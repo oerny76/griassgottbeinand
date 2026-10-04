@@ -72,8 +72,8 @@ Ursprüngliche Empfehlung war Stufe 1 mit Heatmap nur für den Admin. Entschiede
 
 - Anwesenheit = 13 minus Abwesenheiten (wie im alten Sheet). Die Mitgliederzahl hat sich geändert, ältere Werte sind ungenau.
 - Abwesenheiten sind erst ab etwa 2014 verlässlich.
-- Locations: nur wenige Bewertungen bei über 100 Orten. Keine belastbare Bestenliste.
-- Keine Koordinaten, deshalb keine Karte ohne Geocoding.
+- Locations: nur wenige Bewertungen bei über 100 Orten. Keine belastbare Bestenliste. Neue Bewertungen sind in der App möglich (je Mitglied und Location eine).
+- Keine Koordinaten, deshalb keine Karte ohne Geocoding. Statt einer eingebetteten Karte gibt es Routen-Knöpfe in die Karten-App (Adresse als Text). Für die MVGO-App gibt es keinen Link, der das Ziel vorausfüllt, deshalb fehlt er.
 - Kein Zahlungsdatum gespeichert, deshalb keine "Zahlungsdauer".
 - Einträge werden nie gelöscht (Supabase-MCP hängt bei DELETE). Alle Auswertungen müssen `cancelled_at is null` filtern.
 
@@ -83,7 +83,7 @@ Ursprüngliche Empfehlung war Stufe 1 mit Heatmap nur für den Admin. Entschiede
 - `app_stats_absent(p_token)` für die Heatmap mit Namen (`_auth_member`, `db/app_stats_absent.sql`). Die frühere Admin-Variante `app_stats_admin` ist gelöscht.
 - Charts in neuer Datei `charts.js` (Funktionen, die SVG per `document.createElementNS` bauen, Text nur per `textContent`, kein `innerHTML`).
 - Tooltip: ein gemeinsames Element, Positionierung am Marker, Tastatur-Fokus unterstützen.
-- Service Worker: Cache-Version erhöhen (aktuell `stammtisch-v6`), neue Dateien in die Liste.
+- Service Worker: Cache-Version erhöhen (Stand: `stammtisch-v25`), neue Dateien in die Liste.
 - Tests lokal mit Playwright und gemockten Supabase-Routen (Muster wie bisher), plus Rollback-Test der RPC:
   `DO $$ ... raise exception 'PRUEFUNG: %', ...; $$;` und `set local role anon` für Browserrechte.
 
