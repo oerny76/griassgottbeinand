@@ -74,8 +74,10 @@
       panelBox.replaceChildren(...(p ? [h("div", { class: "panel" }, p.build())] : []));
       Object.entries(toggles).forEach(([k, b]) => b.setAttribute("aria-expanded", String(k === heroPanel)));
     };
+    // Wer den Vorsitz hat, kann sich nicht einfach abmelden: Zuerst den Vorsitz übertragen, dann erscheint "Ich komme nicht".
+    const mustTransfer = !!m && !!m.chair && m.chair === me.name && !d.my_absent && !!panels.chair;
     const buttons = [];
-    if (m) {
+    if (m && !mustTransfer) {
       buttons.push(h("button", {
         type: "button", class: "hbtn main", disabled: locked,
         onclick: (e) => act(e.currentTarget,
@@ -85,11 +87,14 @@
     }
     for (const key of ["chair", "loc"]) {
       if (!panels[key]) continue;
-      toggles[key] = h("button", { type: "button", class: "hbtn alt", "aria-expanded": "false", onclick: () => { heroPanel = heroPanel === key ? null : key; draw(); } }, panels[key].label);
+      toggles[key] = h("button", { type: "button", class: "hbtn " + (mustTransfer && key === "chair" ? "main" : "alt"), "aria-expanded": "false", onclick: () => { heroPanel = heroPanel === key ? null : key; draw(); } }, panels[key].label);
       buttons.push(toggles[key]);
     }
     draw();
-    return [buttons.length ? h("div", { class: "actions" }, buttons) : null, panelBox];
+    return [
+      mustTransfer ? h("p", { class: "muted small", style: "margin-top:12px" }, "Du hast den Vorsitz. Um dich abzumelden, übertrage ihn zuerst.") : null,
+      buttons.length ? h("div", { class: "actions" }, buttons) : null,
+      panelBox];
   }
 
   // Eingabe der Location für den nächsten Termin (auch zum Ändern einer schon eingetragenen).
@@ -244,18 +249,21 @@
   // Wenn du ein Mitglied ansiehst, kannst du hier ausdrücklich als Admin für diese Person handeln.
   function actAsPanel(d) {
     const who = d.me.name;
+    // Auch für andere gilt: Wer den Vorsitz hat, wird erst abgemeldet, wenn der Vorsitz übertragen ist.
+    const isChair = !!d.meeting && d.meeting.chair === who && !d.my_absent;
     const guest = h("input", { type: "text", maxlength: "60", placeholder: "Name des Gastes", autocomplete: "off", "aria-label": "Gast" });
     return h("section", { class: "card admincard" },
       h("h2", {}, `Admin-Aktion für ${who}`),
       h("div", { class: "stack" },
         h("div", { class: "inline" },
-          h("button", { class: "full", onclick: (e) => act(e.currentTarget, () => rpc("app_add_absence", { p_member: who }), () => `${who}: Abwesenheit eingetragen.`) }, "Abwesenheit eintragen"),
+          h("button", { class: "full", disabled: isChair, onclick: (e) => act(e.currentTarget, () => rpc("app_add_absence", { p_member: who }), () => `${who}: Abwesenheit eingetragen.`) }, "Abwesenheit eintragen"),
           h("button", { class: "full", onclick: (e) => act(e.currentTarget, () => rpc("app_cancel_absence", { p_member: who }), () => `${who}: Abwesenheit zurückgezogen.`) }, "Zurückziehen")),
         h("div", { class: "inline" }, guest,
           h("button", { onclick: (e) => {
             if (!guest.value.trim()) { toast("Bitte den Namen des Gastes eingeben.", true); return; }
             act(e.currentTarget, () => rpc("app_add_guest", { p_guest: guest.value, p_host: who }), (r) => `Gast bei ${r.host} (${r.category}).`);
           } }, "Gast")),
+        isChair ? h("p", { class: "notice", style: "margin:0" }, `${who} hat den Vorsitz. Zum Abmelden zuerst den Vorsitz in deiner eigenen Ansicht ändern.`) : null,
         h("p", { class: "muted small", style: "margin:0" }, "Als Admin gilt die Frist nicht. Zahlungen und weitere Buchungen findest du im Admin-Bereich.")));
   }
 
