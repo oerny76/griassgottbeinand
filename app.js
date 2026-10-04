@@ -502,12 +502,21 @@
     $app.replaceChildren(root, tabBar(admin));
   }
 
+  // Für die Home-Bildschirm-App (iPhone): eigener Speicher, deshalb Link oder Code hier einfügen.
+  function tokenForm() {
+    const input = h("input", { id: "tok", type: "text", autocomplete: "off", autocapitalize: "off", spellcheck: "false", placeholder: "Persönlichen Link oder Code einfügen", "aria-label": "Persönlicher Link oder Code" });
+    const save = () => { if (window.App.setToken(input.value)) load(); else input.focus(); };
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") save(); });
+    return h("div", { style: "margin-top:16px;text-align:left" }, input, h("button", { class: "primary full", style: "margin-top:8px", onclick: save }, "Speichern"));
+  }
+
   function showNoToken() {
     $app.classList.remove("tabs");
     $app.replaceChildren(h("div", { class: "card center", style: "margin-top:32px" },
       h("p", { class: "big" }, "🍻 Griassgottbeinand"),
       h("p", {}, "Bitte öffne deinen persönlichen Link. Den bekommst du vom Kassier."),
-      h("p", { class: "muted small" }, "Dein Link wird auf diesem Gerät gespeichert. Danach reicht das Icon auf dem Startbildschirm.")));
+      h("p", { class: "muted small" }, "Dein Link wird auf diesem Gerät gespeichert. Danach reicht das Icon auf dem Startbildschirm."),
+      tokenForm()));
   }
 
   let loading = false;

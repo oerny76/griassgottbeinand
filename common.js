@@ -20,6 +20,33 @@
   let token = (qs.get("t") || "").trim() || store.get() || "";
   if (qs.get("t")) store.set(token);
 
+  // iPhone: Die Home-Bildschirm-App hat einen eigenen Speicher und startet über start_url ohne "?t=".
+  // Deshalb steht der Code beim Anlegen des Icons im Manifest (best effort), zusätzlich gibt es ein Eingabefeld.
+  function embedTokenInManifest() {
+    try {
+      const link = document.querySelector('link[rel="manifest"]');
+      if (!link || !token) return;
+      const base = new URL(".", location.href).href;
+      const m = {
+        name: "Griassgottbeinand", short_name: "Stammtisch", lang: "de", display: "standalone",
+        background_color: "#f6efe2", theme_color: "#1f6f5c",
+        start_url: base + "?t=" + encodeURIComponent(token), scope: base,
+        icons: [{ src: base + "icons/icon-192.png", sizes: "192x192", type: "image/png" }, { src: base + "icons/icon-512.png", sizes: "512x512", type: "image/png" }],
+      };
+      link.href = "data:application/manifest+json," + encodeURIComponent(JSON.stringify(m));
+    } catch { /* egal */ }
+  }
+  embedTokenInManifest();
+
+  // Nimmt den Code oder den ganzen persönlichen Link entgegen.
+  function setToken(input) {
+    let v = String(input || "").trim();
+    try { const t = new URL(v).searchParams.get("t"); if (t) v = t.trim(); } catch { /* war kein Link */ }
+    if (!v) return false;
+    token = v; store.set(v); embedTokenInManifest();
+    return true;
+  }
+
   const euro = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" });
   const dateLong = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const dateShort = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -115,6 +142,6 @@
 
   window.App = {
     h, card, options, rpc, toast, euro, dateShort, dateLong, dateDay, stripGast, safeUrl, act, friendly,
-    hooks, session, forgetToken, hasToken: () => !!token,
+    hooks, session, forgetToken, setToken, hasToken: () => !!token,
   };
 })();
