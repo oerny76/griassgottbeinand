@@ -28,6 +28,9 @@
     const addr = loc ? [loc.street, [loc.zip, loc.city].filter(Boolean).join(" ")].filter(Boolean).join(", ") : "";
     // Route: Google Maps (öffnet auf dem Handy die App, wenn installiert), auf Apple-Geräten zusätzlich Apple Karten.
     const dest = loc ? encodeURIComponent([loc.name, addr].filter(Boolean).join(", ")) : "";
+    // MVG bietet keinen Link, der das Ziel in MVGO vorausfüllt. Der Link führt zur MVGO-Seite, von dort lässt sich die App öffnen oder laden.
+    const MVGO_URL = "https://www.mvg.de/services/unsere-apps/mvgo.html";
+    const muenchen = !!loc && /m[üu]nchen/i.test(loc.city || "");
     const apple = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
     const routes = loc ? [
       apple && ["Apple Karten", `https://maps.apple.com/?daddr=${dest}&dirflg=d`],
@@ -51,7 +54,8 @@
         ? [h("p", {}, h("strong", {}, loc.name), addr && h("span", { class: "muted" }, " · " + addr)),
             h("div", { class: "locLinks" },
               routes.map(([label, href]) => h("a", { class: "btn hbtn", href, target: "_blank", rel: "noopener noreferrer" }, "📍 " + label)),
-              web && h("a", { class: "btn hbtn", href: web, target: "_blank", rel: "noopener noreferrer" }, "🌐 Website"))]
+              web && h("a", { class: "btn hbtn", href: web, target: "_blank", rel: "noopener noreferrer" }, "🌐 Website"),
+              muenchen && h("a", { class: "btn hbtn", href: MVGO_URL, target: "_blank", rel: "noopener noreferrer" }, "🚇 MVGO"))]
         : h("p", { class: "muted" }, "Location noch offen"),
       h("p", { class: "muted small" }, locked ? "Die Anmeldefrist ist abgelaufen. Bitte beim Admin melden." : m.deadline_passed ? "Die Anmeldefrist ist abgelaufen." : "Abmelden oder Gäste anmelden bis 19 Uhr am Stammtischtag."),
       nextLine,
