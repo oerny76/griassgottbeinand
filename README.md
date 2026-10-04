@@ -12,7 +12,7 @@ Ohne Build-Schritt: reines HTML, CSS und JavaScript. Daten liegen in Supabase (P
 | `config.js` | Öffentliche Verbindungsdaten (URL, öffentlicher Schlüssel, PayPal-Name) |
 | `charts.js` | Statistik-Seite mit den Diagrammen |
 | `trend.js` | Rechenlogik für Durchschnitt und Tendenz der Abwesenheiten (reine Funktionen, mit `node` testbar) |
-| `db/` | SQL der Datenbankfunktionen (`app_stats.sql`, `app_stats_admin.sql`; die übrigen liegen noch nur in Supabase) |
+| `db/` | SQL der Datenbankfunktionen (`app_stats.sql`, `app_stats_admin.sql`, `app_add_absence.sql`; die übrigen liegen noch nur in Supabase) |
 | `docs/` | Redesign-Konzept und Prototyp (nur Entwurf, wird nicht ausgeliefert genutzt) |
 | `manifest.webmanifest`, `sw.js`, `icons/` | Installierbare App, Offline-Hülle |
 
@@ -67,7 +67,7 @@ Aus dem Admin-Bereich öffnet "Mitglied ansehen" dieselbe Ansicht (`index.html#a
 
 - Mitglied: eigene Abwesenheit und Gäste (bis 19 Uhr am Stammtischtag), eigene offene Posten.
 - Vorsitz des letzten Abends: bestimmt den nächsten Vorsitz. Ist er vergeben, darf er ihn nur noch bis einschließlich zum Tag nach dem Stammtisch ändern.
-- Designierter Vorsitz ("ich" in der App): kann sich nicht einfach abmelden. Statt "Ich komme nicht" steht zuerst "Vorsitz übertragen", erst danach erscheint "Ich komme nicht" (nur in der Oberfläche, die Datenbank erzwingt es nicht). Er überträgt den Vorsitz mit "Vorsitz übertragen" (Auswahl mit Vorschlag nach der längsten Zeit ohne Vorsitz, `vorsitz.js`) und trägt die Location ein.
+- Designierter Vorsitz ("ich" in der App): kann sich nicht einfach abmelden. Statt "Ich komme nicht" steht zuerst "Vorsitz übertragen", erst danach erscheint "Ich komme nicht" (die Datenbank erzwingt es in `app_add_absence`, siehe `db/app_add_absence.sql`; am Stammtischtag selbst gilt es nicht mehr, denn dann lässt sich der Vorsitz nicht mehr übertragen). Er überträgt den Vorsitz mit "Vorsitz übertragen" (Auswahl mit Vorschlag nach der längsten Zeit ohne Vorsitz, `vorsitz.js`) und trägt die Location ein.
 - Admin: alles, auch für andere Mitglieder und ohne Frist.
 
 ## Veröffentlichen

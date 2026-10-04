@@ -75,7 +75,8 @@
       Object.entries(toggles).forEach(([k, b]) => b.setAttribute("aria-expanded", String(k === heroPanel)));
     };
     // Wer den Vorsitz hat, kann sich nicht einfach abmelden: Zuerst den Vorsitz übertragen, dann erscheint "Ich komme nicht".
-    const mustTransfer = !!m && !!m.chair && m.chair === me.name && !d.my_absent && !!panels.chair;
+    // Die Datenbank erzwingt das ebenfalls. Am Stammtischtag selbst gilt es nicht mehr, dann lässt sich der Vorsitz nicht mehr übertragen.
+    const mustTransfer = !!m && inDays(m.date) > 0 && !!m.chair && m.chair === me.name && !d.my_absent && !!panels.chair;
     const buttons = [];
     if (m && !mustTransfer) {
       buttons.push(h("button", {
@@ -250,7 +251,7 @@
   function actAsPanel(d) {
     const who = d.me.name;
     // Auch für andere gilt: Wer den Vorsitz hat, wird erst abgemeldet, wenn der Vorsitz übertragen ist.
-    const isChair = !!d.meeting && d.meeting.chair === who && !d.my_absent;
+    const isChair = !!d.meeting && inDays(d.meeting.date) > 0 && d.meeting.chair === who && !d.my_absent;
     const guest = h("input", { type: "text", maxlength: "60", placeholder: "Name des Gastes", autocomplete: "off", "aria-label": "Gast" });
     return h("section", { class: "card admincard" },
       h("h2", {}, `Admin-Aktion für ${who}`),
