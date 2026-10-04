@@ -1,106 +1,11 @@
 (() => {
   "use strict";
-  const C = window.APP_CONFIG;
-  const STORE_KEY = "stammtisch_token";
+  const { h, card, options, rpc, toast, euro, dateShort, dateLong, dateDay, stripGast, safeUrl, act, session, hooks } = window.App;
   const DOC_HOSTS = ["drive.google.com", "docs.google.com"];
   let linksCache = null; // Satzung und Gebührenordnung kommen aus der Datenbank, nicht aus dem Code
   const $app = document.getElementById("app");
-  const $toast = document.getElementById("toast");
-
-  // ---------- Hilfsfunktionen ----------
-  const store = {
-    get() { try { return localStorage.getItem(STORE_KEY); } catch { return null; } },
-    set(v) { try { localStorage.setItem(STORE_KEY, v); } catch { /* egal */ } },
-    clear() { try { localStorage.removeItem(STORE_KEY); } catch { /* egal */ } },
-  };
-
-  const qs = new URLSearchParams(location.search);
-  let token = (qs.get("t") || "").trim() || store.get() || "";
-  if (qs.get("t")) store.set(token);
-
-  const euro = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" });
-  const dateLong = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  const dateShort = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
-  const dateDay = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
-  const stripGast = (s) => String(s || "").replace(/^Gast\s+/i, "");
-
-  function safeUrl(u, hosts) {
-    try {
-      const url = new URL(u);
-      if (url.protocol !== "https:" && url.protocol !== "http:") return null;
-      if (hosts && !hosts.includes(url.hostname)) return null;
-      return url.href;
-    } catch { return null; }
-  }
-
-  function h(tag, attrs, ...kids) {
-    const el = document.createElement(tag);
-    for (const [k, v] of Object.entries(attrs || {})) {
-      if (v == null || v === false) continue;
-      if (k === "class") el.className = v;
-      else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
-      else el.setAttribute(k, v === true ? "" : v);
-    }
-    for (const kid of kids.flat()) {
-      if (kid == null || kid === false) continue;
-      el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
-    }
-    return el;
-  }
-
-  const card = (title, ...kids) => h("section", { class: "card" }, title && h("h2", {}, title), ...kids);
-
-  let toastTimer;
-  function toast(text, isError) {
-    $toast.textContent = text;
-    $toast.className = "show" + (isError ? " err" : "");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { $toast.className = ""; }, isError ? 6000 : 3500);
-  }
-
-  const FRIENDLY = [
-    [/Link ungueltig/i, "Dieser Link ist ungültig. Bitte den persönlichen Link nutzen."],
-    [/naechsten/gi, "nächsten"],
-    [/Frist abgelaufen/i, "Die Frist ist abgelaufen (19 Uhr am Stammtischtag). Bitte beim Admin melden."],
-  ];
-  function friendly(msg) {
-    let out = String(msg || "Unbekannter Fehler");
-    for (const [re, to] of FRIENDLY) out = out.replace(re, to);
-    return out;
-  }
-
-  async function rpc(fn, args = {}) {
-    let res;
-    try {
-      res = await fetch(`${C.SUPABASE_URL}/rest/v1/rpc/${fn}`, {
-        method: "POST",
-        headers: { apikey: C.SUPABASE_KEY, "Content-Type": "application/json" },
-        body: JSON.stringify({ p_token: token, ...args }),
-      });
-    } catch {
-      throw new Error("Keine Verbindung. Bitte später noch einmal versuchen.");
-    }
-    const body = await res.json().catch(() => null);
-    if (!res.ok) {
-      const err = new Error(friendly(body && body.message));
-      err.invalid = !!(body && /Link ungueltig/i.test(body.message || ""));
-      throw err;
-    }
-    return body;
-  }
-
-  async function act(btn, fn, okText) {
-    if (btn) btn.disabled = true;
-    try {
-      const r = await fn();
-      toast(typeof okText === "function" ? okText(r) : okText);
-      await load();
-    } catch (e) {
-      if (e.invalid) { store.clear(); token = ""; return showNoToken(); }
-      toast(e.message, true);
-      if (btn) btn.disabled = false;
-    }
-  }
+  const VIEW_KEY = "stammtisch_view";
+  const VIEW_AS_KEY = "stammtisch_view_as";
 
   // ---------- Bereiche ----------
   function meetingCard(d) {
@@ -125,9 +30,14 @@
       h("p", { class: "muted small" }, m.deadline_passed ? "Die Anmeldefrist ist abgelaufen." : "Abmelden oder Gäste anmelden bis 19 Uhr am Stammtischtag."));
   }
 
-  function signupCard(d) {
+  function signupCard(d, readOnly) {
     const m = d.meeting, me = d.me;
     if (!m) return null;
+    if (readOnly) {
+      return card(`Anmeldung von ${me.name}`,
+        h("p", { style: "margin:0" }, d.my_absent ? h("span", { class: "chip" }, "entschuldigt") : "Kommt (nicht abgemeldet)."),
+        d.my_guests.length ? h("p", { style: "margin:10px 0 0" }, "Gäste: ", d.my_guests.map(stripGast).join(", ")) : null);
+    }
     const locked = m.deadline_passed && !me.is_admin;
     const children = [];
     if (locked) children.push(h("p", { class: "notice" }, "Die Frist ist abgelaufen (19 Uhr am Stammtischtag). Bitte beim Admin melden."));
@@ -187,7 +97,6 @@
   }
 
   function memberNames(d) { return d.absences_year.list.map((x) => x.name).sort((a, b) => a.localeCompare(b, "de")); }
-  const options = (names, selected) => names.map((n) => h("option", { value: n, selected: n === selected }, n));
 
   function chairCard(d) {
     const me = d.me, parts = [];
@@ -231,26 +140,48 @@
     return card("Vorsitz", ...parts);
   }
 
-  function adminCard(d) {
-    if (!d.meeting) return null;
-    const sel = h("select", { id: "adminMember" }, options(memberNames(d)));
-    const guest = h("input", { type: "text", maxlength: "60", placeholder: "Name des Gastes", autocomplete: "off" });
-    const who = () => sel.value;
-    return card("Admin: für andere eintragen",
+  // ---------- Nur für Admins: Ansicht wechseln ----------
+  const getView = () => session.get(VIEW_KEY) || "self";
+  const getViewAs = () => session.get(VIEW_AS_KEY) || "";
+  function setView(view, name) { session.set(VIEW_KEY, view); session.set(VIEW_AS_KEY, name || ""); load(); }
+
+  function adminBar(own, mode) {
+    const names = memberNames(own);
+    const sel = h("select", { id: "viewSel", "aria-label": "Ansicht wählen", class: "adminsel",
+      onchange: (e) => { const v = e.target.value; if (v === "self" || v === "plain") setView(v); else setView("as", v.slice(3)); } },
+      h("option", { value: "self", selected: mode === "self" }, "Meine Ansicht (Admin)"),
+      h("option", { value: "plain", selected: mode === "plain" }, "Wie ein normales Mitglied"),
+      h("optgroup", { label: "Mitglied ansehen (nur lesen)" }, names.map((n) => h("option", { value: "as:" + n, selected: mode === "as" && getViewAs() === n }, n))));
+    return h("div", { class: "adminbar" },
+      h("span", { class: "badge" }, "🔒 Admin"),
+      sel,
+      h("a", { class: "btn adminbtn", href: "admin.html" }, "Admin-Bereich →"));
+  }
+
+  function viewBanner(mode, name) {
+    return h("div", { class: "viewbanner", role: "status" },
+      h("span", {}, mode === "as"
+        ? `👁 Du siehst die App so, wie ${name} sie sieht. Nur ansehen, hier wird nichts für ${name} geändert.`
+        : "👁 So sieht ein normales Mitglied die App. Es sind deine eigenen Daten."),
+      h("button", { class: "link", onclick: () => setView("self") }, "Zurück zu meiner Ansicht"));
+  }
+
+  // Wenn du ein Mitglied ansiehst, kannst du hier ausdrücklich als Admin für diese Person handeln.
+  function actAsPanel(d) {
+    const who = d.me.name;
+    const guest = h("input", { type: "text", maxlength: "60", placeholder: "Name des Gastes", autocomplete: "off", "aria-label": "Gast" });
+    return h("section", { class: "card admincard" },
+      h("h2", {}, `Admin-Aktion für ${who}`),
       h("div", { class: "stack" },
-        h("a", { class: "btn primary full", href: "#admin" }, "Zahlungen und Buchungen"),
-        h("div", {}, h("label", { for: "adminMember" }, "Mitglied"), sel),
         h("div", { class: "inline" },
-          h("button", { class: "full", onclick: (e) => act(e.currentTarget, () => rpc("app_add_absence", { p_member: who() }), (r) => `${r.member}: Abwesenheit eingetragen.`) }, "Abwesenheit"),
-          h("button", { class: "full", onclick: (e) => act(e.currentTarget, () => rpc("app_cancel_absence", { p_member: who() }), (r) => `${r.member}: Abwesenheit zurückgezogen.`) }, "Zurückziehen")),
+          h("button", { class: "full", onclick: (e) => act(e.currentTarget, () => rpc("app_add_absence", { p_member: who }), () => `${who}: Abwesenheit eingetragen.`) }, "Abwesenheit eintragen"),
+          h("button", { class: "full", onclick: (e) => act(e.currentTarget, () => rpc("app_cancel_absence", { p_member: who }), () => `${who}: Abwesenheit zurückgezogen.`) }, "Zurückziehen")),
         h("div", { class: "inline" }, guest,
-          h("button", {
-            onclick: (e) => {
-              if (!guest.value.trim()) { toast("Bitte den Namen des Gastes eingeben.", true); return; }
-              act(e.currentTarget, () => rpc("app_add_guest", { p_guest: guest.value, p_host: who() }), (r) => `Gast bei ${r.host} (${r.category}).`);
-            },
-          }, "Gast")),
-        h("p", { class: "muted small", style: "margin:0" }, "Als Admin gilt die Frist nicht. Gäste nach 19 Uhr werden als „Gast unangemeldet“ gebucht.")));
+          h("button", { onclick: (e) => {
+            if (!guest.value.trim()) { toast("Bitte den Namen des Gastes eingeben.", true); return; }
+            act(e.currentTarget, () => rpc("app_add_guest", { p_guest: guest.value, p_host: who }), (r) => `Gast bei ${r.host} (${r.category}).`);
+          } }, "Gast")),
+        h("p", { class: "muted small", style: "margin:0" }, "Als Admin gilt die Frist nicht. Zahlungen und weitere Buchungen findest du im Admin-Bereich.")));
   }
 
   function absencesCard(d) {
@@ -356,13 +287,21 @@
       h("br"), "Stand: " + new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }));
   }
 
-  function render(d) {
+  // own: eigene Daten. as: Daten eines angesehenen Mitglieds (nur Admin).
+  function render(own, as) {
+    const admin = !!own.me.is_admin;
+    const mode = admin ? getView() : "self";
+    let d = own, readOnly = false;
+    if (mode === "as" && as) { d = Object.assign({}, as.dashboard, { overview: as.overview }); readOnly = true; }
+    if (mode === "plain") d = Object.assign({}, own, { me: Object.assign({}, own.me, { is_admin: false, can_set_next_chair: false, can_set_location: false }) });
+    const canChair = !readOnly && (d.me.can_set_next_chair || d.me.can_set_location);
     const root = h("div", {},
+      admin ? adminBar(own, mode) : null,
+      admin && mode !== "self" ? viewBanner(mode, d.me.name) : null,
       h("h1", {}, "🍻 Griassgottbeinand"),
-      h("p", { class: "hello" }, `Servus, ${d.me.name}!`),
-      meetingCard(d), signupCard(d), whoCard(d), accountCard(d),
-      (d.me.can_set_next_chair || d.me.can_set_location) ? chairCard(d) : null,
-      d.me.is_admin ? (adminCard(d) || card("Admin", h("a", { class: "btn primary full", href: "#admin" }, "Zahlungen und Buchungen"))) : null,
+      h("p", { class: "hello" }, readOnly ? `Ansicht von ${d.me.name}` : `Servus, ${d.me.name}!`),
+      meetingCard(d), signupCard(d, readOnly), readOnly ? actAsPanel(d) : null, whoCard(d), accountCard(d),
+      canChair ? chairCard(d) : null,
       openCard(d), absencesCard(d), chairsCard(d), locationsCard(d), infoCard(d), footer());
     $app.replaceChildren(root);
   }
@@ -374,34 +313,41 @@
       h("p", { class: "muted small" }, "Dein Link wird auf diesem Gerät gespeichert. Danach reicht das Icon auf dem Startbildschirm.")));
   }
 
-  let lastData = null;
-  function show(d) {
-    lastData = d;
-    if (location.hash === "#admin" && d.me.is_admin && window.Admin) window.Admin.render($app, d);
-    else render(d);
-  }
-  window.addEventListener("hashchange", () => { if (lastData) { show(lastData); window.scrollTo(0, 0); } });
-
   let loading = false;
   async function load(manual) {
-    if (!token) return showNoToken();
+    if (!window.App.hasToken()) return showNoToken();
     if (loading) return;
     loading = true;
     try {
-      const [d, overview] = await Promise.all([rpc("app_dashboard"), rpc("app_overview").catch(() => null)]);
-      d.overview = overview;
-      show(d);
+      const [own, overview] = await Promise.all([rpc("app_dashboard"), rpc("app_overview").catch(() => null)]);
+      own.overview = overview;
+      let as = null;
+      if (own.me.is_admin && getView() === "as" && getViewAs()) {
+        try { as = await rpc("app_admin_view_as", { p_member: getViewAs() }); }
+        catch (e) { session.set(VIEW_KEY, "self"); toast(e.message, true); }
+      }
+      render(own, as);
       if (manual) toast("Aktualisiert.");
     } catch (e) {
-      if (e.invalid) { store.clear(); token = ""; showNoToken(); }
+      if (e.invalid) { window.App.forgetToken(); showNoToken(); }
       else if (!$app.querySelector(".card")) { $app.replaceChildren(h("div", { class: "card center pad" }, h("p", {}, e.message), h("button", { class: "primary", onclick: () => load() }, "Nochmal versuchen"))); }
       else toast(e.message, true);
     } finally { loading = false; }
   }
 
-  window.App = { h, card, rpc, toast, euro, dateShort, dateLong, stripGast, act, load, friendly };
+  // Aus dem Admin-Bereich: index.html#as=Name öffnet die Ansicht dieses Mitglieds.
+  function applyHash() {
+    const m = location.hash.match(/^#as=(.+)$/);
+    if (!m) return;
+    session.set(VIEW_KEY, "as"); session.set(VIEW_AS_KEY, decodeURIComponent(m[1]));
+    history.replaceState(null, "", location.pathname + location.search);
+  }
 
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && token) load(); });
+  hooks.reload = () => load();
+  hooks.noToken = showNoToken;
+
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && window.App.hasToken()) load(); });
   if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("sw.js").catch(() => {});
+  applyHash();
   load();
 })();

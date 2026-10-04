@@ -7,7 +7,8 @@ Ohne Build-Schritt: reines HTML, CSS und JavaScript. Daten liegen in Supabase (P
 
 | Datei | Zweck |
 |---|---|
-| `index.html`, `styles.css`, `app.js` | Oberfläche und Logik |
+| `index.html`, `styles.css`, `common.js`, `app.js` | Mitglieder-App (`common.js` ist gemeinsam mit dem Admin-Bereich) |
+| `admin.html`, `admin.js`, `paypal.js` | Admin-Bereich: Zahlungen, Buchungen, Offen, Letzte |
 | `config.js` | Öffentliche Verbindungsdaten (URL, öffentlicher Schlüssel, PayPal-Name) |
 | `manifest.webmanifest`, `sw.js`, `icons/` | Installierbare App, Offline-Hülle |
 
@@ -18,6 +19,17 @@ Ohne Build-Schritt: reines HTML, CSS und JavaScript. Daten liegen in Supabase (P
 - Der Schlüssel in `config.js` ist für Browser gedacht und darf öffentlich sein.
 - Persönliche Codes gehören **nie** ins Repo.
 - Buchungen werden nie gelöscht, nur storniert (`entries.cancelled_at`).
+
+## Ansicht wechseln (nur Admin)
+
+In der App erscheint für den Admin oben eine Leiste mit Auswahl:
+
+- **Meine Ansicht (Admin):** wie bisher.
+- **Wie ein normales Mitglied:** deine eigenen Daten, aber ohne Admin-Werkzeuge. Ein gelbes Banner zeigt den Modus.
+- **Mitglied ansehen:** die App genau so, wie das gewählte Mitglied sie sieht (nur lesen, Funktion `app_admin_view_as`).
+  Darunter gibt es eine eigene Karte "Admin-Aktion", mit der du ausdrücklich für diese Person Abwesenheit oder Gäste ändern kannst.
+
+Aus dem Admin-Bereich öffnet "Mitglied ansehen" dieselbe Ansicht (`index.html#as=Name`).
 
 ## Rollen
 
@@ -34,7 +46,10 @@ Alternativen ohne Build: Cloudflare Pages oder Netlify (Ordner direkt ausliefern
 Persönlicher Link pro Mitglied: `https://<adresse>/?t=<Code>`.
 Der Code wird auf dem Gerät gespeichert. Danach "Zum Startbildschirm hinzufügen".
 
-## Admin-Bereich (`#admin`)
+## Admin-Bereich (`admin.html`)
+
+Eigene Seite mit dunkelblauem Kopf und gelbem Streifen, damit man immer sieht, wo man ist. Nur der Admin kommt hinein, alle anderen
+sehen "Kein Zugriff". Die Prüfung liegt in der Datenbank, nicht in der Seite.
 
 - **Zahlung:** Text der PayPal-Mail einfügen. Betrag, Datum, Transaktionscode, Absender und Mitteilung werden ausgelesen (`paypal.js`).
   Die App schlägt eine Zuordnung zu offenen Posten vor (alles, eindeutig oder mehrere Varianten zur Auswahl). Gebucht wird erst nach Bestätigung,
