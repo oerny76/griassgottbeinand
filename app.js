@@ -5,8 +5,6 @@
   const DOC_HOSTS = ["drive.google.com", "docs.google.com"];
   let linksCache = null; // Satzung und Gebührenordnung kommen aus der Datenbank, nicht aus dem Code
   const $app = document.getElementById("app");
-  const VIEW_KEY = "stammtisch_view";
-  const VIEW_AS_KEY = "stammtisch_view_as";
 
   // ---------- Bereiche ----------
   const noonMs = (iso) => Date.parse(iso + "T12:00:00");
@@ -16,9 +14,9 @@
   let heroPanel = null; // "chair" oder "loc": welches Fenster in der Hauptkarte offen ist (bleibt beim Neuzeichnen offen)
 
   // Hauptkarte: der nächste Termin auf einen Blick, mit den Aktionen direkt darin (nicht beim Ansehen eines anderen Mitglieds).
-  function heroCard(d, readOnly) {
+  function heroCard(d) {
     const m = d.meeting;
-    const actions = readOnly ? [] : heroActions(d);
+    const actions = heroActions(d);
     if (!m) {
       return h("section", { class: "hero" },
         h("p", { class: "date" }, "Noch kein Termin"),
@@ -39,7 +37,7 @@
     return h("section", { class: "hero" },
       h("div", { class: "badges" },
         h("span", { class: "when" }, whenText(inDays(m.date))),
-        d.my_absent && !readOnly ? h("span", { class: "state" }, "Du bist entschuldigt") : null),
+        d.my_absent ? h("span", { class: "state" }, "Du bist entschuldigt") : null),
       h("p", { class: "date" }, day.toLocaleDateString("de-DE", { weekday: "long" }) + ",",
         h("small", {}, day.toLocaleDateString("de-DE", sameYear ? { day: "numeric", month: "long" } : { day: "numeric", month: "long", year: "numeric" }))),
       h("p", {}, "Vorsitz: ", h("strong", {}, m.chair ? (m.chair === d.me.name ? "ich" : m.chair) : "noch offen")),
@@ -149,14 +147,6 @@
       }, cur ? "Location ändern" : "Location eintragen"));
   }
 
-  function signupCard(d, readOnly) {
-    const m = d.meeting, me = d.me;
-    if (!m || !readOnly) return null; // Im normalen Modus sitzt der Gast-Bereich in der Hauptkarte
-    return card(`Anmeldung von ${me.name}`,
-      h("p", { style: "margin:0" }, d.my_absent ? h("span", { class: "chip" }, "entschuldigt") : "Kommt (nicht abgemeldet)."),
-      d.my_guests.length ? h("p", { style: "margin:10px 0 0" }, "Gäste: ", d.my_guests.map(stripGast).join(", ")) : null);
-  }
-
   // Gast anmelden und entfernen. Klappt in der Hauptkarte auf.
   function guestForm(d) {
     const m = d.meeting, me = d.me;
@@ -251,40 +241,6 @@
       list,
       changing ? null : h("div", {}, h("label", { for: "nextDate" }, "Datum (leer lassen: erster Freitag im Folgemonat)"), date),
       btn);
-  }
-
-  // ---------- Nur für Admins: Mitglied ansehen (Einstieg über den Admin-Bereich) ----------
-  const getView = () => session.get(VIEW_KEY) || "self";
-  const getViewAs = () => session.get(VIEW_AS_KEY) || "";
-  function setView(view, name) { session.set(VIEW_KEY, view); session.set(VIEW_AS_KEY, name || ""); load(); }
-
-  function viewBanner(mode, name) {
-    return h("div", { class: "viewbanner", role: "status" },
-      h("span", {}, mode === "as"
-        ? `👁 Du siehst die App so, wie ${name} sie sieht. Nur ansehen, hier wird nichts für ${name} geändert.`
-        : "👁 So sieht ein normales Mitglied die App. Es sind deine eigenen Daten."),
-      h("button", { class: "link", onclick: () => setView("self") }, "Zurück zu meiner Ansicht"));
-  }
-
-  // Wenn du ein Mitglied ansiehst, kannst du hier ausdrücklich als Admin für diese Person handeln.
-  function actAsPanel(d) {
-    const who = d.me.name;
-    // Auch für andere gilt: Wer den Vorsitz hat, wird erst abgemeldet, wenn der Vorsitz übertragen ist.
-    const isChair = !!d.meeting && d.me.chair_scope !== "next" && d.meeting.chair === who && !d.my_absent;
-    const guest = h("input", { type: "text", maxlength: "60", placeholder: "Name des Gastes", autocomplete: "off", "aria-label": "Gast" });
-    return h("section", { class: "card admincard" },
-      h("h2", {}, `Admin-Aktion für ${who}`),
-      h("div", { class: "stack" },
-        h("div", { class: "inline" },
-          h("button", { class: "full", disabled: isChair, onclick: (e) => act(e.currentTarget, () => rpc("app_add_absence", { p_member: who }), () => `${who}: Abwesenheit eingetragen.`) }, "Abwesenheit eintragen"),
-          h("button", { class: "full", onclick: (e) => act(e.currentTarget, () => rpc("app_cancel_absence", { p_member: who }), () => `${who}: Abwesenheit zurückgezogen.`) }, "Zurückziehen")),
-        h("div", { class: "inline" }, guest,
-          h("button", { onclick: (e) => {
-            if (!guest.value.trim()) { toast("Bitte den Namen des Gastes eingeben.", true); return; }
-            act(e.currentTarget, () => rpc("app_add_guest", { p_guest: guest.value, p_host: who }), (r) => `Gast bei ${r.host} (${r.category}).`);
-          } }, "Gast")),
-        isChair ? h("p", { class: "notice", style: "margin:0" }, `${who} hat den Vorsitz. Zum Abmelden zuerst den Vorsitz in deiner eigenen Ansicht ändern.`) : null,
-        h("p", { class: "muted small", style: "margin:0" }, "Als Admin gilt die Frist nicht. Zahlungen und weitere Buchungen findest du im Admin-Bereich.")));
   }
 
   function absencesCard(d) {
@@ -480,14 +436,14 @@
     const p = document.createElementNS(NS, "path"); p.setAttribute("d", path); svg.append(p);
     return svg;
   };
-  let tab = TABS.some(([id]) => id === session.get(TAB_KEY)) ? session.get(TAB_KEY) : "start";
+  let tab = [...TABS.map(([id]) => id), "admin"].includes(session.get(TAB_KEY)) ? session.get(TAB_KEY) : "start";
   let statsCache = null; // Antwort von app_stats, wird beim Öffnen des Tabs geladen
   let statsReq = null; // laufende Anfrage, damit ein erneutes Zeichnen keine zweite startet
   let last = null; // zuletzt geladene Daten, damit ein Tab-Wechsel nicht neu lädt
 
   function goTab(id) {
     tab = id; session.set(TAB_KEY, id);
-    if (last) render(last.own, last.as);
+    if (last) render(last.own);
     window.scrollTo(0, 0);
   }
 
@@ -496,7 +452,7 @@
   function tabBar(admin) {
     return h("nav", { class: "tabbar", "aria-label": "Bereiche" }, h("div", { class: "tabbar-in" },
       TABS.map(([id, label, path]) => h("button", { type: "button", "aria-current": id === tab ? "page" : null, onclick: () => goTab(id) }, icon(path), label)),
-      admin ? h("a", { href: "admin.html" }, icon(ADMIN_ICON), "Admin") : null));
+      admin ? h("button", { type: "button", "aria-current": tab === "admin" ? "page" : null, onclick: () => goTab("admin") }, icon(ADMIN_ICON), "Admin") : null));
   }
 
   // Statistik (Gruppenwerte für alle): wird erst gebraucht geladen, Tab und Chronik teilen sich eine Anfrage.
@@ -522,26 +478,24 @@
     return box;
   }
 
-  // own: eigene Daten. as: Daten eines angesehenen Mitglieds (nur Admin).
-  function render(own, as) {
-    last = { own, as };
+  function render(own) {
+    last = { own };
     const admin = !!own.me.is_admin;
-    const mode = admin ? getView() : "self";
-    let d = own, readOnly = false;
-    if (mode === "as" && as) { d = Object.assign({}, as.dashboard, { overview: as.overview }); readOnly = true; }
+    if (tab === "admin" && !admin) tab = "start";
+    const d = own;
     const today = new Date(todayBerlin() + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
     // Nur der geöffnete Tab wird gebaut (der Statistik-Tab lädt Daten).
     const pages = {
-      start: () => [heroCard(d, readOnly), tilesBlock(d, goTab), signupCard(d, readOnly), readOnly ? actAsPanel(d) : null, whoCard(d)],
+      start: () => [heroCard(d), tilesBlock(d, goTab), whoCard(d)],
       stat: () => [statsPage(d)],
       konto: () => [accountCard(d), openCard(d)],
       chronik: () => [recentCard(d), chairsCard(d), locationsCard(d), absencesCard(d)],
+      admin: () => [window.AdminView.render(own)],
     };
     const root = h("div", {},
-      admin && mode === "as" ? viewBanner(mode, d.me.name) : null,
       tab === "start"
-        ? [h("p", { class: "hello" }, readOnly ? `Ansicht von ${d.me.name}` : today), h("h1", {}, readOnly ? d.me.name : `Servus, ${d.me.name}!`)]
-        : h("h1", {}, TABS.find(([id]) => id === tab)[1]),
+        ? [h("p", { class: "hello" }, today), h("h1", {}, `Servus, ${d.me.name}!`)]
+        : h("h1", {}, tab === "admin" ? "Admin" : TABS.find(([id]) => id === tab)[1]),
       pages[tab](),
       footer());
     $app.classList.add("tabs");
@@ -564,12 +518,7 @@
     try {
       const [own, overview] = await Promise.all([rpc("app_dashboard"), rpc("app_overview").catch(() => null)]);
       own.overview = overview;
-      let as = null;
-      if (own.me.is_admin && getView() === "as" && getViewAs()) {
-        try { as = await rpc("app_admin_view_as", { p_member: getViewAs() }); }
-        catch (e) { session.set(VIEW_KEY, "self"); toast(e.message, true); }
-      }
-      render(own, as);
+      render(own);
       if (manual) { statsCache = null; toast("Aktualisiert."); }
     } catch (e) {
       if (e.invalid) { window.App.forgetToken(); showNoToken(); }
@@ -578,19 +527,10 @@
     } finally { loading = false; }
   }
 
-  // Aus dem Admin-Bereich: index.html#as=Name öffnet die Ansicht dieses Mitglieds.
-  function applyHash() {
-    const m = location.hash.match(/^#as=(.+)$/);
-    if (!m) return;
-    session.set(VIEW_KEY, "as"); session.set(VIEW_AS_KEY, decodeURIComponent(m[1]));
-    history.replaceState(null, "", location.pathname + location.search);
-  }
-
   hooks.reload = () => load();
   hooks.noToken = showNoToken;
 
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && window.App.hasToken()) load(); });
   if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("sw.js").catch(() => {});
-  applyHash();
   load();
 })();

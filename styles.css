@@ -57,24 +57,6 @@ details.loc > summary::-webkit-details-marker { display: none; }
 details.loc { border-bottom: 1px solid var(--line); }
 details.loc > summary { font-weight: 400; }
 
-/* ---------- Admin: eigener Look, damit man immer sieht, wo man ist ---------- */
-.adminsel { flex: 1 1 150px; min-height: 40px; background: #fff; color: #1d3557; border: 0; border-radius: 10px; padding: 6px 10px; }
-.btn.adminbtn { min-height: 40px; background: #f4c542; border-color: #f4c542; color: #2a2200; padding: 6px 12px; white-space: nowrap; }
-.viewbanner { position: sticky; top: 8px; z-index: 5; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; background: #f4c542; color: #2a2200; border-radius: 12px; padding: 10px 12px; margin: 0 0 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, .25); }
-.viewbanner .link { color: #1d3557; padding: 0; min-height: 0; text-decoration: underline; }
-.card.admincard { border-left: 4px solid #1d3557; }
-body.admin { --brand: #1d3557; --brand-ink: #ffffff; }
-body.admin .card { border-left: 4px solid #f4c542; }
-.adminhead { position: sticky; top: 0; z-index: 6; background: #1d3557; color: #fff; border-bottom: 4px solid #f4c542; padding: max(10px, env(safe-area-inset-top)) 16px 10px; }
-.adminhead-in { max-width: 520px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.adminhead-in + .adminhead-in { margin-top: 8px; }
-.adminhead-in:empty { display: none; }
-.adminhead .small { opacity: .85; }
-@media (prefers-color-scheme: dark) {
-  body.admin { --brand: #8fb3e8; --brand-ink: #08142a; }
-  .card.admincard { border-left-color: #8fb3e8; }
-}
-
 /* ---------- iOS Safari: Datumsfelder ignorieren sonst Breite und Höhe ---------- */
 input[type="date"] {
   -webkit-appearance: none;

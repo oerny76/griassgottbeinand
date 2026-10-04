@@ -7,8 +7,8 @@ Ohne Build-Schritt: reines HTML, CSS und JavaScript. Daten liegen in Supabase (P
 
 | Datei | Zweck |
 |---|---|
-| `index.html`, `styles.css`, `common.js`, `app.js` | Mitglieder-App (`common.js` ist gemeinsam mit dem Admin-Bereich) |
-| `admin.html`, `admin.js`, `paypal.js` | Admin-Bereich: Zahlungen, Buchungen, Offen, Letzte |
+| `index.html`, `styles.css`, `common.js`, `app.js` | Mitglieder-App  |
+| `admin.js`, `paypal.js` | Admin-Tab in der App: Zahlungen, Buchungen, Offen, Letzte, Fehlen |
 | `config.js` | Öffentliche Verbindungsdaten (URL, öffentlicher Schlüssel, PayPal-Name) |
 | `charts.js` | Statistik-Seite mit den Diagrammen |
 | `trend.js` | Rechenlogik für Durchschnitt und Tendenz der Abwesenheiten (reine Funktionen, mit `node` testbar) |
@@ -42,7 +42,7 @@ Annahmen, die man kennen sollte:
 - **Tendenz (Kachel Abwesenheiten):** Durchschnitt der letzten 12 Monate gegen die 12 Monate davor, gerechnet aus den Anwesenden pro Abend. Gezeigt wird ein neutraler Pfeil (schräg hoch, waagerecht, schräg runter) mit Text und Zahlen. Pro Abend schwankt die Zahl stark (etwa 1 bis 7), deshalb heißt es erst ab einem Unterschied von 1 pro Abend "mehr" oder "weniger", sonst "ähnlich". Fehlen Vergleichsdaten, steht nur der Durchschnitt der letzten 12 Monate.
 - Das laufende Jahr ist unvollständig und mit * markiert.
 
-**Nur Admin:** Im Admin-Bereich zeigt der Tab "Fehlen" eine Heatmap, wer bei den letzten zwölf Abenden fehlte (`db/app_stats_admin.sql`, Funktion prüft die Admin-Rolle). Einzelpersonen mit Namen sehen nur Admins.
+**Nur Admin:** Im Admin-Tab zeigt der Unterpunkt "Fehlen" eine Heatmap, wer bei den letzten zwölf Abenden fehlte (`db/app_stats_admin.sql`, Funktion prüft die Admin-Rolle). Einzelpersonen mit Namen sehen nur Admins.
 
 ## Sicherheit in Kürze
 
@@ -51,17 +51,6 @@ Annahmen, die man kennen sollte:
 - Der Schlüssel in `config.js` ist für Browser gedacht und darf öffentlich sein.
 - Persönliche Codes gehören **nie** ins Repo.
 - Buchungen werden nie gelöscht, nur storniert (`entries.cancelled_at`).
-
-## Ansicht wechseln (nur Admin)
-
-In der App erscheint für den Admin oben eine Leiste mit Auswahl:
-
-- **Meine Ansicht (Admin):** wie bisher.
-- **Wie ein normales Mitglied:** deine eigenen Daten, aber ohne Admin-Werkzeuge. Ein gelbes Banner zeigt den Modus.
-- **Mitglied ansehen:** die App genau so, wie das gewählte Mitglied sie sieht (nur lesen, Funktion `app_admin_view_as`).
-  Darunter gibt es eine eigene Karte "Admin-Aktion", mit der du ausdrücklich für diese Person Abwesenheit oder Gäste ändern kannst.
-
-Aus dem Admin-Bereich öffnet "Mitglied ansehen" dieselbe Ansicht (`index.html#as=Name`).
 
 ## Rollen
 
@@ -79,10 +68,9 @@ Alternativen ohne Build: Cloudflare Pages oder Netlify (Ordner direkt ausliefern
 Persönlicher Link pro Mitglied: `https://<adresse>/?t=<Code>`.
 Der Code wird auf dem Gerät gespeichert. Danach "Zum Startbildschirm hinzufügen".
 
-## Admin-Bereich (`admin.html`)
+## Admin-Bereich (Tab "Admin")
 
-Eigene Seite mit dunkelblauem Kopf und gelbem Streifen, damit man immer sieht, wo man ist. Nur der Admin kommt hinein, alle anderen
-sehen "Kein Zugriff". Die Prüfung liegt in der Datenbank, nicht in der Seite.
+Teil der App, keine eigene Seite. Der Tab "Admin" erscheint unten in der Tab-Leiste, aber nur für den Admin. Die Prüfung liegt in der Datenbank, nicht in der Oberfläche.
 
 - **Zahlung:** Text der PayPal-Mail einfügen. Betrag, Datum, Transaktionscode, Absender und Mitteilung werden ausgelesen (`paypal.js`).
   Die App schlägt eine Zuordnung zu offenen Posten vor (alles, eindeutig oder mehrere Varianten zur Auswahl). Gebucht wird erst nach Bestätigung,

@@ -1,4 +1,4 @@
-// Admin-Bereich: PayPal-Zahlungen zuordnen, manuell buchen, offene Posten, letzte Buchungen.
+// Admin-Bereich (Tab "Admin" in der App): PayPal-Zahlungen zuordnen, manuell buchen, offene Posten, letzte Buchungen.
 (() => {
   "use strict";
   const L = window.StammtischLogic;
@@ -18,53 +18,21 @@
   const eur = (n) => A().euro.format(Number(n));
   const num = (el) => (el.value === "" ? NaN : Number(el.value));
 
-  function render($app, d) {
+  function render($box, d) {
     const { h } = A();
     nextMeetingDate = d.meeting ? d.meeting.date : null;
     const body = h("div", {});
     const nav = h("div", { class: "inline", style: "margin:0 0 12px", role: "tablist" },
       TABS.map(([id, label]) => h("button", {
         class: id === tab ? "primary full" : "full", role: "tab", "aria-selected": String(id === tab), style: "flex:1 1 0;min-width:0;padding:10px 2px;font-size:.82rem",
-        onclick: () => { tab = id; render($app, d); },
+        onclick: () => { tab = id; render($box, d); },
       }, label)));
-    $app.replaceChildren(h("div", {}, nav, body));
+    $box.replaceChildren(h("div", {}, h("p", { class: "muted small", style: "margin:0 0 12px" }, "Nur du kannst hier buchen und verwalten."), nav, body));
     ({ pay: payTab, book: bookTab, open: openTab, recent: recentTab, heat: heatTab })[tab](body).catch((e) => A().toast(e.message, true));
   }
 
-  // ---------- Seite starten ----------
-  const $app = document.getElementById("app");
-  const $tools = document.getElementById("admintools");
-
-  function noAccess(text) {
-    const { h } = A();
-    $tools.replaceChildren();
-    $app.replaceChildren(h("div", { class: "card center", style: "margin-top:24px" },
-      h("p", { class: "big" }, "Kein Zugriff"),
-      h("p", {}, text),
-      h("a", { class: "btn primary", href: "./" }, "Zur App")));
-  }
-
-  // Auswahl "Mitglied ansehen": öffnet die App in der Ansicht dieses Mitglieds.
-  function memberViewer(names) {
-    const { h } = A();
-    const sel = h("select", { "aria-label": "Mitglied ansehen", class: "adminsel",
-      onchange: (e) => { if (e.target.value) location.href = "./#as=" + encodeURIComponent(e.target.value); } },
-      h("option", { value: "" }, "Mitglied ansehen …"), A().options(names));
-    $tools.replaceChildren(sel);
-  }
-
-  async function start() {
-    if (!A().hasToken()) return noAccess("Bitte öffne zuerst die App mit deinem persönlichen Link.");
-    try {
-      const [m, d] = await Promise.all([getMeta(), A().rpc("app_dashboard")]);
-      memberViewer(m.members);
-      render($app, d);
-    } catch (e) {
-      if (e.invalid) { A().forgetToken(); return noAccess("Dieser Link ist ungültig. Bitte die App mit deinem persönlichen Link öffnen."); }
-      if (e.forbidden) return noAccess("Dieser Bereich ist nur für den Admin. Du bist als normales Mitglied angemeldet.");
-      $app.replaceChildren(A().h("div", { class: "card center pad" }, A().h("p", {}, e.message), A().h("button", { class: "primary", onclick: start }, "Nochmal versuchen")));
-    }
-  }
+  // Wird von der App aufgerufen. d: Dashboard des Admins.
+  window.AdminView = { render(d) { const box = A().h("div", {}); render(box, d); return box; } };
 
   // ---------- Wer fehlt wie oft (nur Admin, mit Namen) ----------
   async function heatTab(body) {
@@ -273,7 +241,6 @@
       const det = h("div", { style: "display:none;padding:4px 0 8px" });
       return h("div", {},
         h("div", { class: "row" },
-          h("a", { class: "small", href: "./#as=" + encodeURIComponent(x.name), "aria-label": "Ansicht von " + x.name }, "ansehen"),
           h("button", { class: "link", style: "padding-left:0;flex:1;text-align:left", onclick: async () => {
             if (det.style.display === "none") {
               if (!lists.has(x.name)) lists.set(x.name, await A().rpc("app_admin_open_items", { p_member: x.name }));
@@ -308,8 +275,4 @@
     }) : h("p", { class: "muted" }, "Keine Buchungen."),
     h("p", { class: "muted small", style: "margin:8px 0 0" }, "Stornieren geht nur für unbezahlte Buchungen. Nichts wird gelöscht, nur als storniert markiert.")));
   }
-
-  A().hooks.reload = start;
-  A().hooks.noToken = () => noAccess("Dieser Link ist ungültig. Bitte die App mit deinem persönlichen Link öffnen.");
-  start();
 })();
