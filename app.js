@@ -379,6 +379,7 @@
   const TAB_KEY = "stammtisch_tab";
   const TABS = [
     ["start", "Start", "M3 11.5 12 4l9 7.5M5.5 10v9.5h13V10"],
+    ["stat", "Statistik", "M5 20V11M12 20V5M19 20v-7"],
     ["konto", "Konto", "M3.5 7h17v12h-17zM3.5 7l2-3h13l2 3M15.5 13h2"],
     ["chronik", "Chronik", "M5 4.5h11a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3zM5 16.5a3 3 0 0 1 3-3h11"],
   ];
@@ -390,6 +391,8 @@
     return svg;
   };
   let tab = TABS.some(([id]) => id === session.get(TAB_KEY)) ? session.get(TAB_KEY) : "start";
+  let statsCache = null; // Antwort von app_stats, wird beim Öffnen des Tabs geladen
+  let statsReq = null; // laufende Anfrage, damit ein erneutes Zeichnen keine zweite startet
   let last = null; // zuletzt geladene Daten, damit ein Tab-Wechsel nicht neu lädt
 
   function goTab(id) {
@@ -403,6 +406,21 @@
       TABS.map(([id, label, path]) => h("button", { type: "button", "aria-current": id === tab ? "page" : null, onclick: () => goTab(id) }, icon(path), label))));
   }
 
+  // Statistik: Gruppenwerte für alle, wird erst beim Öffnen geladen.
+  function statsPage() {
+    const box = h("div", {});
+    const show = (d) => box.replaceChildren(window.Charts.statsPage(d));
+    const fail = (e) => box.replaceChildren(h("div", { class: "card center" }, h("p", {}, e.message || "Die Statistik ist gerade nicht erreichbar."),
+      h("button", { class: "primary", onclick: () => { box.replaceChildren(h("p", { class: "muted center pad" }, "Lade ...")); fetchStats().then(show, fail); } }, "Nochmal versuchen")));
+    function fetchStats() {
+      if (!statsReq) statsReq = rpc("app_stats").then((d) => { statsReq = null; return (statsCache = d); }, (e) => { statsReq = null; throw e; });
+      return statsReq;
+    }
+    if (statsCache) show(statsCache);
+    else { box.append(h("p", { class: "muted center pad" }, "Lade ...")); fetchStats().then(show, (e) => { if (e.invalid) { window.App.forgetToken(); showNoToken(); } else fail(e); }); }
+    return box;
+  }
+
   // own: eigene Daten. as: Daten eines angesehenen Mitglieds (nur Admin).
   function render(own, as) {
     last = { own, as };
@@ -413,10 +431,12 @@
     if (mode === "plain") d = Object.assign({}, own, { me: Object.assign({}, own.me, { is_admin: false, can_set_next_chair: false, can_set_location: false }) });
     const canChair = !readOnly && (d.me.can_set_next_chair || d.me.can_set_location);
     const today = new Date(todayBerlin() + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+    // Nur der geöffnete Tab wird gebaut (der Statistik-Tab lädt Daten).
     const pages = {
-      start: [heroCard(d), tilesBlock(d, goTab), signupCard(d, readOnly), readOnly ? actAsPanel(d) : null, whoCard(d), canChair ? chairCard(d) : null],
-      konto: [accountCard(d), openCard(d)],
-      chronik: [recentCard(d), chairsCard(d), locationsCard(d), absencesCard(d)],
+      start: () => [heroCard(d), tilesBlock(d, goTab), signupCard(d, readOnly), readOnly ? actAsPanel(d) : null, whoCard(d), canChair ? chairCard(d) : null],
+      stat: () => [statsPage()],
+      konto: () => [accountCard(d), openCard(d)],
+      chronik: () => [recentCard(d), chairsCard(d), locationsCard(d), absencesCard(d)],
     };
     const root = h("div", {},
       admin ? adminBar(own, mode) : null,
@@ -424,7 +444,7 @@
       tab === "start"
         ? [h("p", { class: "hello" }, readOnly ? `Ansicht von ${d.me.name}` : today), h("h1", {}, readOnly ? d.me.name : `Servus, ${d.me.name}!`)]
         : h("h1", {}, TABS.find(([id]) => id === tab)[1]),
-      pages[tab],
+      pages[tab](),
       footer());
     $app.classList.add("tabs");
     $app.replaceChildren(root, tabBar());
@@ -452,7 +472,7 @@
         catch (e) { session.set(VIEW_KEY, "self"); toast(e.message, true); }
       }
       render(own, as);
-      if (manual) toast("Aktualisiert.");
+      if (manual) { statsCache = null; toast("Aktualisiert."); }
     } catch (e) {
       if (e.invalid) { window.App.forgetToken(); showNoToken(); }
       else if (!$app.querySelector(".card, .hero, .tile")) { $app.classList.remove("tabs"); $app.replaceChildren(h("div", { class: "card center pad" }, h("p", {}, e.message), h("button", { class: "primary", onclick: () => load() }, "Nochmal versuchen"))); }

@@ -5,9 +5,10 @@
   --hero: #1f5c4a; --wash: #d9e8e1;
   --radius: 20px; --shadow: 0 1px 0 var(--line), 0 6px 18px rgba(60, 40, 10, .06);
   --tabbar-h: 64px;
+  --s1: #1f8a70; --s2: #e8a200; --s3: #e2573d; --s4: #6b5bd2; --grid: #e6dfd0;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #0f1a17; --card: #17261f; --ink: #ecf1ee; --muted: #9fb0a8; --line: #26382f; --brand: #3fae93; --brand-ink: #06231b; --warn: #ff8a73; --ok: #6fcf97; --hero: #1f5c4a; --wash: #213a31; --shadow: none; }
+  :root { --bg: #0f1a17; --card: #17261f; --ink: #ecf1ee; --muted: #9fb0a8; --line: #26382f; --brand: #3fae93; --brand-ink: #06231b; --warn: #ff8a73; --ok: #6fcf97; --hero: #1f5c4a; --wash: #213a31; --shadow: none; --s1: #22a479; --s2: #b78a0b; --s3: #c65959; --s4: #7971d0; --grid: #26382f; }
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -128,3 +129,39 @@ input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; m
 .tabbar button[aria-current="page"] { color: var(--brand); }
 .tabbar svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 body:has(.tabbar) #toast { bottom: calc(var(--tabbar-h) + max(20px, env(safe-area-inset-bottom))); }
+
+/* ---------- Statistik: Diagramme (Farben in Hell und Dunkel geprüft, siehe docs/REDESIGN-KONZEPT.md) ---------- */
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 12px; }
+.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 10px; min-width: 0; box-shadow: var(--shadow); }
+.kpi p { margin: 0; }
+.kpi .label { color: var(--muted); font-size: .75rem; line-height: 1.25; }
+.kpi .v { white-space: nowrap; font-size: 1.15rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.2; margin: 2px 0; }
+.chartcard h3 { margin: 0; font-size: 1rem; font-weight: 800; letter-spacing: -.01em; }
+.chartcard .head { margin-bottom: 8px; }
+.chartcard .ctl { margin: 0 0 8px; }
+.seg { display: inline-flex; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 999px; padding: 2px; }
+.seg button { min-height: 32px; padding: 2px 10px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font-size: .75rem; font-weight: 700; }
+.seg button[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .8125rem; color: var(--muted); margin: 0 0 4px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.ch { display: block; overflow: visible; touch-action: pan-y; }
+.ch .t { font-size: 10px; }
+.ch .t.strong { font-weight: 700; font-size: 11px; }
+.ch .t.muted { fill: var(--muted); }
+.ch .t.ink { fill: var(--ink); }
+.ch .grid { stroke: var(--grid); stroke-width: 1; }
+.ch .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.ch .dot { stroke: var(--card); stroke-width: 2; }
+.ch .cross { stroke: var(--muted); stroke-width: 1; }
+.ch .hit { fill: transparent; outline: none; }
+.ch .hit:hover, .ch .hit:focus { fill: color-mix(in srgb, var(--ink) 8%, transparent); }
+.ch .hit:focus-visible { stroke: var(--accent); stroke-width: 2; }
+button.linkbtn { min-height: 36px; padding: 4px 0; border: 0; background: transparent; color: var(--muted); font-size: .8125rem; font-weight: 600; text-decoration: underline; }
+.tvwrap { max-height: 260px; overflow: auto; margin-top: 6px; }
+table.tv { width: 100%; border-collapse: collapse; font-size: .8125rem; }
+table.tv th, table.tv td { text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--line); font-weight: 400; }
+table.tv thead th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--card); }
+#charttip { position: fixed; z-index: 20; pointer-events: none; max-width: 230px; padding: 8px 10px; border-radius: 10px; font-size: .8125rem; line-height: 1.35; background: var(--ink); color: var(--bg); box-shadow: 0 6px 20px rgba(0, 0, 0, .3); opacity: 0; transition: opacity .1s; }
+#charttip.on { opacity: 1; }
+#charttip strong { display: block; font-size: .9375rem; }
+@media (prefers-reduced-motion: reduce) { #charttip { transition: none; } }
