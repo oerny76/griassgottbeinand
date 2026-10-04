@@ -1,6 +1,6 @@
 # Redesign-Konzept: Stammtisch-App
 
-Stand: 04.10.2026. Status: Alle drei Phasen umgesetzt. Richtung Mischung aus A und B, Datenschutz-Stufe 1 (Heatmap mit Namen nur im Admin-Bereich).
+Stand: 04.10.2026. Status: Alle drei Phasen umgesetzt. Richtung Mischung aus A und B, Datenschutz-Stufe 2 (Heatmap mit Namen für alle Mitglieder, entschieden am 04.10.2026).
 
 Hinweis: GitHub Pages ist öffentlich. Diese Datei enthält deshalb bewusst keine Namen und keine echten Zahlen einzelner Mitglieder.
 
@@ -60,13 +60,13 @@ Reihenfolge fest: Grün, Gelb, Koralle, Violett. Nie zyklisch, Farbe folgt der B
 Prüfbefehl: `node scripts/validate_palette.js "<hex,...>" --mode light|dark [--surface #hex]`.
 Warnung: Gelb hat im Hellmodus zu wenig Kontrast. Deshalb immer sichtbare Labels und Tabellenansicht. Text nie in Serienfarbe.
 
-## 6. Datenschutz, Entscheidung offen
+## 6. Datenschutz, entschieden: Stufe 2
 
 1. **Nur Gruppenwerte:** Alle sehen Durchschnitte, Kasse, Jahresverläufe. Keine Einzelpersonen.
 2. **Mit Namen bei Abwesenheit:** Zusätzlich die Heatmap pro Mitglied. Transparent, kann aber wie ein Pranger wirken.
 3. **Wie 2, Beträge nur für Admin.**
 
-Empfehlung: Stufe 1 für alle, Heatmap im Admin-Bereich. Später öffnen ist leicht, zurücknehmen schwer.
+Ursprüngliche Empfehlung war Stufe 1 mit Heatmap nur für den Admin. Entschieden wurde Stufe 2: Die Heatmap steht im Statistik-Tab unter "Wer war dabei?" und zeigt allen Mitgliedern Namen. Zurücknehmen ist schwer, deshalb bewusst so gewählt.
 
 ## 7. Datengrundlagen und Grenzen
 
@@ -80,7 +80,7 @@ Empfehlung: Stufe 1 für alle, Heatmap im Admin-Bereich. Später öffnen ist lei
 ## 8. Technik
 
 - **Neue RPC `app_stats(p_token)`**: `SECURITY DEFINER`, prüft den Token über `_auth_member`, liefert nur aggregierte JSON-Werte. Tabellen bleiben für anon gesperrt (RLS ohne Policies).
-- Admin-Variante `app_stats_admin(p_token)` für Heatmap und Beträge (`_auth_admin`).
+- `app_stats_absent(p_token)` für die Heatmap mit Namen (`_auth_member`, `db/app_stats_absent.sql`). Die frühere Admin-Variante `app_stats_admin` ist gelöscht.
 - Charts in neuer Datei `charts.js` (Funktionen, die SVG per `document.createElementNS` bauen, Text nur per `textContent`, kein `innerHTML`).
 - Tooltip: ein gemeinsames Element, Positionierung am Marker, Tastatur-Fokus unterstützen.
 - Service Worker: Cache-Version erhöhen (aktuell `stammtisch-v6`), neue Dateien in die Liste.
@@ -91,13 +91,12 @@ Empfehlung: Stufe 1 für alle, Heatmap im Admin-Bereich. Später öffnen ist lei
 
 1. **Look und Navigation:** neue Tokens in `styles.css` (Farben, Radien, Schatten, Dunkelmodus), Startseite als Kacheln, Tab-Leiste. Keine neue Datenbankfunktion nötig.
 2. **Statistik-Tab:** `app_stats`, `charts.js`, erste drei Diagramme (Anwesenheit, Kasse, Einnahmen).
-3. **Rest:** Vorsitz-Wartezeit, Abwesenheiten pro Jahr, Admin-Heatmap, Chronik-Tab.
+3. **Rest:** Vorsitz-Wartezeit, Abwesenheiten pro Jahr, Heatmap, Chronik-Tab.
 
 Jede Phase einzeln als Pull Request, damit sie sich leicht prüfen und zurücknehmen lässt.
 
 ## 10. Offene Punkte
 
 - Richtung festlegen (A, B, C oder Mischung).
-- Datenschutz-Stufe festlegen.
 - Aus früheren Schritten: SQL-Migrationen als Dateien ins Repo legen, leere Spalte `entries.payment_reported_at` entfernen, alten Apps Script abschalten.
-- Echter Test auf dem iPhone und erster echter Aufruf App gegen Supabase stehen noch aus.
+- iPhone: Code speichern per Eingabefeld ist getestet. Offen: ob das Manifest mit `start_url` samt Code beim Anlegen des Icons greift.

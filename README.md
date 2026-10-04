@@ -20,8 +20,8 @@ Ohne Build-Schritt: reines HTML, CSS und JavaScript. Daten liegen in Supabase (P
 
 Untere Tab-Leiste mit vier Bereichen (Konzept: `docs/REDESIGN-KONZEPT.md`):
 
-- **Start:** Hauptkarte mit dem nächsten Termin ("in X Tagen") und den Aktionen direkt darin ("Ich komme nicht" oder "Doch teilnehmen", für den Vorsitz "Vorsitz übertragen" oder "Vorsitz ändern" und "Location festlegen" oder "Location ändern"; Auswahl und Eingabe klappen in der Karte auf), Kacheln (Konto mit PayPal-Link, Kassenstand, Geburtstag, Abwesenheiten mit Durchschnitt pro Abend und Tendenz der letzten 12 Monate), Anmeldung, Vorsitz.
-- **Statistik:** Anwesenheit pro Abend (12 oder 24 Abende), Kassenstand über die Zeit, Einnahmen pro Jahr, Wartezeit auf den Vorsitz, Abwesenheiten pro Abend und Jahr. Siehe unten.
+- **Start:** Hauptkarte mit dem nächsten Termin ("in X Tagen") und den Aktionen direkt darin ("Ich komme nicht" oder "Doch teilnehmen", für den Vorsitz "Vorsitz übertragen" oder "Vorsitz ändern" und "Location festlegen" oder "Location ändern"; Auswahl und Eingabe klappen in der Karte auf), darunter die Karte "Wer fehlt, wer kommt dazu" (Entschuldigte und Gäste), dann Kacheln (Konto mit PayPal-Link, Kassenstand, Geburtstag, Abwesenheiten mit Durchschnitt pro Abend und Tendenz der letzten 12 Monate).
+- **Statistik:** Anwesenheit pro Abend (12 oder 24 Abende), Heatmap "Wer fehlt wie oft?", Kassenstand über die Zeit, Einnahmen pro Jahr, Wartezeit auf den Vorsitz, Abwesenheiten pro Abend und Jahr. Siehe unten.
 - **Konto:** eigene Posten und die offenen Beträge im Stammtisch.
 - **Chronik:** letzte Abende (mit Anzahl Anwesender und Gästen, sobald die Statistik geladen ist), Vorsitz-Historie, besuchte Locations, Abwesenheiten.
 
@@ -30,7 +30,7 @@ Hell und Dunkel folgen dem Gerät. Farben und Formen stehen als Variablen oben i
 ## Statistik
 
 Eigene SVG-Diagramme in `charts.js`, keine Bibliothek. Tooltip per Hover, Antippen und Tastatur (Pfeiltasten im Kassen-Diagramm), jedes Diagramm hat eine Tabellenansicht.
-Daten kommen aus der Funktion `app_stats` (`db/app_stats.sql`). Sie liefert nur Gruppenwerte, keine Einzelpersonen (Datenschutz-Stufe 1).
+Daten kommen aus der Funktion `app_stats` (`db/app_stats.sql`). Sie liefert nur Gruppenwerte. Nur die Heatmap enthält Namen (siehe unten).
 
 Annahmen, die man kennen sollte:
 
@@ -47,7 +47,7 @@ Annahmen, die man kennen sollte:
 ## Sicherheit in Kürze
 
 - Alle Tabellen sind für Browser gesperrt (Row Level Security ohne Policy).
-- Zugriff geht nur über Datenbankfunktionen `app_*`. Jede prüft den persönlichen Code (`?t=…` im Link) und die Rolle.
+- Zugriff geht nur über Datenbankfunktionen `app_*`. Jede prüft den persönlichen Code (`?t=…` im Link) und die Rolle. Alle Mitglieder sehen die Heatmap mit Namen (bewusste Entscheidung vom 04.10.2026).
 - Der Schlüssel in `config.js` ist für Browser gedacht und darf öffentlich sein.
 - Persönliche Codes gehören **nie** ins Repo.
 - Buchungen werden nie gelöscht, nur storniert (`entries.cancelled_at`).
@@ -67,6 +67,8 @@ Alternativen ohne Build: Cloudflare Pages oder Netlify (Ordner direkt ausliefern
 
 Persönlicher Link pro Mitglied: `https://<adresse>/?t=<Code>`.
 Der Code wird auf dem Gerät gespeichert. Danach "Zum Startbildschirm hinzufügen".
+
+**iPhone:** Die App auf dem Home-Bildschirm hat einen eigenen Speicher, getrennt von Safari, und startet ohne `?t=…`. Deshalb gibt es auf der Seite "Bitte öffne deinen persönlichen Link" ein Eingabefeld: persönlichen Link oder nur den Code einfügen und "Speichern" (`setToken` in `common.js`). Der Code bleibt danach in der App gespeichert (getestet). Zusätzlich trägt `common.js` den Code in ein dynamisches Manifest als `start_url` ein, damit ein in Safari angelegtes Icon gleich mit dem Code startet. Ob iOS das übernimmt, ist nicht geprüft.
 
 ## Admin-Bereich (Tab "Admin")
 
