@@ -46,7 +46,7 @@ begin
         from (select g::date m from generate_series(first_month::timestamp, date_trunc('month', today)::timestamp, interval '1 month') g) ms
         left join (select date_trunc('month', tx_date)::date m, sum(amount) s from public.paypal_payments where money_pool is null group by 1) mo on mo.m = ms.m
       ) c), '[]'::jsonb),
-    -- Einnahmen pro Jahr nach Art (nur positive Buchungen nach Buchungsdatum, Ausgaben zählen nicht).
+    -- Einnahmen pro Jahr nach Art (nur positive Buchungen nach Buchungsdatum bis heute, Ausgaben zählen nicht).
     'income', coalesce((
       select jsonb_agg(to_jsonb(r) order by r.year)
       from (
@@ -56,17 +56,18 @@ begin
                coalesce(sum(e.amount) filter (where e.category = 'Sonderumlage'), 0) as special,
                coalesce(sum(e.amount) filter (where e.category in ('Gastbeitrag', 'Gast unangemeldet')), 0) as guests
         from generate_series(first_year, extract(year from today)::int) y(y)
-        left join public.entries e on extract(year from e.entry_date) = y.y and e.cancelled_at is null and e.amount > 0
+        left join public.entries e on extract(year from e.entry_date) = y.y and e.cancelled_at is null and e.amount > 0 and e.entry_date <= today
         group by y.y
       ) r), '[]'::jsonb),
     -- Abwesenheiten pro Jahr seit 2015 und Zahl der Abende, damit sich Jahre vergleichen lassen (laufendes Jahr ist unvollständig).
-    -- Gezählt nach Buchungsdatum, weil ältere Abwesenheiten teils keinem Abend zugeordnet sind.
+    -- Gezählt nach Buchungsdatum bis gestern, weil ältere Abwesenheiten teils keinem Abend zugeordnet sind.
+    -- Schon angemeldete Abwesenheiten für künftige Abende zählen nicht, sonst passt der Zähler nicht zur Zahl der Abende.
     'absences_by_year', coalesce((
       select jsonb_agg(to_jsonb(r) order by r.year)
       from (
         select y.y as year,
                (select count(*) from public.entries e
-                 where e.cancelled_at is null and e.category in ('Abwesenheit (1x)', 'Abwesenheit unentschuldigt') and extract(year from e.entry_date) = y.y) as absences,
+                 where e.cancelled_at is null and e.category in ('Abwesenheit (1x)', 'Abwesenheit unentschuldigt') and e.entry_date < today and extract(year from e.entry_date) = y.y) as absences,
                (select count(*) from public.meetings mt
                  where extract(year from mt.meeting_date) = y.y and mt.meeting_date < today and coalesce(mt.note, '') not ilike 'AUSFALL%') as meetings
         from generate_series(2015, extract(year from today)::int) y(y)

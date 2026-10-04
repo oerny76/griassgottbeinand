@@ -116,7 +116,7 @@ input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; m
 .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 12px; }
 .tile { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; min-width: 0; box-shadow: var(--shadow); }
 .tile.wide { grid-column: span 2; }
-.tile > p { margin: 0; }
+.tile p { margin: 0; }
 .tile .label { color: var(--muted); font-size: .8125rem; }
 .tile .num { font-size: 1.75rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; overflow-wrap: anywhere; }
 .tile .num.zero { color: var(--ok); }
@@ -169,3 +169,7 @@ table.tv thead th { color: var(--muted); font-weight: 600; position: sticky; top
 #charttip.on { opacity: 1; }
 #charttip strong { display: block; font-size: .9375rem; }
 @media (prefers-reduced-motion: reduce) { #charttip { transition: none; } }
+.tile .unit { font-size: 1rem; font-weight: 600; color: var(--muted); letter-spacing: 0; }
+.tile .sep { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; }
+.tile .sep > p { margin: 0; }
+.tile .spark { margin: 6px 0; }

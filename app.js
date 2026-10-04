@@ -352,6 +352,7 @@
           pay && h("a", { class: "btn paypal full", href: pay, target: "_blank", rel: "noopener noreferrer" }, `Mit PayPal bezahlen (${euro.format(o.total)})`),
           h("button", { class: "link", onclick: () => goTab("konto") }, "Posten ansehen"))
       : h("div", { class: "tile" }, h("p", { class: "label" }, "Dein Konto"), h("p", { class: "num text zero" }, "Alles bezahlt ✓"));
+    // Immer volle Zeilen: Die kleinen Kacheln füllen das Raster, eine einzelne Kachel wird breit. Die Abwesenheiten-Kachel ist immer breit.
     const small = [
       h("div", { class: "tile" },
         h("p", { class: "label" }, "Kassenstand"),
@@ -361,15 +362,36 @@
         h("p", { class: "label" }, "Nächster Geburtstag"),
         h("p", { class: "num text" }, b.name),
         h("p", { class: "label" }, `${dateDay(b.date)} (${b.turns})`)) : null,
-      h("div", { class: "tile" },
-        h("p", { class: "label" }, `Abwesenheiten ${a.year}`),
-        h("p", { class: "num" }, String(absSum)),
-        h("p", { class: "label" }, "alle Mitglieder zusammen")),
     ].filter(Boolean);
-    // Immer volle Zeilen: Die kleinen Kacheln füllen das Raster, eine einzelne Kachel wird breit.
-    const used = owes ? 0 : 1;
-    if ((small.length + used) % 2 === 1) small[small.length - 1].classList.add("wide");
-    return h("div", { class: "tiles" }, konto, ...small);
+    if ((small.length + (owes ? 0 : 1)) % 2 === 1) small[small.length - 1].classList.add("wide");
+    return h("div", { class: "tiles" }, konto, ...small, absencesTile(a, absSum));
+  }
+
+  // Abwesenheiten: Durchschnitt pro Abend im laufenden Jahr und Tendenz der letzten 12 Monate (aus der Statistik).
+  // Bis die Statistik da ist steht "…", fällt sie aus, bleibt die Summe aller Mitglieder.
+  function absencesTile(a, absSum) {
+    const body = h("div", {}, h("p", { class: "num" }, "…"));
+    const fallback = () => body.replaceChildren(h("p", { class: "num" }, String(absSum)), h("p", { class: "label" }, "alle Mitglieder zusammen"));
+    getStats().then((st) => {
+      const t = window.Trend.absenceTrend(st);
+      if (t.yearAvg == null) return fallback();
+      const parts = [
+        h("p", { class: "num" }, fmt1(t.yearAvg), h("span", { class: "unit" }, " pro Abend")),
+        h("p", { class: "label" }, `Durchschnitt ${t.year}, bisher ${t.yearEvenings} ${t.yearEvenings === 1 ? "Abend" : "Abende"}`)];
+      if (t.series.length >= 3) {
+        const arrow = { mehr: "↑", weniger: "↓", "ähnlich": "→" }[t.direction] || "";
+        const text = t.prev == null
+          ? `Letzte 12 Monate: Ø\u00a0${fmt1(t.last)} pro Abend`
+          : `Letzte 12 Monate: Ø\u00a0${fmt1(t.last)}, davor Ø\u00a0${fmt1(t.prev)}`;
+        parts.push(h("div", { class: "sep" },
+          h("p", { class: "label" }, "Tendenz der letzten 12 Monate"),
+          window.Charts.sparkline(t.series),
+          h("p", { class: "small" }, t.direction ? h("strong", {}, `${arrow} ${t.direction}`) : null, t.direction ? ". " : "", text),
+          t.direction === "mehr" || t.direction === "weniger" ? null : h("p", { class: "label" }, "Pro Abend schwankt die Zahl stark, kleine Unterschiede sind Zufall.")));
+      }
+      body.replaceChildren(...parts);
+    }).catch(fallback);
+    return h("div", { class: "tile wide", "aria-label": `Abwesenheiten ${a.year}` }, h("p", { class: "label" }, `Abwesenheiten ${a.year}`), body);
   }
 
   function docLinks(slot, links) {
