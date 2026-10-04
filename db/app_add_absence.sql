@@ -1,7 +1,7 @@
 -- Abwesenheit eintragen (Mitglied für sich, Admin für andere).
 -- Neu: Wer den Vorsitz des nächsten Termins hat, meldet sich erst ab, wenn der Vorsitz übertragen ist.
--- Die Regel gilt nur für künftige Termine. Am Stammtischtag selbst lässt sich der Vorsitz nicht mehr übertragen
--- (app_set_next_chair ändert den ersten Termin nach heute), dort würde die Regel den Vorsitz festsetzen.
+-- Die Regel gilt, solange sich der Vorsitz dieses Termins noch übertragen lässt, also bis 19 Uhr am Stammtischtag
+-- (siehe chair_target.sql). Danach greift sie nicht mehr, sonst würde sie den Vorsitz festsetzen.
 -- Sie gilt auch, wenn der Admin für den Vorsitz einträgt. Der Admin ändert dann zuerst den Vorsitz.
 -- Nicht betroffen: manuelle Buchungen im Admin-Bereich (app_admin_add_entry).
 create or replace function public.app_add_absence(p_token text, p_member text default null::text)
@@ -26,7 +26,7 @@ begin
   if exists (select 1 from public.entries where meeting_id = reg.id and member_id = tgt.id and cancelled_at is null
              and category in ('Abwesenheit (1x)','Abwesenheit unentschuldigt')) then
     raise exception 'Abwesenheit ist schon eingetragen' using errcode = '23505'; end if;
-  if reg.meeting_date > public._today() and reg.chair_id = tgt.id then
+  if reg.chair_id = tgt.id and not public._deadline_passed(reg.meeting_date) then
     raise exception 'Der Vorsitz muss zuerst uebertragen werden' using errcode = '55000'; end if;
   select default_amount into fee from public.fee_types where name = 'Abwesenheit (1x)';
   insert into public.entries(entry_date, meeting_id, member_id, category, amount, paid, source)
