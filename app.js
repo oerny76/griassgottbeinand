@@ -8,19 +8,28 @@
   const VIEW_AS_KEY = "stammtisch_view_as";
 
   // ---------- Bereiche ----------
-  function meetingCard(d) {
+  const noonMs = (iso) => Date.parse(iso + "T12:00:00");
+  const inDays = (iso) => Math.round((noonMs(iso) - noonMs(todayBerlin())) / 86400000);
+  const whenText = (n) => n < 0 ? "vorbei" : n === 0 ? "heute" : n === 1 ? "morgen" : `in ${n} Tagen`;
+
+  // Hauptkarte: der nächste Termin auf einen Blick.
+  function heroCard(d) {
     const m = d.meeting;
     if (!m) {
-      return card("Nächster Stammtisch",
-        h("p", { class: "big" }, "Noch kein Termin"),
-        h("p", { class: "muted small" }, "Der Vorsitz des letzten Abends legt den nächsten Termin fest."));
+      return h("section", { class: "hero" },
+        h("p", { class: "date" }, "Noch kein Termin"),
+        h("p", { class: "muted" }, "Der Vorsitz des letzten Abends legt den nächsten Termin fest."));
     }
     const loc = m.location;
     const web = loc && safeUrl(loc.url);
     const addr = loc ? [loc.street, [loc.zip, loc.city].filter(Boolean).join(" ")].filter(Boolean).join(", ") : "";
     const maps = loc ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([loc.name, addr].filter(Boolean).join(", "))}` : null;
-    return card("Nächster Stammtisch",
-      h("p", { class: "big" }, dateLong(m.date)),
+    const day = new Date(m.date + "T12:00:00");
+    const sameYear = day.getFullYear() === new Date(todayBerlin() + "T12:00:00").getFullYear();
+    return h("section", { class: "hero" },
+      h("span", { class: "when" }, whenText(inDays(m.date))),
+      h("p", { class: "date" }, day.toLocaleDateString("de-DE", { weekday: "long" }) + ",",
+        h("small", {}, day.toLocaleDateString("de-DE", sameYear ? { day: "numeric", month: "long" } : { day: "numeric", month: "long", year: "numeric" }))),
       h("p", {}, "Vorsitz: ", h("strong", {}, m.chair ? (m.chair === d.me.name ? "ich" : m.chair) : "noch offen")),
       loc
         ? h("p", {}, h("strong", {}, loc.name), addr && h("span", { class: "muted" }, " · " + addr), " ",
@@ -265,9 +274,15 @@
           h("div", { class: "row" },
             h("span", { style: "flex:1" }, c.name, c.former ? h("span", { class: "muted small" }, " (ehemals)") : null,
               h("span", { class: "bar", style: `width:${Math.round(c.count / max * 100)}%` })),
-            h("strong", {}, c.count + "×")))),
-        h("p", { class: "muted small", style: "margin:12px 0 6px" }, "Zuletzt"),
-        o.recent.map((r) => h("div", { class: "row" }, h("span", {}, dateShort(r.date), " · ", r.chair || "?"), h("span", { class: "muted small" }, r.location || "")))));
+            h("strong", {}, c.count + "×"))))));
+  }
+
+  function recentCard(d) {
+    const o = d.overview;
+    if (!o) return null;
+    return card("Letzte Abende",
+      o.recent.length ? o.recent.map((r) => h("div", { class: "row" }, h("span", {}, dateShort(r.date), " · ", r.chair || "?"), h("span", { class: "muted small" }, r.location || "")))
+        : h("p", { class: "muted", style: "margin:0" }, "Noch keine Abende."));
   }
 
   const RATING_LABELS = [["food", "Essen"], ["drinks", "Getränke"], ["service", "Service"], ["ambience", "Ambiente"], ["value", "Preis-Leistung"]];
@@ -311,12 +326,37 @@
         listEl));
   }
 
-  function infoCard(d) {
-    const b = d.birthday, t = d.budget;
-    return card("Sonstiges",
-      b && h("div", { class: "row" }, h("span", {}, "Nächster Geburtstag"), h("strong", {}, `${b.name}, ${dateDay(b.date)} (${b.turns})`)),
-      h("div", { class: "row" }, h("span", {}, "Kassenstand inkl. Außenstände"), h("strong", {}, euro.format(Number(t.paypal) + Number(t.outstanding))))
-    );
+  // Kacheln aus den vorhandenen Daten. Nichts davon ist neu berechnet oder geschätzt.
+  function tilesBlock(d, goTab) {
+    const o = d.my_open, b = d.birthday, t = d.budget, a = d.absences_year;
+    const pay = safeUrl(o.paypal_url, ["paypal.me", "www.paypal.me"]);
+    const owes = o.items.length > 0;
+    const absSum = a.list.reduce((x, y) => x + Number(y.count), 0);
+    const konto = owes
+      ? h("div", { class: "tile wide" },
+          h("p", { class: "label" }, "Dein Konto: offen"),
+          h("p", { class: "num" }, euro.format(o.total)),
+          pay && h("a", { class: "btn paypal full", href: pay, target: "_blank", rel: "noopener noreferrer" }, `Mit PayPal bezahlen (${euro.format(o.total)})`),
+          h("button", { class: "link", onclick: () => goTab("konto") }, "Posten ansehen"))
+      : h("div", { class: "tile" }, h("p", { class: "label" }, "Dein Konto"), h("p", { class: "num text zero" }, "Alles bezahlt ✓"));
+    const small = [
+      h("div", { class: "tile" },
+        h("p", { class: "label" }, "Kassenstand"),
+        h("p", { class: "num" }, euro.format(Number(t.paypal) + Number(t.outstanding))),
+        h("p", { class: "label" }, `inkl. ${euro.format(t.outstanding)} offen`)),
+      b ? h("div", { class: "tile" },
+        h("p", { class: "label" }, "Nächster Geburtstag"),
+        h("p", { class: "num text" }, b.name),
+        h("p", { class: "label" }, `${dateDay(b.date)} (${b.turns})`)) : null,
+      h("div", { class: "tile" },
+        h("p", { class: "label" }, `Abwesenheiten ${a.year}`),
+        h("p", { class: "num" }, String(absSum)),
+        h("p", { class: "label" }, "alle Mitglieder zusammen")),
+    ].filter(Boolean);
+    // Immer volle Zeilen: Die kleinen Kacheln füllen das Raster, eine einzelne Kachel wird breit.
+    const used = owes ? 0 : 1;
+    if ((small.length + used) % 2 === 1) small[small.length - 1].classList.add("wide");
+    return h("div", { class: "tiles" }, konto, ...small);
   }
 
   function docLinks(slot, links) {
@@ -335,26 +375,63 @@
       h("br"), "Stand: " + new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }));
   }
 
+  // ---------- Tabs ----------
+  const TAB_KEY = "stammtisch_tab";
+  const TABS = [
+    ["start", "Start", "M3 11.5 12 4l9 7.5M5.5 10v9.5h13V10"],
+    ["konto", "Konto", "M3.5 7h17v12h-17zM3.5 7l2-3h13l2 3M15.5 13h2"],
+    ["chronik", "Chronik", "M5 4.5h11a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3zM5 16.5a3 3 0 0 1 3-3h11"],
+  ];
+  const NS = "http://www.w3.org/2000/svg";
+  const icon = (path) => {
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true");
+    const p = document.createElementNS(NS, "path"); p.setAttribute("d", path); svg.append(p);
+    return svg;
+  };
+  let tab = TABS.some(([id]) => id === session.get(TAB_KEY)) ? session.get(TAB_KEY) : "start";
+  let last = null; // zuletzt geladene Daten, damit ein Tab-Wechsel nicht neu lädt
+
+  function goTab(id) {
+    tab = id; session.set(TAB_KEY, id);
+    if (last) render(last.own, last.as);
+    window.scrollTo(0, 0);
+  }
+
+  function tabBar() {
+    return h("nav", { class: "tabbar", "aria-label": "Bereiche" }, h("div", { class: "tabbar-in" },
+      TABS.map(([id, label, path]) => h("button", { type: "button", "aria-current": id === tab ? "page" : null, onclick: () => goTab(id) }, icon(path), label))));
+  }
+
   // own: eigene Daten. as: Daten eines angesehenen Mitglieds (nur Admin).
   function render(own, as) {
+    last = { own, as };
     const admin = !!own.me.is_admin;
     const mode = admin ? getView() : "self";
     let d = own, readOnly = false;
     if (mode === "as" && as) { d = Object.assign({}, as.dashboard, { overview: as.overview }); readOnly = true; }
     if (mode === "plain") d = Object.assign({}, own, { me: Object.assign({}, own.me, { is_admin: false, can_set_next_chair: false, can_set_location: false }) });
     const canChair = !readOnly && (d.me.can_set_next_chair || d.me.can_set_location);
+    const today = new Date(todayBerlin() + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+    const pages = {
+      start: [heroCard(d), tilesBlock(d, goTab), signupCard(d, readOnly), readOnly ? actAsPanel(d) : null, whoCard(d), canChair ? chairCard(d) : null],
+      konto: [accountCard(d), openCard(d)],
+      chronik: [recentCard(d), chairsCard(d), locationsCard(d), absencesCard(d)],
+    };
     const root = h("div", {},
       admin ? adminBar(own, mode) : null,
       admin && mode !== "self" ? viewBanner(mode, d.me.name) : null,
-      h("h1", {}, "🍻 Griassgottbeinand"),
-      h("p", { class: "hello" }, readOnly ? `Ansicht von ${d.me.name}` : `Servus, ${d.me.name}!`),
-      meetingCard(d), signupCard(d, readOnly), readOnly ? actAsPanel(d) : null, whoCard(d), accountCard(d),
-      canChair ? chairCard(d) : null,
-      openCard(d), absencesCard(d), chairsCard(d), locationsCard(d), infoCard(d), footer());
-    $app.replaceChildren(root);
+      tab === "start"
+        ? [h("p", { class: "hello" }, readOnly ? `Ansicht von ${d.me.name}` : today), h("h1", {}, readOnly ? d.me.name : `Servus, ${d.me.name}!`)]
+        : h("h1", {}, TABS.find(([id]) => id === tab)[1]),
+      pages[tab],
+      footer());
+    $app.classList.add("tabs");
+    $app.replaceChildren(root, tabBar());
   }
 
   function showNoToken() {
+    $app.classList.remove("tabs");
     $app.replaceChildren(h("div", { class: "card center", style: "margin-top:32px" },
       h("p", { class: "big" }, "🍻 Griassgottbeinand"),
       h("p", {}, "Bitte öffne deinen persönlichen Link. Den bekommst du vom Kassier."),
@@ -378,7 +455,7 @@
       if (manual) toast("Aktualisiert.");
     } catch (e) {
       if (e.invalid) { window.App.forgetToken(); showNoToken(); }
-      else if (!$app.querySelector(".card")) { $app.replaceChildren(h("div", { class: "card center pad" }, h("p", {}, e.message), h("button", { class: "primary", onclick: () => load() }, "Nochmal versuchen"))); }
+      else if (!$app.querySelector(".card, .hero, .tile")) { $app.classList.remove("tabs"); $app.replaceChildren(h("div", { class: "card center pad" }, h("p", {}, e.message), h("button", { class: "primary", onclick: () => load() }, "Nochmal versuchen"))); }
       else toast(e.message, true);
     } finally { loading = false; }
   }

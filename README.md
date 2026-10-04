@@ -10,7 +10,18 @@ Ohne Build-Schritt: reines HTML, CSS und JavaScript. Daten liegen in Supabase (P
 | `index.html`, `styles.css`, `common.js`, `app.js` | Mitglieder-App (`common.js` ist gemeinsam mit dem Admin-Bereich) |
 | `admin.html`, `admin.js`, `paypal.js` | Admin-Bereich: Zahlungen, Buchungen, Offen, Letzte |
 | `config.js` | Öffentliche Verbindungsdaten (URL, öffentlicher Schlüssel, PayPal-Name) |
+| `docs/` | Redesign-Konzept und Prototyp (nur Entwurf, wird nicht ausgeliefert genutzt) |
 | `manifest.webmanifest`, `sw.js`, `icons/` | Installierbare App, Offline-Hülle |
+
+## Aufbau der Mitglieder-App
+
+Untere Tab-Leiste mit drei Bereichen (Statistik folgt in Phase 2, siehe `docs/REDESIGN-KONZEPT.md`):
+
+- **Start:** Hauptkarte mit dem nächsten Termin ("in X Tagen"), Kacheln (Konto mit PayPal-Link, Kassenstand, Geburtstag, Abwesenheiten), Anmeldung, Vorsitz.
+- **Konto:** eigene Posten und die offenen Beträge im Stammtisch.
+- **Chronik:** letzte Abende, Vorsitz-Historie, besuchte Locations, Abwesenheiten.
+
+Hell und Dunkel folgen dem Gerät. Farben und Formen stehen als Variablen oben in `styles.css`.
 
 ## Sicherheit in Kürze
 

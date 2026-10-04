@@ -1,19 +1,22 @@
+/* Farben und Formen für die Mitglieder-App. Hell und Dunkel folgen dem Gerät. */
 :root {
-  --bg: #f4f1ea; --card: #ffffff; --ink: #23302b; --muted: #66726c; --line: #e3ded2;
+  --bg: #f6efe2; --card: #ffffff; --ink: #1d2a25; --muted: #5f6b65; --line: #e6dfd0;
   --brand: #1f6f5c; --brand-ink: #ffffff; --accent: #f4c542; --warn: #b4452f; --ok: #2c7a4b;
-  --radius: 16px;
+  --hero: #1f5c4a; --wash: #d9e8e1;
+  --radius: 20px; --shadow: 0 1px 0 var(--line), 0 6px 18px rgba(60, 40, 10, .06);
+  --tabbar-h: 64px;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #14201c; --card: #1c2b26; --ink: #ecf1ee; --muted: #9fb0a8; --line: #2b3d36; --brand: #3fae93; --brand-ink: #06231b; --warn: #ff8a73; --ok: #6fcf97; }
+  :root { --bg: #0f1a17; --card: #17261f; --ink: #ecf1ee; --muted: #9fb0a8; --line: #26382f; --brand: #3fae93; --brand-ink: #06231b; --warn: #ff8a73; --ok: #6fcf97; --hero: #1f5c4a; --wash: #213a31; --shadow: none; }
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
 #app { max-width: 520px; margin: 0 auto; padding: max(16px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom)); }
-h1 { font-size: 1.35rem; margin: 4px 0 2px; }
+h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; margin: 2px 0 14px; }
 h2 { font-size: .8rem; margin: 0 0 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
-.hello { color: var(--muted); margin: 0 0 14px; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin: 0 0 12px; }
+.hello { color: var(--muted); margin: 0; font-size: .9rem; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin: 0 0 12px; box-shadow: var(--shadow); }
 .big { font-size: 1.25rem; font-weight: 700; margin: 0 0 4px; }
 .muted { color: var(--muted); }
 .small { font-size: .875rem; }
@@ -95,3 +98,33 @@ input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; m
 .pick:has(input:checked) { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 10%, transparent); }
 .pick input[type="radio"] { width: 22px; min-height: 22px; height: 22px; margin: 0; flex: 0 0 22px; accent-color: var(--brand); }
 .pickbody { display: flex; flex-direction: column; min-width: 0; }
+
+/* ---------- Redesign: Startseite mit Hauptkarte und Kacheln ---------- */
+#app.tabs { padding-bottom: calc(var(--tabbar-h) + max(24px, env(safe-area-inset-bottom))); }
+.hero { position: relative; overflow: hidden; margin: 0 0 12px; padding: 20px; border-radius: 24px; background: var(--hero); color: #fff; }
+.hero::before { content: ""; position: absolute; inset: 0; opacity: .12; pointer-events: none;
+  background: linear-gradient(45deg, #fff 25%, transparent 25%) 0 0 / 34px 34px, linear-gradient(-45deg, #fff 25%, transparent 25%) 0 0 / 34px 34px;
+  -webkit-mask-image: linear-gradient(180deg, transparent 20%, #000 100%); mask-image: linear-gradient(180deg, transparent 20%, #000 100%); }
+.hero > * { position: relative; margin: 0; }
+.hero > * + * { margin-top: 6px; }
+.hero a { color: #fff; }
+.hero .muted { color: rgba(255, 255, 255, .8); }
+.hero .when { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: .8rem; font-weight: 700; background: var(--accent); color: #2a2200; }
+.hero .date { font-size: 2.1rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.08; margin-top: 10px; }
+.hero .date small { display: block; font-size: 1.1rem; font-weight: 600; letter-spacing: 0; opacity: .85; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 12px; }
+.tile { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; min-width: 0; box-shadow: var(--shadow); }
+.tile.wide { grid-column: span 2; }
+.tile > p { margin: 0; }
+.tile .label { color: var(--muted); font-size: .8125rem; }
+.tile .num { font-size: 1.75rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; overflow-wrap: anywhere; }
+.tile .num.zero { color: var(--ok); }
+.tile .num.text { font-size: 1.2rem; }
+.tile .btn { margin-top: 10px; }
+.tile.tap { cursor: pointer; text-align: left; font-weight: 400; min-height: 0; display: block; }
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8; background: var(--card); border-top: 1px solid var(--line); padding: 0 max(8px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(8px, env(safe-area-inset-left)); }
+.tabbar-in { max-width: 520px; margin: 0 auto; display: flex; justify-content: space-around; }
+.tabbar button { flex: 1 1 0; min-height: var(--tabbar-h); flex-direction: column; gap: 3px; border: 0; border-radius: 0; background: transparent; color: var(--muted); font-size: .72rem; font-weight: 600; padding: 8px 4px; }
+.tabbar button[aria-current="page"] { color: var(--brand); }
+.tabbar svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+body:has(.tabbar) #toast { bottom: calc(var(--tabbar-h) + max(20px, env(safe-area-inset-bottom))); }
