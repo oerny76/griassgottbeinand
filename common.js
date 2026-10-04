@@ -64,6 +64,7 @@
   const FRIENDLY = [
     [/Link ungueltig/i, "Dieser Link ist ungültig. Bitte den persönlichen Link nutzen."],
     [/naechsten/gi, "nächsten"],
+    [/nur noch vom neuen Vorsitzenden geaendert/i, "Der Vorsitz kann nur noch vom neuen Vorsitzenden geändert werden."],
     [/Frist abgelaufen/i, "Die Frist ist abgelaufen (19 Uhr am Stammtischtag). Bitte beim Admin melden."],
   ];
   function friendly(msg) {
