@@ -20,7 +20,7 @@ Ohne Build-Schritt: reines HTML, CSS und JavaScript. Daten liegen in Supabase (P
 
 Untere Tab-Leiste mit vier Bereichen (Konzept: `docs/REDESIGN-KONZEPT.md`):
 
-- **Start:** Hauptkarte mit dem nächsten Termin ("in X Tagen"), Kacheln (Konto mit PayPal-Link, Kassenstand, Geburtstag, Abwesenheiten mit Durchschnitt pro Abend und Tendenz der letzten 12 Monate), Anmeldung, Vorsitz.
+- **Start:** Hauptkarte mit dem nächsten Termin ("in X Tagen") und den Aktionen direkt darin ("Ich komme nicht" oder "Doch teilnehmen", für den Vorsitz "Vorsitz übertragen" oder "Vorsitz ändern" und "Location festlegen" oder "Location ändern"; Auswahl und Eingabe klappen in der Karte auf), Kacheln (Konto mit PayPal-Link, Kassenstand, Geburtstag, Abwesenheiten mit Durchschnitt pro Abend und Tendenz der letzten 12 Monate), Anmeldung, Vorsitz.
 - **Statistik:** Anwesenheit pro Abend (12 oder 24 Abende), Kassenstand über die Zeit, Einnahmen pro Jahr, Wartezeit auf den Vorsitz, Abwesenheiten pro Abend und Jahr. Siehe unten.
 - **Konto:** eigene Posten und die offenen Beträge im Stammtisch.
 - **Chronik:** letzte Abende (mit Anzahl Anwesender und Gästen, sobald die Statistik geladen ist), Vorsitz-Historie, besuchte Locations, Abwesenheiten.
@@ -39,7 +39,7 @@ Annahmen, die man kennen sollte:
 - **Einnahmen** = nur positive Buchungen nach Buchungsdatum, nicht nach Zahlung. Ausgaben sind nicht abgezogen. Gäste = Gastbeitrag und Gast unangemeldet.
 - **Wartezeit auf den Vorsitz:** Monate seit dem letzten Vorsitz, gleiche Rangliste wie der Vorschlag bei "Vorsitz übertragen" (`vorsitz.js`). Der schon bestimmte Vorsitz fehlt in der Liste. Diese Angaben sehen alle ohnehin in der Vorsitz-Historie.
 - **Abwesenheiten pro Abend:** Abwesenheiten je Jahr geteilt durch die Zahl der Abende, seit 2015. Gezählt nach Buchungsdatum, denn vor 2021 sind einige Abwesenheiten keinem Abend zugeordnet.
-- **Tendenz (Kachel Abwesenheiten):** Durchschnitt der letzten 12 Monate gegen die 12 Monate davor, gerechnet aus den Anwesenden pro Abend. Pro Abend schwankt die Zahl stark (etwa 1 bis 7), deshalb heißt es erst ab einem Unterschied von 1 pro Abend "mehr" oder "weniger", sonst "ähnlich". Fehlen Vergleichsdaten, steht nur der Durchschnitt.
+- **Tendenz (Kachel Abwesenheiten):** Durchschnitt der letzten 12 Monate gegen die 12 Monate davor, gerechnet aus den Anwesenden pro Abend. Gezeigt wird ein neutraler Pfeil (schräg hoch, waagerecht, schräg runter) mit Text und Zahlen. Pro Abend schwankt die Zahl stark (etwa 1 bis 7), deshalb heißt es erst ab einem Unterschied von 1 pro Abend "mehr" oder "weniger", sonst "ähnlich". Fehlen Vergleichsdaten, steht nur der Durchschnitt der letzten 12 Monate.
 - Das laufende Jahr ist unvollständig und mit * markiert.
 
 **Nur Admin:** Im Admin-Bereich zeigt der Tab "Fehlen" eine Heatmap, wer bei den letzten zwölf Abenden fehlte (`db/app_stats_admin.sql`, Funktion prüft die Admin-Rolle). Einzelpersonen mit Namen sehen nur Admins.

@@ -222,16 +222,6 @@
       { headers: ["Mitglied", `Fehlte (von ${data.dates.length})`], rows: people.map((p) => [p.name, p.count]) });
   }
 
-  // ---------- Kleiner Verlauf für Kacheln (Achse beginnt bei 0, damit nichts größer wirkt als es ist) ----------
-  function sparkline(vals) {
-    const w = 300, hgt = 44, pad = 5, mx = Math.max(1, ...vals);
-    const sx = (i) => pad + (vals.length > 1 ? i * (w - 2 * pad) / (vals.length - 1) : 0), sy = (v) => hgt - pad - (v / mx) * (hgt - 2 * pad);
-    const svg = s("svg", { class: "ch spark", viewBox: `0 0 ${w} ${hgt}`, width: "100%", height: hgt, "aria-hidden": "true", preserveAspectRatio: "none" });
-    svg.append(s("line", { x1: pad, x2: w - pad, y1: sy(0), y2: sy(0), class: "grid" }),
-      s("path", { d: vals.map((v, i) => `${i ? "L" : "M"}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(""), class: "line", style: "stroke:var(--s1)", "vector-effect": "non-scaling-stroke" }));
-    return svg;
-  }
-
   // ---------- Karten, Legende, Tabellenansicht ----------
   function table(headers, rows) {
     return h("div", { class: "tvwrap" }, h("table", { class: "tv" },
@@ -293,5 +283,5 @@
         { headers: ["Jahr", "Abwesenheiten", "Abende", "Ø pro Abend"], rows: d.absences_by_year.filter((r) => r.meetings > 0).slice().reverse().map((r) => [r.year, r.absences, r.meetings, num1(r.absences / r.meetings)]) }) : null);
   }
 
-  window.Charts = { statsPage, heatmapCard, sparkline };
+  window.Charts = { statsPage, heatmapCard };
 })();
