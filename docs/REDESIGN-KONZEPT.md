@@ -29,7 +29,7 @@ Untere Tab-Leiste mit vier Punkten:
 3. **Konto:** eigene Posten und Zahlungen
 4. **Chronik:** vergangene Abende
 
-Admin bleibt eine eigene Seite (`admin.html`), damit klar ist, wo man ist.
+Admin ist ein weiterer Tab der App (nur für den Admin sichtbar), keine eigene Seite mehr.
 
 ## 4. Statistiken
 
