@@ -21,7 +21,7 @@
     const maps = loc ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([loc.name, addr].filter(Boolean).join(", "))}` : null;
     return card("Nächster Stammtisch",
       h("p", { class: "big" }, dateLong(m.date)),
-      h("p", {}, "Vorsitz: ", h("strong", {}, m.chair || "noch offen")),
+      h("p", {}, "Vorsitz: ", h("strong", {}, m.chair ? (m.chair === d.me.name ? "ich" : m.chair) : "noch offen")),
       loc
         ? h("p", {}, h("strong", {}, loc.name), addr && h("span", { class: "muted" }, " · " + addr), " ",
             maps && h("a", { href: maps, target: "_blank", rel: "noopener noreferrer" }, "Karte"),
@@ -98,27 +98,71 @@
 
   function memberNames(d) { return d.absences_year.list.map((x) => x.name).sort((a, b) => a.localeCompare(b, "de")); }
 
+  const todayBerlin = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
+
+  // Auswahl der Mitglieder mit Vorschlag: längste Zeit ohne Vorsitz zuerst.
+  function chairPicker(d, changing) {
+    const V = window.Vorsitz;
+    const exclude = changing ? d.meeting.chair : null;
+    const hasData = !!(d.overview && d.overview.chairs);
+    const ranked = V.rankMembers(memberNames(d), hasData ? d.overview.chairs : null, exclude, todayBerlin());
+    // Ohne Daten gibt es keinen Vorschlag: nichts vorauswählen und nichts behaupten.
+    let chosen = hasData && ranked.length ? ranked[0].name : "";
+    const btn = h("button", { class: "primary full" });
+    const label = () => {
+      btn.textContent = !chosen ? "Bitte ein Mitglied wählen" : changing ? `Vorsitz an ${chosen} übertragen` : `${chosen} zum Vorsitz machen`;
+    };
+    label();
+    const date = h("input", { id: "nextDate", type: "date" });
+    const list = h("div", { class: "picklist", role: "radiogroup", "aria-label": "Mitglied für den Vorsitz" }, ranked.map((m, i) => {
+      const id = "pick-" + i;
+      return h("label", { class: "pick", for: id },
+        h("input", { type: "radio", name: "chairPick", id, value: m.name, checked: hasData && i === 0,
+          onchange: () => { chosen = m.name; label(); } }),
+        h("span", { class: "pickbody" },
+          h("span", {}, h("strong", {}, m.name), hasData && i === 0 ? h("span", { class: "chip", style: "margin-left:8px" }, "Vorschlag") : null),
+          hasData ? h("span", { class: "muted small" }, m.last ? `zuletzt ${dateShort(m.last)} · ${V.ago(m.days)} · ${m.count}×` : "noch nie Vorsitz") : null));
+    }));
+    btn.addEventListener("click", (e) => {
+      if (!chosen) { toast("Bitte ein Mitglied wählen.", true); return; }
+      const wer = d.meeting && d.meeting.chair === d.me.name ? "mir" : d.meeting && d.meeting.chair;
+      if (changing && !confirm(`Vorsitz am ${dateShort(d.meeting.date)} von ${wer} an ${chosen} übergeben?`)) return;
+      act(e.currentTarget, () => rpc("app_set_next_chair", { p_chair: chosen, p_date: changing ? null : (date.value || null) }),
+        (r) => `${r.chair} hat den Vorsitz am ${dateShort(r.date)}.`);
+    });
+    return h("div", { class: "stack" },
+      h("p", { class: "muted small", style: "margin:0" }, hasData
+        ? "Vorschlag: Das Mitglied, das am längsten keinen Vorsitz hatte, steht oben."
+        : "Die Reihenfolge ist gerade nicht verfügbar. Bitte ein Mitglied wählen."),
+      list,
+      changing ? null : h("div", {}, h("label", { for: "nextDate" }, "Datum (leer lassen: erster Freitag im Folgemonat)"), date),
+      btn);
+  }
+
   function chairCard(d) {
     const me = d.me, parts = [];
     if (me.can_set_next_chair) {
-      // Gibt es schon einen Termin mit Vorsitz, wird dieser Vorsitz geändert. Das Datum bleibt dann wie es ist.
+      // Gibt es schon einen Termin mit Vorsitz, wird dieser Vorsitz übertragen. Das Datum bleibt dann wie es ist.
       const changing = !!(me.has_upcoming && d.meeting && d.meeting.chair);
-      const sel = h("select", { id: "nextChair" }, h("option", { value: "" }, "Bitte wählen"), options(memberNames(d)));
-      const date = h("input", { id: "nextDate", type: "date" });
-      parts.push(
-        h("div", { class: "stack" },
-          h("div", {}, h("label", { for: "nextChair" }, changing ? `Vorsitz ändern (aktuell: ${d.meeting.chair})` : "Nächster Vorsitz"), sel),
+      if (changing) {
+        const mine = d.meeting.chair === me.name;
+        const panel = h("div", { style: "display:none;margin-top:12px" }, chairPicker(d, true));
+        const open = h("button", {
+          class: "full", style: "flex:0 0 auto;width:auto", "aria-expanded": "false",
+          onclick: (e) => {
+            const shown = panel.style.display !== "none";
+            panel.style.display = shown ? "none" : "";
+            e.currentTarget.setAttribute("aria-expanded", String(!shown));
+          },
+        }, mine ? "Vorsitz übertragen" : "Vorsitz ändern");
+        parts.push(h("div", {},
+          h("div", { class: "row", style: "border:0;padding-top:0" },
+            h("span", {}, "Vorsitz: ", h("strong", {}, mine ? "ich" : d.meeting.chair)), open),
           me.chair_change_until ? h("p", { class: "notice", style: "margin:0" }, `Du kannst den Vorsitz noch bis einschließlich ${dateShort(me.chair_change_until)} ändern. Danach nur noch ${d.meeting.chair}.`) : null,
-          changing ? null : h("div", {}, h("label", { for: "nextDate" }, "Datum (leer lassen: erster Freitag im Folgemonat)"), date),
-          h("button", {
-            class: "primary full",
-            onclick: (e) => {
-              if (!sel.value) { toast("Bitte ein Mitglied wählen.", true); return; }
-              if (changing && !confirm(`Vorsitz am ${dateShort(d.meeting.date)} von ${d.meeting.chair} an ${sel.value} übergeben?`)) return;
-              act(e.currentTarget, () => rpc("app_set_next_chair", { p_chair: sel.value, p_date: changing ? null : (date.value || null) }),
-                (r) => `${r.chair} hat den Vorsitz am ${dateShort(r.date)}.`);
-            },
-          }, changing ? "Vorsitz ändern" : "Vorsitz festlegen")));
+          panel));
+      } else {
+        parts.push(h("div", {}, h("p", { class: "muted small", style: "margin:0 0 8px" }, "Noch kein Vorsitz für den nächsten Termin. Wähle das Mitglied:"), chairPicker(d, false)));
+      }
     }
     if (me.can_set_location) {
       const list = h("datalist", { id: "locList" });

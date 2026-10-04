@@ -34,8 +34,8 @@ Aus dem Admin-Bereich öffnet "Mitglied ansehen" dieselbe Ansicht (`index.html#a
 ## Rollen
 
 - Mitglied: eigene Abwesenheit und Gäste (bis 19 Uhr am Stammtischtag), eigene offene Posten.
-- Vorsitz des letzten Abends: bestimmt den nächsten Vorsitz, trägt die Location ein.
-- Neuer Vorsitz: trägt die Location ein.
+- Vorsitz des letzten Abends: bestimmt den nächsten Vorsitz. Ist er vergeben, darf er ihn nur noch bis einschließlich zum Tag nach dem Stammtisch ändern.
+- Designierter Vorsitz ("ich" in der App): überträgt den Vorsitz mit "Vorsitz übertragen" (Auswahl mit Vorschlag nach der längsten Zeit ohne Vorsitz, `vorsitz.js`) und trägt die Location ein.
 - Admin: alles, auch für andere Mitglieder und ohne Frist.
 
 ## Veröffentlichen
