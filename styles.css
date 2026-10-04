@@ -45,3 +45,10 @@ details > summary { cursor: pointer; font-weight: 600; min-height: 32px; }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
 #toast.err { background: #8c2f1d; }
 @media (prefers-reduced-motion: reduce) { #toast { transition: none; } }
+.bar { display: block; height: 4px; margin-top: 4px; border-radius: 2px; background: var(--brand); opacity: .55; }
+.rate { font-weight: 700; white-space: nowrap; color: var(--brand); }
+.stars { color: var(--accent); letter-spacing: 1px; }
+details.loc > summary { list-style: none; min-height: 40px; }
+details.loc > summary::-webkit-details-marker { display: none; }
+details.loc { border-bottom: 1px solid var(--line); }
+details.loc > summary { font-weight: 400; }

@@ -263,6 +263,75 @@
         h("p", { class: "muted small", style: "margin:8px 0 0" }, "Ab 5 gibt es einen Warnhinweis.")));
   }
 
+  function openCard(d) {
+    const list = d.overview && d.overview.open;
+    if (!list) return null;
+    const sum = list.reduce((a, x) => a + Number(x.total), 0);
+    return card("Offene Beträge im Stammtisch",
+      list.length
+        ? [...list.map((x) => h("div", { class: "row" }, h("span", {}, x.name, x.mine ? h("span", { class: "chip", style: "margin-left:8px" }, "du") : null), h("strong", {}, euro.format(x.total)))),
+           h("div", { class: "row" }, h("span", { class: "muted" }, "Summe"), h("strong", {}, euro.format(sum)))]
+        : h("p", { style: "margin:0" }, "Alles bezahlt ✓"),
+      h("p", { class: "muted small", style: "margin:10px 0 0" }, "Die einzelnen Posten und den PayPal-Link siehst nur du bei dir unter „Dein Konto“."));
+  }
+
+  function chairsCard(d) {
+    const o = d.overview;
+    if (!o) return null;
+    const max = Math.max(1, ...o.chairs.map((c) => c.count));
+    return h("section", { class: "card" },
+      h("details", {},
+        h("summary", {}, "Vorsitz-Historie"),
+        h("div", { style: "margin-top:8px" }, o.chairs.map((c) =>
+          h("div", { class: "row" },
+            h("span", { style: "flex:1" }, c.name, c.former ? h("span", { class: "muted small" }, " (ehemals)") : null,
+              h("span", { class: "bar", style: `width:${Math.round(c.count / max * 100)}%` })),
+            h("strong", {}, c.count + "×")))),
+        h("p", { class: "muted small", style: "margin:12px 0 6px" }, "Zuletzt"),
+        o.recent.map((r) => h("div", { class: "row" }, h("span", {}, dateShort(r.date), " · ", r.chair || "?"), h("span", { class: "muted small" }, r.location || "")))));
+  }
+
+  const RATING_LABELS = [["food", "Essen"], ["drinks", "Getränke"], ["service", "Service"], ["ambience", "Ambiente"], ["value", "Preis-Leistung"]];
+  const fmt1 = (n) => Number(n).toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const stars = (n) => "★".repeat(Math.round(n)) + "☆".repeat(5 - Math.round(n));
+
+  function locationsCard(d) {
+    const o = d.overview;
+    if (!o) return null;
+    const all = o.locations.slice();
+    const listEl = h("div", { style: "margin-top:8px" });
+    let sortBy = "visits";
+    const draw = (filter) => {
+      const f = (filter || "").trim().toLowerCase();
+      const items = all
+        .filter((l) => !f || (l.name + " " + (l.city || "")).toLowerCase().includes(f))
+        .sort((a, b) => sortBy === "rating"
+          ? (b.avg == null) - (a.avg == null) || (b.avg ?? 0) - (a.avg ?? 0) || b.visits - a.visits
+          : b.visits - a.visits || a.name.localeCompare(b.name, "de"));
+      listEl.replaceChildren(...items.map((l) => {
+        const web = safeUrl(l.url);
+        const head = h("span", { style: "flex:1" }, web ? h("a", { href: web, target: "_blank", rel: "noopener noreferrer" }, l.name) : l.name,
+          h("span", { class: "muted small" }, ` · ${l.city || ""} · ${l.visits}× zuletzt ${dateShort(l.last)}`));
+        if (l.avg == null) return h("div", { class: "row" }, head, h("span", { class: "muted small" }, "noch nicht bewertet"));
+        return h("details", { class: "loc" },
+          h("summary", { class: "row", style: "border:0" }, head, h("span", { class: "rate", title: `${l.n} Bewertung${l.n === 1 ? "" : "en"}` }, "★ " + fmt1(l.avg))),
+          h("div", { style: "padding:0 0 8px" },
+            RATING_LABELS.map(([k, label]) => l[k] == null ? null : h("div", { class: "row small" }, h("span", {}, label), h("span", {}, h("span", { class: "stars" }, stars(l[k])), " " + fmt1(l[k])))),
+            h("p", { class: "muted small", style: "margin:4px 0 0" }, `${l.n} Bewertung${l.n === 1 ? "" : "en"}, Skala 1 bis 5`)));
+      }));
+      if (!items.length) listEl.append(h("p", { class: "muted" }, "Nichts gefunden."));
+    };
+    const search = h("input", { type: "search", placeholder: "Location oder Ort suchen", autocomplete: "off", "aria-label": "Locations durchsuchen", oninput: (e) => draw(e.target.value) });
+    const sort = h("select", { "aria-label": "Sortierung", onchange: (e) => { sortBy = e.target.value; draw(search.value); } },
+      h("option", { value: "visits" }, "Nach Besuchen"), h("option", { value: "rating" }, "Nach Bewertung"));
+    draw("");
+    return h("section", { class: "card" },
+      h("details", {},
+        h("summary", {}, `Besuchte Locations (${all.length})`),
+        h("div", { class: "inline", style: "margin-top:10px" }, search, h("div", { style: "flex:0 0 46%" }, sort)),
+        listEl));
+  }
+
   function infoCard(d) {
     const b = d.birthday, t = d.budget;
     return card("Sonstiges",
@@ -294,7 +363,7 @@
       meetingCard(d), signupCard(d), whoCard(d), accountCard(d),
       (d.me.can_set_next_chair || d.me.can_set_location) ? chairCard(d) : null,
       d.me.is_admin ? (adminCard(d) || card("Admin", h("a", { class: "btn primary full", href: "#admin" }, "Zahlungen und Buchungen"))) : null,
-      absencesCard(d), infoCard(d), footer());
+      openCard(d), absencesCard(d), chairsCard(d), locationsCard(d), infoCard(d), footer());
     $app.replaceChildren(root);
   }
 
@@ -319,7 +388,9 @@
     if (loading) return;
     loading = true;
     try {
-      show(await rpc("app_dashboard"));
+      const [d, overview] = await Promise.all([rpc("app_dashboard"), rpc("app_overview").catch(() => null)]);
+      d.overview = overview;
+      show(d);
       if (manual) toast("Aktualisiert.");
     } catch (e) {
       if (e.invalid) { store.clear(); token = ""; showNoToken(); }

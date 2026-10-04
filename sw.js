@@ -1,5 +1,5 @@
 // Einfacher Service Worker: App-Dateien offline verfügbar, Daten immer frisch vom Server.
-const CACHE = "stammtisch-v3";
+const CACHE = "stammtisch-v4";
 const ASSETS = ["./", "index.html", "styles.css", "app.js", "admin.js", "paypal.js", "config.js", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {
