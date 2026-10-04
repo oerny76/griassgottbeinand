@@ -1,5 +1,5 @@
 // Statistik-Seite: eigene SVG-Diagramme ohne Bibliothek. Alle Texte gehen über textContent, nie über innerHTML.
-// Datenschutz-Stufe 1: Die Daten (Funktion app_stats) enthalten nur Gruppenwerte, keine Einzelpersonen.
+// Die Daten (Funktion app_stats) enthalten nur Gruppenwerte. Nur die Heatmap (app_stats_absent) zeigt Namen.
 (() => {
   "use strict";
   const { h } = window.App;
@@ -191,7 +191,7 @@
   }
 
   // ---------- Nur Admin: Wer fehlte bei den letzten Abenden ----------
-  // data: Antwort von app_stats_admin. Ein "×" in der Zelle zeigt das Fehlen auch ohne Farbe.
+  // data: Antwort von app_stats_absent. Ein "×" in der Zelle zeigt das Fehlen auch ohne Farbe.
   function heatmap(data) {
     const n = data.dates.length;
     const people = data.rows.map((r) => ({ name: r.name, cells: [...r.absent].map((c) => c === "1") }))
@@ -217,7 +217,7 @@
 
   function heatmapCard(data) {
     const { svg, people } = heatmap(data);
-    return chartCard("Wer fehlt wie oft?", `Die letzten ${data.dates.length} Abende, nur für den Admin sichtbar`,
+    return chartCard("Wer fehlt wie oft?", `Die letzten ${data.dates.length} Abende, Namen sind für alle Mitglieder sichtbar`,
       [legend([["fehlte (×)", "--seq-hi"], ["war dabei", "--seq-lo"]]), svg],
       { headers: ["Mitglied", `Fehlte (von ${data.dates.length})`], rows: people.map((p) => [p.name, p.count]) });
   }
@@ -270,6 +270,7 @@
       chartCard("Wer war dabei?", "Anwesende Mitglieder pro Stammtisch", [legend([["Mitglieder", "--s1"], ["Gäste", "--s2"]]), attBox,
         h("p", { class: "muted small", style: "margin:4px 0 0" }, `Anwesende = ${d.members} Mitglieder minus Entschuldigte. Tippe auf einen Balken für Datum und Gäste.`)],
         { headers: ["Abend", "Mitglieder", "Gäste"], rows: d.attendance.slice().reverse().map((x) => [fmtDate(x.date, { day: "2-digit", month: "2-digit", year: "numeric" }), x.present, x.guests]) }, seg),
+      d.absent_grid && d.absent_grid.dates.length ? heatmapCard(d.absent_grid) : null,
       chartCard("Kassenstand", "PayPal-Saldo am Monatsende, Tippen und Wischen zeigt den Monat",
         [d.cash.some((p) => Number(p.change) <= BIG_DROP) ? legend([["Saldo", "--s1"], ["Auszahlung ab 1.000 € im Monat", "--s3"]]) : null, cash(d)],
         { headers: ["Monat", "Saldo", "Veränderung"], rows: d.cash.slice().reverse().map((p) => [fmtDate(p.month + "-01", { month: "long", year: "numeric" }), money(p.balance), money(p.change)]) }),
