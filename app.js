@@ -101,20 +101,23 @@
   function chairCard(d) {
     const me = d.me, parts = [];
     if (me.can_set_next_chair) {
+      // Gibt es schon einen Termin mit Vorsitz, wird dieser Vorsitz geändert. Das Datum bleibt dann wie es ist.
+      const changing = !!(me.has_upcoming && d.meeting && d.meeting.chair);
       const sel = h("select", { id: "nextChair" }, h("option", { value: "" }, "Bitte wählen"), options(memberNames(d)));
       const date = h("input", { id: "nextDate", type: "date" });
       parts.push(
         h("div", { class: "stack" },
-          h("div", {}, h("label", { for: "nextChair" }, "Nächster Vorsitz"), sel),
-          h("div", {}, h("label", { for: "nextDate" }, "Datum (leer lassen: erster Freitag im Folgemonat)"), date),
+          h("div", {}, h("label", { for: "nextChair" }, changing ? `Vorsitz ändern (aktuell: ${d.meeting.chair})` : "Nächster Vorsitz"), sel),
+          changing ? null : h("div", {}, h("label", { for: "nextDate" }, "Datum (leer lassen: erster Freitag im Folgemonat)"), date),
           h("button", {
             class: "primary full",
             onclick: (e) => {
               if (!sel.value) { toast("Bitte ein Mitglied wählen.", true); return; }
-              act(e.currentTarget, () => rpc("app_set_next_chair", { p_chair: sel.value, p_date: date.value || null }),
+              if (changing && !confirm(`Vorsitz am ${dateShort(d.meeting.date)} von ${d.meeting.chair} an ${sel.value} übergeben?`)) return;
+              act(e.currentTarget, () => rpc("app_set_next_chair", { p_chair: sel.value, p_date: changing ? null : (date.value || null) }),
                 (r) => `${r.chair} hat den Vorsitz am ${dateShort(r.date)}.`);
             },
-          }, "Vorsitz festlegen")));
+          }, changing ? "Vorsitz ändern" : "Vorsitz festlegen")));
     }
     if (me.can_set_location) {
       const list = h("datalist", { id: "locList" });
