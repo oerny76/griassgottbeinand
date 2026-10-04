@@ -27,10 +27,43 @@
         class: id === tab ? "primary full" : "full", role: "tab", "aria-selected": String(id === tab), style: "flex:1 1 0;min-width:0;padding:10px 4px",
         onclick: () => { tab = id; render($app, d); },
       }, label)));
-    $app.replaceChildren(h("div", {},
-      h("p", { style: "margin:0 0 4px" }, h("a", { href: "#" }, "← Zurück")),
-      h("h1", {}, "Admin"), nav, body));
+    $app.replaceChildren(h("div", {}, nav, body));
     ({ pay: payTab, book: bookTab, open: openTab, recent: recentTab })[tab](body).catch((e) => A().toast(e.message, true));
+  }
+
+  // ---------- Seite starten ----------
+  const $app = document.getElementById("app");
+  const $tools = document.getElementById("admintools");
+
+  function noAccess(text) {
+    const { h } = A();
+    $tools.replaceChildren();
+    $app.replaceChildren(h("div", { class: "card center", style: "margin-top:24px" },
+      h("p", { class: "big" }, "Kein Zugriff"),
+      h("p", {}, text),
+      h("a", { class: "btn primary", href: "./" }, "Zur App")));
+  }
+
+  // Auswahl "Mitglied ansehen": öffnet die App in der Ansicht dieses Mitglieds.
+  function memberViewer(names) {
+    const { h } = A();
+    const sel = h("select", { "aria-label": "Mitglied ansehen", class: "adminsel",
+      onchange: (e) => { if (e.target.value) location.href = "./#as=" + encodeURIComponent(e.target.value); } },
+      h("option", { value: "" }, "Mitglied ansehen …"), A().options(names));
+    $tools.replaceChildren(sel);
+  }
+
+  async function start() {
+    if (!A().hasToken()) return noAccess("Bitte öffne zuerst die App mit deinem persönlichen Link.");
+    try {
+      const [m, d] = await Promise.all([getMeta(), A().rpc("app_dashboard")]);
+      memberViewer(m.members);
+      render($app, d);
+    } catch (e) {
+      if (e.invalid) { A().forgetToken(); return noAccess("Dieser Link ist ungültig. Bitte die App mit deinem persönlichen Link öffnen."); }
+      if (e.forbidden) return noAccess("Dieser Bereich ist nur für den Admin. Du bist als normales Mitglied angemeldet.");
+      $app.replaceChildren(A().h("div", { class: "card center pad" }, A().h("p", {}, e.message), A().h("button", { class: "primary", onclick: start }, "Nochmal versuchen")));
+    }
   }
 
   // ---------- Zahlung erfassen ----------
@@ -235,7 +268,8 @@
       const det = h("div", { style: "display:none;padding:4px 0 8px" });
       return h("div", {},
         h("div", { class: "row" },
-          h("button", { class: "link", style: "padding-left:0", onclick: async () => {
+          h("a", { class: "small", href: "./#as=" + encodeURIComponent(x.name), "aria-label": "Ansicht von " + x.name }, "ansehen"),
+          h("button", { class: "link", style: "padding-left:0;flex:1;text-align:left", onclick: async () => {
             if (det.style.display === "none") {
               if (!lists.has(x.name)) lists.set(x.name, await A().rpc("app_admin_open_items", { p_member: x.name }));
               det.replaceChildren(...lists.get(x.name).map((i) => h("div", { class: "row small" }, h("span", {}, A().dateShort(i.date), " · ", i.category, i.sub ? " (" + A().stripGast(i.sub) + ")" : ""), h("span", {}, eur(i.open)))));
@@ -270,5 +304,7 @@
     h("p", { class: "muted small", style: "margin:8px 0 0" }, "Stornieren geht nur für unbezahlte Buchungen. Nichts wird gelöscht, nur als storniert markiert.")));
   }
 
-  window.Admin = { render };
+  A().hooks.reload = start;
+  A().hooks.noToken = () => noAccess("Dieser Link ist ungültig. Bitte die App mit deinem persönlichen Link öffnen.");
+  start();
 })();
