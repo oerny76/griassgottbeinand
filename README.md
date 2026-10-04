@@ -8,11 +8,11 @@ Ohne Build-Schritt: reines HTML, CSS und JavaScript. Daten liegen in Supabase (P
 | Datei | Zweck |
 |---|---|
 | `index.html`, `styles.css`, `common.js`, `app.js` | Mitglieder-App  |
-| `admin.js`, `paypal.js` | Admin-Tab in der App: Zahlungen, Buchungen, Offen, Letzte, Fehlen |
+| `admin.js`, `paypal.js` | Admin-Tab in der App: Zahlungen, Buchungen, Offen, Letzte |
 | `config.js` | Öffentliche Verbindungsdaten (URL, öffentlicher Schlüssel, PayPal-Name) |
 | `charts.js` | Statistik-Seite mit den Diagrammen |
 | `trend.js` | Rechenlogik für Durchschnitt und Tendenz der Abwesenheiten (reine Funktionen, mit `node` testbar) |
-| `db/` | SQL der Datenbankfunktionen (`app_stats.sql`, `app_stats_admin.sql`, `app_add_absence.sql`, `chair_target.sql`; die übrigen liegen noch nur in Supabase) |
+| `db/` | SQL der Datenbankfunktionen (`app_stats.sql`, `app_stats_absent.sql`, `app_add_absence.sql`, `chair_target.sql`; die übrigen liegen noch nur in Supabase) |
 | `docs/` | Redesign-Konzept und Prototyp (nur Entwurf, wird nicht ausgeliefert genutzt) |
 | `manifest.webmanifest`, `sw.js`, `icons/` | Installierbare App, Offline-Hülle |
 
@@ -42,7 +42,7 @@ Annahmen, die man kennen sollte:
 - **Tendenz (Kachel Abwesenheiten):** Durchschnitt der letzten 12 Monate gegen die 12 Monate davor, gerechnet aus den Anwesenden pro Abend. Gezeigt wird ein neutraler Pfeil (schräg hoch, waagerecht, schräg runter) mit Text und Zahlen. Pro Abend schwankt die Zahl stark (etwa 1 bis 7), deshalb heißt es erst ab einem Unterschied von 1 pro Abend "mehr" oder "weniger", sonst "ähnlich". Fehlen Vergleichsdaten, steht nur der Durchschnitt der letzten 12 Monate.
 - Das laufende Jahr ist unvollständig und mit * markiert.
 
-**Nur Admin:** Im Admin-Tab zeigt der Unterpunkt "Fehlen" eine Heatmap, wer bei den letzten zwölf Abenden fehlte (`db/app_stats_admin.sql`, Funktion prüft die Admin-Rolle). Einzelpersonen mit Namen sehen nur Admins.
+**Heatmap "Wer fehlt wie oft?":** Unter "Wer war dabei?" zeigt eine Heatmap mit Namen, wer bei den letzten zwölf Abenden fehlte (`db/app_stats_absent.sql`, für jedes Mitglied mit gültigem Code lesbar). Fällt diese Abfrage aus, fehlt nur die Karte.
 
 ## Sicherheit in Kürze
 
@@ -78,7 +78,6 @@ Teil der App, keine eigene Seite. Der Tab "Admin" erscheint unten in der Tab-Lei
 - **Buchen:** manuelle Buchungen, auch für alle Mitglieder (z. B. Geburtstagsbeitrag).
 - **Offen:** offene Posten je Mitglied und Abgleich mit dem PayPal-Saldo.
 - **Letzte:** letzte Buchungen, unbezahlte lassen sich stornieren.
-- **Fehlen:** Heatmap, wer bei den letzten zwölf Abenden fehlte.
 
 Tests der Logik: `node` mit `paypal.js` (reine Funktionen, kein Browser nötig).
 

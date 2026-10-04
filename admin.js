@@ -3,7 +3,7 @@
   "use strict";
   const L = window.StammtischLogic;
   const A = () => window.App;
-  const TABS = [["pay", "Zahlung"], ["book", "Buchen"], ["open", "Offen"], ["recent", "Letzte"], ["heat", "Fehlen"]];
+  const TABS = [["pay", "Zahlung"], ["book", "Buchen"], ["open", "Offen"], ["recent", "Letzte"]];
   let tab = "pay";
   let meta = null;
   let nextMeetingDate = null;
@@ -28,16 +28,11 @@
         onclick: () => { tab = id; render($box, d); },
       }, label)));
     $box.replaceChildren(h("div", {}, h("p", { class: "muted small", style: "margin:0 0 12px" }, "Nur du kannst hier buchen und verwalten."), nav, body));
-    ({ pay: payTab, book: bookTab, open: openTab, recent: recentTab, heat: heatTab })[tab](body).catch((e) => A().toast(e.message, true));
+    ({ pay: payTab, book: bookTab, open: openTab, recent: recentTab })[tab](body).catch((e) => A().toast(e.message, true));
   }
 
   // Wird von der App aufgerufen. d: Dashboard des Admins.
   window.AdminView = { render(d) { const box = A().h("div", {}); render(box, d); return box; } };
-
-  // ---------- Wer fehlt wie oft (nur Admin, mit Namen) ----------
-  async function heatTab(body) {
-    body.append(window.Charts.heatmapCard(await A().rpc("app_stats_admin")));
-  }
 
   // ---------- Zahlung erfassen ----------
   async function payTab(body) {

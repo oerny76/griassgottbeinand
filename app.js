@@ -458,7 +458,7 @@
   // Statistik (Gruppenwerte für alle): wird erst gebraucht geladen, Tab und Chronik teilen sich eine Anfrage.
   function getStats() {
     if (statsCache) return Promise.resolve(statsCache);
-    if (!statsReq) statsReq = rpc("app_stats").then((d) => { statsReq = null; return (statsCache = d); }, (e) => { statsReq = null; throw e; });
+    if (!statsReq) statsReq = Promise.all([rpc("app_stats"), rpc("app_stats_absent").catch(() => null)]).then(([d, grid]) => { statsReq = null; return (statsCache = Object.assign(d, { absent_grid: grid })); }, (e) => { statsReq = null; throw e; });
     return statsReq;
   }
 
