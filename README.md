@@ -20,7 +20,7 @@ Ohne Build-Schritt: reines HTML, CSS und JavaScript. Daten liegen in Supabase (P
 
 Untere Tab-Leiste mit vier Bereichen (Konzept: `docs/REDESIGN-KONZEPT.md`):
 
-- **Start:** Hauptkarte mit dem nächsten Termin ("in X Tagen"), Kacheln (Konto mit PayPal-Link, Kassenstand, Geburtstag, Abwesenheiten mit Durchschnitt pro Abend und Tendenz der letzten 12 Monate), Anmeldung, Vorsitz.
+- **Start:** Hauptkarte mit dem nächsten Termin ("in X Tagen") und den Aktionen direkt darin ("Ich komme nicht" oder "Doch teilnehmen", für den Vorsitz "Vorsitz übertragen" oder "Vorsitz ändern" und "Location festlegen" oder "Location ändern"; Auswahl und Eingabe klappen in der Karte auf), Kacheln (Konto mit PayPal-Link, Kassenstand, Geburtstag, Abwesenheiten mit Durchschnitt pro Abend und Tendenz der letzten 12 Monate), Anmeldung, Vorsitz.
 - **Statistik:** Anwesenheit pro Abend (12 oder 24 Abende), Kassenstand über die Zeit, Einnahmen pro Jahr, Wartezeit auf den Vorsitz, Abwesenheiten pro Abend und Jahr. Siehe unten.
 - **Konto:** eigene Posten und die offenen Beträge im Stammtisch.
 - **Chronik:** letzte Abende (mit Anzahl Anwesender und Gästen, sobald die Statistik geladen ist), Vorsitz-Historie, besuchte Locations, Abwesenheiten.

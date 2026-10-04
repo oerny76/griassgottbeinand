@@ -12,13 +12,17 @@
   const inDays = (iso) => Math.round((noonMs(iso) - noonMs(todayBerlin())) / 86400000);
   const whenText = (n) => n < 0 ? "vorbei" : n === 0 ? "heute" : n === 1 ? "morgen" : `in ${n} Tagen`;
 
-  // Hauptkarte: der nächste Termin auf einen Blick.
-  function heroCard(d) {
+  let heroPanel = null; // "chair" oder "loc": welches Fenster in der Hauptkarte offen ist (bleibt beim Neuzeichnen offen)
+
+  // Hauptkarte: der nächste Termin auf einen Blick, mit den Aktionen direkt darin (nicht beim Ansehen eines anderen Mitglieds).
+  function heroCard(d, readOnly) {
     const m = d.meeting;
+    const actions = readOnly ? [] : heroActions(d);
     if (!m) {
       return h("section", { class: "hero" },
         h("p", { class: "date" }, "Noch kein Termin"),
-        h("p", { class: "muted" }, "Der Vorsitz des letzten Abends legt den nächsten Termin fest."));
+        h("p", { class: "muted" }, "Der Vorsitz des letzten Abends legt den nächsten Termin fest."),
+        ...actions);
     }
     const loc = m.location;
     const web = loc && safeUrl(loc.url);
@@ -26,8 +30,11 @@
     const maps = loc ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([loc.name, addr].filter(Boolean).join(", "))}` : null;
     const day = new Date(m.date + "T12:00:00");
     const sameYear = day.getFullYear() === new Date(todayBerlin() + "T12:00:00").getFullYear();
+    const locked = m.deadline_passed && !d.me.is_admin;
     return h("section", { class: "hero" },
-      h("span", { class: "when" }, whenText(inDays(m.date))),
+      h("div", { class: "badges" },
+        h("span", { class: "when" }, whenText(inDays(m.date))),
+        d.my_absent && !readOnly ? h("span", { class: "state" }, "Du bist entschuldigt") : null),
       h("p", { class: "date" }, day.toLocaleDateString("de-DE", { weekday: "long" }) + ",",
         h("small", {}, day.toLocaleDateString("de-DE", sameYear ? { day: "numeric", month: "long" } : { day: "numeric", month: "long", year: "numeric" }))),
       h("p", {}, "Vorsitz: ", h("strong", {}, m.chair ? (m.chair === d.me.name ? "ich" : m.chair) : "noch offen")),
@@ -36,7 +43,75 @@
             maps && h("a", { href: maps, target: "_blank", rel: "noopener noreferrer" }, "Karte"),
             web && [" · ", h("a", { href: web, target: "_blank", rel: "noopener noreferrer" }, "Website")])
         : h("p", { class: "muted" }, "Location noch offen"),
-      h("p", { class: "muted small" }, m.deadline_passed ? "Die Anmeldefrist ist abgelaufen." : "Abmelden oder Gäste anmelden bis 19 Uhr am Stammtischtag."));
+      h("p", { class: "muted small" }, locked ? "Die Anmeldefrist ist abgelaufen. Bitte beim Admin melden." : m.deadline_passed ? "Die Anmeldefrist ist abgelaufen." : "Abmelden oder Gäste anmelden bis 19 Uhr am Stammtischtag."),
+      ...actions);
+  }
+
+  // Knöpfe in der Hauptkarte: Abmelden oder doch teilnehmen, Vorsitz, Location.
+  // Auswahl und Eingabe klappen direkt darunter auf. Es ist immer nur ein Fenster offen.
+  function heroActions(d) {
+    const m = d.meeting, me = d.me;
+    const locked = !!m && m.deadline_passed && !me.is_admin;
+    const panels = {};
+    if (me.can_set_next_chair) {
+      // Gibt es schon einen Termin mit Vorsitz, wird dieser Vorsitz übertragen. Das Datum bleibt dann wie es ist.
+      const changing = !!(me.has_upcoming && m && m.chair);
+      panels.chair = changing
+        ? { label: m.chair === me.name ? "Vorsitz übertragen" : "Vorsitz ändern",
+            build: () => h("div", { class: "stack" },
+              me.chair_change_until ? h("p", { class: "notice", style: "margin:0" }, `Du kannst den Vorsitz noch bis einschließlich ${dateShort(me.chair_change_until)} ändern. Danach nur noch ${m.chair}.`) : null,
+              chairPicker(d, true)) }
+        : { label: "Vorsitz festlegen",
+            build: () => h("div", {}, h("p", { class: "muted small", style: "margin:0 0 8px" }, "Noch kein Vorsitz für den nächsten Termin. Wähle das Mitglied:"), chairPicker(d, false)) };
+    }
+    if (me.can_set_location) panels.loc = { label: m && m.location ? "Location ändern" : "Location festlegen", build: () => locationForm(d) };
+
+    const toggles = {};
+    const panelBox = h("div", {});
+    const draw = () => {
+      const p = panels[heroPanel];
+      panelBox.replaceChildren(...(p ? [h("div", { class: "panel" }, p.build())] : []));
+      Object.entries(toggles).forEach(([k, b]) => b.setAttribute("aria-expanded", String(k === heroPanel)));
+    };
+    const buttons = [];
+    if (m) {
+      buttons.push(h("button", {
+        type: "button", class: "hbtn main", disabled: locked,
+        onclick: (e) => act(e.currentTarget,
+          () => rpc(d.my_absent ? "app_cancel_absence" : "app_add_absence"),
+          (r) => d.my_absent ? "Abmeldung zurückgezogen." : `Abwesenheit eingetragen (${euro.format(r.amount)}).`),
+      }, d.my_absent ? "Doch teilnehmen" : "Ich komme nicht"));
+    }
+    for (const key of ["chair", "loc"]) {
+      if (!panels[key]) continue;
+      toggles[key] = h("button", { type: "button", class: "hbtn alt", "aria-expanded": "false", onclick: () => { heroPanel = heroPanel === key ? null : key; draw(); } }, panels[key].label);
+      buttons.push(toggles[key]);
+    }
+    draw();
+    return [buttons.length ? h("div", { class: "actions" }, buttons) : null, panelBox];
+  }
+
+  // Eingabe der Location für den nächsten Termin (auch zum Ändern einer schon eingetragenen).
+  function locationForm(d) {
+    const cur = d.meeting && d.meeting.location;
+    const list = h("datalist", { id: "locList" });
+    rpc("app_locations").then((names) => names.forEach((n) => list.append(h("option", { value: n })))).catch(() => {});
+    const loc = h("input", { id: "loc", type: "text", list: "locList", maxlength: "80", placeholder: cur ? "Name der neuen Location" : "Name der Location", autocomplete: "off" });
+    const street = h("input", { type: "text", maxlength: "80", placeholder: "Straße und Hausnummer", autocomplete: "off" });
+    const zip = h("input", { type: "text", maxlength: "10", placeholder: "PLZ", inputmode: "numeric", autocomplete: "off" });
+    const city = h("input", { type: "text", maxlength: "60", placeholder: "Ort", autocomplete: "off" });
+    const url = h("input", { type: "url", maxlength: "200", placeholder: "Website (https://…)", autocomplete: "off" });
+    return h("div", { class: "stack" },
+      h("div", {}, h("label", { for: "loc" }, cur ? `Andere Location für den nächsten Termin (aktuell: ${cur.name})` : "Location für den nächsten Termin"), loc, list),
+      h("details", {}, h("summary", {}, "Neue Location? Adresse ergänzen"), h("div", { class: "stack", style: "margin-top:10px" }, street, h("div", { class: "inline" }, zip, city), url)),
+      h("button", {
+        class: "primary full",
+        onclick: (e) => {
+          if (!loc.value.trim()) { toast("Bitte die Location eintragen.", true); return; }
+          act(e.currentTarget, () => rpc("app_set_next_location", { p_location: loc.value, p_street: street.value, p_zip: zip.value, p_city: city.value, p_url: url.value }),
+            (r) => `Location eingetragen: ${r.location}.`);
+        },
+      }, cur ? "Location ändern" : "Location eintragen"));
   }
 
   function signupCard(d, readOnly) {
@@ -49,17 +124,8 @@
     }
     const locked = m.deadline_passed && !me.is_admin;
     const children = [];
-    if (locked) children.push(h("p", { class: "notice" }, "Die Frist ist abgelaufen (19 Uhr am Stammtischtag). Bitte beim Admin melden."));
+    if (locked) children.push(h("p", { class: "notice" }, "Gäste lassen sich nach Fristende (19 Uhr am Stammtischtag) nicht mehr ändern. Bitte beim Admin melden."));
 
-    const absBtn = h("button", {
-      class: d.my_absent ? "full" : "primary full", disabled: locked,
-      onclick: (e) => act(e.currentTarget,
-        () => rpc(d.my_absent ? "app_cancel_absence" : "app_add_absence"),
-        (r) => d.my_absent ? "Abmeldung zurückgezogen." : `Abwesenheit eingetragen (${euro.format(r.amount)}).`),
-    }, d.my_absent ? "Abmeldung zurückziehen" : "Ich komme nicht");
-    children.push(d.my_absent ? h("p", {}, h("span", { class: "chip" }, "Du bist entschuldigt")) : null, absBtn);
-
-    children.push(h("hr", { style: "border:0;border-top:1px solid var(--line);margin:14px 0" }));
     children.push(h("label", { for: "guest" }, "Gast mitbringen"));
     const input = h("input", { id: "guest", type: "text", maxlength: "60", placeholder: "Name des Gastes", autocomplete: "off", disabled: locked });
     const addBtn = h("button", {
@@ -76,7 +142,7 @@
         h("div", { class: "row" }, h("span", {}, stripGast(g)),
           h("button", { class: "link", disabled: locked, onclick: (e) => act(e.currentTarget, () => rpc("app_cancel_guest", { p_guest: stripGast(g) }), "Gast entfernt.") }, "Entfernen")))));
     }
-    return card("Deine Anmeldung", ...children);
+    return card("Gäste", ...children);
   }
 
   function whoCard(d) {
@@ -146,55 +212,6 @@
       list,
       changing ? null : h("div", {}, h("label", { for: "nextDate" }, "Datum (leer lassen: erster Freitag im Folgemonat)"), date),
       btn);
-  }
-
-  function chairCard(d) {
-    const me = d.me, parts = [];
-    if (me.can_set_next_chair) {
-      // Gibt es schon einen Termin mit Vorsitz, wird dieser Vorsitz übertragen. Das Datum bleibt dann wie es ist.
-      const changing = !!(me.has_upcoming && d.meeting && d.meeting.chair);
-      if (changing) {
-        const mine = d.meeting.chair === me.name;
-        const panel = h("div", { style: "display:none;margin-top:12px" }, chairPicker(d, true));
-        const open = h("button", {
-          class: "full", style: "flex:0 0 auto;width:auto", "aria-expanded": "false",
-          onclick: (e) => {
-            const shown = panel.style.display !== "none";
-            panel.style.display = shown ? "none" : "";
-            e.currentTarget.setAttribute("aria-expanded", String(!shown));
-          },
-        }, mine ? "Vorsitz übertragen" : "Vorsitz ändern");
-        parts.push(h("div", {},
-          h("div", { class: "row", style: "border:0;padding-top:0" },
-            h("span", {}, "Vorsitz: ", h("strong", {}, mine ? "ich" : d.meeting.chair)), open),
-          me.chair_change_until ? h("p", { class: "notice", style: "margin:0" }, `Du kannst den Vorsitz noch bis einschließlich ${dateShort(me.chair_change_until)} ändern. Danach nur noch ${d.meeting.chair}.`) : null,
-          panel));
-      } else {
-        parts.push(h("div", {}, h("p", { class: "muted small", style: "margin:0 0 8px" }, "Noch kein Vorsitz für den nächsten Termin. Wähle das Mitglied:"), chairPicker(d, false)));
-      }
-    }
-    if (me.can_set_location) {
-      const list = h("datalist", { id: "locList" });
-      rpc("app_locations").then((names) => names.forEach((n) => list.append(h("option", { value: n })))).catch(() => {});
-      const loc = h("input", { id: "loc", type: "text", list: "locList", maxlength: "80", placeholder: "Name der Location", autocomplete: "off" });
-      const street = h("input", { type: "text", maxlength: "80", placeholder: "Straße und Hausnummer", autocomplete: "off" });
-      const zip = h("input", { type: "text", maxlength: "10", placeholder: "PLZ", inputmode: "numeric", autocomplete: "off" });
-      const city = h("input", { type: "text", maxlength: "60", placeholder: "Ort", autocomplete: "off" });
-      const url = h("input", { type: "url", maxlength: "200", placeholder: "Website (https://…)", autocomplete: "off" });
-      parts.push(
-        h("div", { class: "stack", style: parts.length ? "margin-top:18px" : "" },
-          h("div", {}, h("label", { for: "loc" }, "Location für den nächsten Termin"), loc, list),
-          h("details", {}, h("summary", {}, "Neue Location? Adresse ergänzen"), h("div", { class: "stack", style: "margin-top:10px" }, street, h("div", { class: "inline" }, zip, city), url)),
-          h("button", {
-            class: "primary full",
-            onclick: (e) => {
-              if (!loc.value.trim()) { toast("Bitte die Location eintragen.", true); return; }
-              act(e.currentTarget, () => rpc("app_set_next_location", { p_location: loc.value, p_street: street.value, p_zip: zip.value, p_city: city.value, p_url: url.value }),
-                (r) => `Location eingetragen: ${r.location}.`);
-            },
-          }, "Location eintragen")));
-    }
-    return card("Vorsitz", ...parts);
   }
 
   // ---------- Nur für Admins: Ansicht wechseln ----------
@@ -472,11 +489,10 @@
     let d = own, readOnly = false;
     if (mode === "as" && as) { d = Object.assign({}, as.dashboard, { overview: as.overview }); readOnly = true; }
     if (mode === "plain") d = Object.assign({}, own, { me: Object.assign({}, own.me, { is_admin: false, can_set_next_chair: false, can_set_location: false }) });
-    const canChair = !readOnly && (d.me.can_set_next_chair || d.me.can_set_location);
     const today = new Date(todayBerlin() + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
     // Nur der geöffnete Tab wird gebaut (der Statistik-Tab lädt Daten).
     const pages = {
-      start: () => [heroCard(d), tilesBlock(d, goTab), signupCard(d, readOnly), readOnly ? actAsPanel(d) : null, whoCard(d), canChair ? chairCard(d) : null],
+      start: () => [heroCard(d, readOnly), tilesBlock(d, goTab), signupCard(d, readOnly), readOnly ? actAsPanel(d) : null, whoCard(d)],
       stat: () => [statsPage(d)],
       konto: () => [accountCard(d), openCard(d)],
       chronik: () => [recentCard(d), chairsCard(d), locationsCard(d), absencesCard(d)],
