@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Redesign-Vorschläge Griassgottbeinand</title>
+<style>
+  /* ===== Gemeinsame Basis ===== */
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #d9d6cf; color: #1b1b1b; -webkit-tap-highlight-color: transparent; }
+  .selector { position: sticky; top: 0; z-index: 50; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; padding: 10px 8px; background: #2a2a28; }
+  .selector button { font: inherit; font-size: .85rem; font-weight: 600; padding: 7px 12px; border-radius: 999px; border: 1px solid #55554f; background: transparent; color: #e8e6df; cursor: pointer; }
+  .selector button[aria-pressed="true"] { background: #f4c542; color: #2a2200; border-color: #f4c542; }
+  .stage { padding: 18px 8px 40px; }
+  .phone { width: 100%; max-width: 390px; margin: 0 auto; border-radius: 28px; overflow: hidden; background: var(--bg); color: var(--ink); position: relative; box-shadow: 0 12px 40px rgba(0,0,0,.25); }
+  .pad { padding: 16px; }
+  button, input { font: inherit; }
+  .muted { color: var(--muted); }
+  .small { font-size: .8125rem; }
+  h1, h2, h3, p { margin: 0; }
+  svg text { font-family: inherit; }
+  #tip { position: fixed; z-index: 100; pointer-events: none; padding: 8px 10px; border-radius: 10px; font-size: .8125rem; line-height: 1.35; background: var(--tipbg, #1b1b1b); color: var(--tipink, #fff); box-shadow: 0 6px 20px rgba(0,0,0,.3); max-width: 220px; opacity: 0; transition: opacity .1s; }
+  #tip.on { opacity: 1; }
+  #tip b { display: block; font-size: 1rem; }
+  .key { display: inline-block; width: 14px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+  table.tv { width: 100%; border-collapse: collapse; font-size: .8125rem; margin-top: 10px; }
+  table.tv th, table.tv td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+  table.tv th { color: var(--muted); font-weight: 600; }
+
+  /* ===== Themes (Farben geprüft: validate_palette.js) ===== */
+  .t-light { --bg: #f6efe2; --card: #ffffff; --ink: #1d2a25; --muted: #66726c; --line: #e6dfd0; --brand: #1f6f5c; --accent: #f4c542; --accent-ink: #2a2200;
+             --s1: #1f8a70; --s2: #e8a200; --s3: #e2573d; --s4: #6b5bd2; --wash: #d9e8e1; --seq-hi: #1f6f5c; --seq-lo: #e4efe9; --grid: #e6dfd0; --tipbg: #1d2a25; --tipink: #fff; }
+  .t-dark  { --bg: #0f1a17; --card: #17261f; --ink: #ecf1ee; --muted: #9fb0a8; --line: #26382f; --brand: #3fae93; --accent: #f4c542; --accent-ink: #2a2200;
+             --s1: #22a479; --s2: #b78a0b; --s3: #c65959; --s4: #7971d0; --wash: #213a31; --seq-hi: #3fae93; --seq-lo: #1d3128; --grid: #26382f; --tipbg: #ecf1ee; --tipink: #0f1a17; }
+  .t-paper { --bg: #fbfaf7; --card: #fbfaf7; --ink: #111111; --muted: #6d6a63; --line: #d9d5cb; --brand: #111111; --accent: #e2573d; --accent-ink: #ffffff;
+             --s1: #1f8a70; --s2: #e8a200; --s3: #e2573d; --s4: #6b5bd2; --wash: #e9e5da; --seq-hi: #111111; --seq-lo: #e9e5da; --grid: #d9d5cb; --tipbg: #111; --tipink: #fff; }
+
+  /* ===== A: Biergarten ===== */
+  .A .hero { margin: 0 16px; border-radius: 24px; padding: 20px; color: #fff; position: relative; overflow: hidden;
+    background: #1f5c4a; }
+  .A .hero::before { content: ""; position: absolute; inset: 0; opacity: .13;
+    background: linear-gradient(45deg, #fff 25%, transparent 25%) 0 0/34px 34px, linear-gradient(-45deg, #fff 25%, transparent 25%) 0 0/34px 34px; mask-image: linear-gradient(180deg, transparent 20%, #000 100%); -webkit-mask-image: linear-gradient(180deg, transparent 20%, #000 100%); }
+  .A .hero > * { position: relative; }
+  .A .chip { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: .8rem; font-weight: 700; background: var(--accent); color: var(--accent-ink); }
+  .A .date { font-size: 2.3rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.05; margin: 10px 0 4px; }
+  .A .cta { width: 100%; margin-top: 16px; padding: 14px; border-radius: 16px; border: 0; background: #fff; color: #1f5c4a; font-weight: 700; }
+  .A .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 16px; }
+  .A .tile { background: var(--card); border-radius: 20px; padding: 14px; box-shadow: 0 1px 0 var(--line), 0 6px 18px rgba(60,40,10,.06); }
+  .A .tile.wide { grid-column: span 2; }
+  .A .num { font-size: 1.9rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+  .A .tabbar { position: sticky; bottom: 0; display: flex; justify-content: space-around; padding: 10px 6px 14px; margin-top: 8px; background: var(--card); border-top: 1px solid var(--line); }
+  .A .tabbar span { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .7rem; color: var(--muted); font-weight: 600; }
+  .A .tabbar span.on { color: var(--brand); }
+  .A .tabbar i { font-style: normal; font-size: 1.25rem; }
+
+  /* ===== B: Bento dunkel ===== */
+  .B .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 14px 14px; }
+  .B .tile { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 14px; min-width: 0; }
+  .B .tile.wide { grid-column: span 2; }
+  .B .num { font-size: 2rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; }
+  .B .big { font-size: 4.2rem; font-weight: 800; letter-spacing: -.05em; line-height: .95; }
+  .B .pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; font-size: .78rem; font-weight: 700; background: var(--wash); color: var(--ink); }
+  .B .cta { margin-top: 12px; width: 100%; padding: 13px; border-radius: 14px; border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 800; }
+  .B .glow { background: radial-gradient(120% 90% at 100% 0%, rgba(63,174,147,.28), transparent 60%), var(--card); }
+
+  /* ===== C: Chronik ===== */
+  .C { letter-spacing: -.005em; }
+  .C .rule { border: 0; border-top: 2px solid var(--ink); margin: 0; }
+  .C .eyebrow { font-size: .72rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+  .C .giant { font-size: 5.4rem; font-weight: 900; letter-spacing: -.06em; line-height: .86; }
+  .C .row2 { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .C .stat { font-size: 2.6rem; font-weight: 900; letter-spacing: -.05em; line-height: 1; }
+  .C .cta { width: 100%; margin-top: 14px; padding: 14px; border: 2px solid var(--ink); border-radius: 0; background: transparent; color: var(--ink); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; font-size: .85rem; }
+  .C .cta.fill { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+  /* ===== Statistik ===== */
+  .S .top { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 6px; }
+  .S h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; }
+  .S .themebtn { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px; padding: 6px 12px; font-weight: 600; font-size: .8rem; cursor: pointer; }
+  .S .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 6px 16px 4px; }
+  .S .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 10px; min-width: 0; }
+  .S .kpi .v { font-size: 1.45rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; margin-top: 2px; }
+  .S .kpi .d { font-size: .72rem; color: var(--muted); margin-top: 2px; line-height: 1.25; }
+  .S .card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 14px 14px 12px; margin: 10px 16px; }
+  .S .card h2 { font-size: 1rem; font-weight: 800; letter-spacing: -.01em; }
+  .S .card .sub { font-size: .8125rem; color: var(--muted); margin: 2px 0 8px; }
+  .S .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .S .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; flex: 0 0 auto; }
+  .S .seg button { border: 0; background: transparent; color: var(--muted); font-weight: 700; font-size: .75rem; padding: 4px 10px; border-radius: 999px; cursor: pointer; }
+  .S .seg button[aria-pressed="true"] { background: var(--brand); color: #fff; }
+  .S .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .78rem; color: var(--muted); margin: 2px 0 4px; }
+  .S .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .S .tbl { background: transparent; border: 0; color: var(--muted); font-size: .75rem; text-decoration: underline; cursor: pointer; padding: 6px 0 0; }
+  .S .fine { text-align: center; padding: 8px 20px 26px; font-size: .75rem; color: var(--muted); }
+  .S [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .S .mark { transition: opacity .12s; }
+  .S .hl { opacity: 1; } .S svg:has(.mark:hover) .mark:not(:hover) { opacity: .55; }
+</style>
+</head>
+<body>
+<div class="selector" role="tablist" aria-label="Entwürfe">
+  <button data-v="A" aria-pressed="true">A · Biergarten</button>
+  <button data-v="B" aria-pressed="false">B · Bento dunkel</button>
+  <button data-v="C" aria-pressed="false">C · Chronik</button>
+  <button data-v="S" aria-pressed="false">Statistik (interaktiv)</button>
+</div>
+<div class="stage"><div class="phone" id="phone"></div></div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+"use strict";
+/* ===== Echte Daten aus deiner Datenbank (Stand 04.10.2026) ===== */
+const D = {
+  att: [{"a":10,"d":"2024-11-01","g":1},{"a":12,"d":"2024-12-06","g":1},{"a":8,"d":"2025-01-03","g":0},{"a":11,"d":"2025-02-07","g":1},{"a":8,"d":"2025-03-07","g":0},{"a":11,"d":"2025-04-04","g":0},{"a":7,"d":"2025-05-02","g":0},{"a":12,"d":"2025-06-06","g":0},{"a":9,"d":"2025-07-04","g":0},{"a":11,"d":"2025-08-01","g":0},{"a":9,"d":"2025-09-05","g":0},{"a":8,"d":"2025-10-03","g":0},{"a":12,"d":"2025-11-07","g":1},{"a":11,"d":"2025-12-05","g":0},{"a":7,"d":"2026-01-02","g":0},{"a":11,"d":"2026-02-06","g":0},{"a":12,"d":"2026-03-06","g":0},{"a":6,"d":"2026-04-03","g":0},{"a":6,"d":"2026-05-01","g":0},{"a":12,"d":"2026-06-05","g":0},{"a":11,"d":"2026-07-03","g":0},{"a":6,"d":"2026-08-07","g":1},{"a":7,"d":"2026-09-04","g":0},{"a":12,"d":"2026-10-02","g":1}],
+  absent12: {Mitglied A:"011001001110",Mitglied B:"000000000100",Mitglied C:"000101100000",Mitglied D:"000010000000",Mitglied E:"001000100101",Mitglied F:"001000100010",Mitglied G:"001000100010",Mitglied H:"000001010100",Mitglied I:"000000000100",Mitglied J:"000101100100",Mitglied K:"001001000010",Mitglied L:"110001100010",Mitglied M:"001001101110"},
+  dates12: ["2025-11-07","2025-12-05","2026-01-02","2026-02-06","2026-03-06","2026-04-03","2026-05-01","2026-06-05","2026-07-03","2026-08-07","2026-09-04","2026-10-02"],
+  cash: {"2023-01":2007,"2023-02":2077,"2023-03":2097,"2023-04":2227,"2023-05":2277,"2023-06":2297,"2023-07":2637,"2023-08":3867,"2023-09":127,"2023-10":157,"2023-11":177,"2023-12":387,"2024-01":827,"2024-02":857,"2024-03":1277,"2024-04":1307,"2024-05":1327,"2024-06":1567,"2024-08":1657,"2024-09":2,"2024-11":32,"2024-12":42,"2025-01":782,"2025-02":802,"2025-03":832,"2025-04":852,"2025-05":952,"2025-06":962,"2025-07":1512,"2025-08":1602,"2025-09":1632,"2025-10":1752,"2025-11":1802,"2025-12":1952,"2026-01":377.5,"2026-02":411.5,"2026-03":421.5,"2026-04":511.5,"2026-05":561.5,"2026-06":611.5,"2026-08":741.5,"2026-09":771.5,"2026-10":791.5},
+  inc: {2021:{Geburtstag:640,Abwesenheit:550,Sonderumlage:0,Gäste:0},2022:{Geburtstag:620,Abwesenheit:360,Sonderumlage:0,Gäste:50},2023:{Geburtstag:750,Abwesenheit:300,Sonderumlage:2400,Gäste:100},2024:{Geburtstag:710,Abwesenheit:260,Sonderumlage:0,Gäste:30},2025:{Geburtstag:730,Abwesenheit:390,Sonderumlage:650,Gäste:20},2026:{Geburtstag:680,Abwesenheit:450,Sonderumlage:744,Gäste:20}},
+  yr: {2015:44,2016:29,2017:35,2018:35,2019:33,2020:27,2021:45,2022:36,2023:30,2024:26,2025:39,2026:40},
+  chairs: [["Mitglied J","2025-04-04"],["Mitglied M","2025-08-01"],["Mitglied G","2025-10-03"],["Mitglied H","2026-02-06"],["Mitglied A","2026-03-06"],["Mitglied I","2026-04-03"],["Mitglied D","2026-05-01"],["Mitglied F","2026-06-05"],["Mitglied L","2026-07-03"],["Mitglied C","2026-08-07"],["Mitglied E","2026-09-04"],["Mitglied K","2026-10-02"]],
+  today: "2026-10-04", next: "2026-11-06"
+};
+const TODAY = new Date(D.today + "T12:00:00");
+const dd = (iso) => new Date(iso + "T12:00:00");
+const fmt = (iso, o) => dd(iso).toLocaleDateString("de-DE", o);
+const eur = (n, f = 0) => Number(n).toLocaleString("de-DE", { minimumFractionDigits: f, maximumFractionDigits: f }) + " €";
+const days = (a, b) => Math.round((b - a) / 86400000);
+const NS = "http://www.w3.org/2000/svg";
+function S(tag, attrs, ...kids) { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs || {})) if (v != null) e.setAttribute(k, v); for (const x of kids.flat()) if (x != null) e.append(x.nodeType ? x : document.createTextNode(x)); return e; }
+function H(tag, attrs, ...kids) { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs || {})) { if (v == null || v === false) continue; if (k === "class") e.className = v; else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v === true ? "" : v); } for (const x of kids.flat()) if (x != null && x !== false) e.append(x.nodeType ? x : document.createTextNode(String(x))); return e; }
+const mean = (a) => a.reduce((s, x) => s + x, 0) / a.length;
+const att12 = D.att.slice(-12).map((x) => x.a), attAll = D.att.map((x) => x.a);
+const daysToNext = days(TODAY, dd(D.next));
+
+/* ===== Tooltip (nur textContent, nie innerHTML) ===== */
+const tip = document.getElementById("tip");
+function showTip(ev, strong, lines) {
+  tip.replaceChildren(H("b", {}, strong), ...lines.map((l) => H("span", {}, l, H("br"))));
+  tip.classList.add("on");
+  const r = tip.getBoundingClientRect(); const x = Math.min(window.innerWidth - r.width - 8, Math.max(8, ev.clientX - r.width / 2)); const y = ev.clientY - r.height - 14;
+  tip.style.left = x + "px"; tip.style.top = (y < 8 ? ev.clientY + 18 : y) + "px";
+}
+const hideTip = () => tip.classList.remove("on");
+function hit(el, strong, lines) { el.setAttribute("tabindex", "0"); el.setAttribute("role", "img"); el.setAttribute("aria-label", strong + ": " + lines.join(", ")); el.addEventListener("pointermove", (e) => showTip(e, strong, lines)); el.addEventListener("pointerleave", hideTip); el.addEventListener("pointerdown", (e) => showTip(e, strong, lines)); el.addEventListener("focus", () => { const r = el.getBoundingClientRect(); showTip({ clientX: r.x + r.width / 2, clientY: r.y }, strong, lines); }); el.addEventListener("blur", hideTip); }
+
+/* ===== Diagramme (reines SVG, keine Bibliothek) ===== */
+const W = 342;
+function rrTop(x, y, w, h, r) { r = Math.min(r, w / 2, h); return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`; }
+
+function sparkline(vals, w, h, color) {
+  const mn = Math.min(...vals), mx = Math.max(...vals), sx = (i) => 2 + i * (w - 4) / (vals.length - 1), sy = (v) => h - 3 - (v - mn) / (mx - mn || 1) * (h - 8);
+  const d = vals.map((v, i) => (i ? "L" : "M") + sx(i).toFixed(1) + "," + sy(v).toFixed(1)).join("");
+  return S("svg", { viewBox: `0 0 ${w} ${h}`, width: "100%", height: h, "aria-hidden": "true" },
+    S("path", { d, fill: "none", stroke: color, "stroke-width": 2, "stroke-linecap": "round", "stroke-linejoin": "round" }),
+    S("circle", { cx: sx(vals.length - 1), cy: sy(vals.at(-1)), r: 4, fill: color, stroke: "var(--card)", "stroke-width": 2 }));
+}
+
+function attendanceChart(n, mini) {
+  const data = D.att.slice(-n), H_ = mini ? 92 : 190, pl = mini ? 4 : 26, pb = mini ? 4 : 20, pt = 16, pr = 4;
+  const iw = (mini ? 300 : W) - pl - pr, band = iw / data.length, bw = Math.min(mini ? 8 : 14, band * 0.62), ymax = 14, sy = (v) => pt + (H_ - pt - pb) * (1 - v / ymax);
+  const svg = S("svg", { viewBox: `0 0 ${mini ? 300 : W} ${H_}`, width: "100%", role: "group", "aria-label": "Anwesende pro Stammtisch" });
+  if (!mini) [0, 5, 10].forEach((t) => { svg.append(S("line", { x1: pl, x2: pl + iw, y1: sy(t), y2: sy(t), stroke: "var(--grid)", "stroke-width": 1 }), S("text", { x: pl - 6, y: sy(t) + 4, "text-anchor": "end", "font-size": 10, fill: "var(--muted)" }, t)); });
+  svg.append(S("line", { x1: pl, x2: pl + iw, y1: sy(13), y2: sy(13), stroke: "var(--grid)", "stroke-width": 1 }));
+  if (!mini) svg.append(S("text", { x: pl + iw, y: sy(13) - 4, "text-anchor": "end", "font-size": 10, fill: "var(--muted)" }, "13 Mitglieder"));
+  const mx = Math.max(...data.map((x) => x.a)), mn = Math.min(...data.map((x) => x.a));
+  data.forEach((x, i) => {
+    const cx = pl + band * i + band / 2, x0 = cx - bw / 2, hA = sy(0) - sy(x.a), hG = x.g ? (sy(0) - sy(x.g)) : 0;
+    const g = S("g", { class: "mark" });
+    g.append(S("path", { d: rrTop(x0, sy(x.a), bw, hA, x.g ? 0 : 4), fill: "var(--s1)" }));
+    if (x.g) g.append(S("path", { d: rrTop(x0, sy(x.a + x.g), bw, Math.max(2, sy(x.a) - sy(x.a + x.g) - 2), 4), fill: "var(--s2)" }));
+    g.append(S("rect", { x: cx - band / 2, y: 0, width: band, height: H_, fill: "transparent" }));
+    if (!mini) {
+      const absNames = x.d >= D.dates12[0] ? Object.entries(D.absent12).filter(([, s]) => s[D.dates12.indexOf(x.d)] === "1").map(([k]) => k) : null;
+      hit(g, fmt(x.d, { weekday: "short", day: "numeric", month: "long", year: "numeric" }), [x.a + " Mitglieder da", x.g ? x.g + " Gast" : "kein Gast", absNames ? "Fehlten: " + absNames.join(", ") : (13 - x.a) + " fehlten"]);
+      if (x.a === mx || x.a === mn) svg.append(S("text", { x: cx, y: sy(x.a + (x.g || 0)) - (x.g ? 8 : 5), "text-anchor": "middle", "font-size": 11, "font-weight": 700, fill: "var(--ink)" }, x.a));
+      if (i % Math.ceil(data.length / 5) === 0 || i === data.length - 1) svg.append(S("text", { x: cx, y: H_ - 4, "text-anchor": "middle", "font-size": 10, fill: "var(--muted)" }, fmt(x.d, { month: "short", year: "2-digit" })));
+    }
+    svg.append(g);
+  });
+  return svg;
+}
+
+function heatmap() {
+  const names = Object.keys(D.absent12).sort((a, b) => [...D.absent12[b]].filter((c) => c === "1").length - [...D.absent12[a]].filter((c) => c === "1").length || a.localeCompare(b, "de"));
+  const pl = 62, pr = 28, top = 18, cell = (W - pl - pr) / 12, ch = 21, svg = S("svg", { viewBox: `0 0 ${W} ${top + names.length * ch + 4}`, width: "100%", role: "group", "aria-label": "Wer fehlte bei den letzten zwölf Stammtischen" });
+  D.dates12.forEach((d, i) => svg.append(S("text", { x: pl + cell * i + cell / 2, y: 11, "text-anchor": "middle", "font-size": 10, fill: "var(--muted)" }, fmt(d, { month: "narrow" }))));
+  names.forEach((nm, r) => {
+    const s = D.absent12[nm], cnt = [...s].filter((c) => c === "1").length, y = top + r * ch;
+    svg.append(S("text", { x: pl - 8, y: y + ch / 2 + 4, "text-anchor": "end", "font-size": 12, fill: "var(--ink)" }, nm), S("text", { x: W - 2, y: y + ch / 2 + 4, "text-anchor": "end", "font-size": 11, "font-weight": 700, fill: "var(--muted)" }, cnt + "×"));
+    [...s].forEach((c, i) => {
+      const rect = S("rect", { class: "mark", x: pl + cell * i + 1, y: y + 1, width: cell - 2, height: ch - 2, rx: 4, fill: c === "1" ? "var(--seq-hi)" : "var(--seq-lo)" });
+      hit(rect, nm + " · " + fmt(D.dates12[i], { day: "numeric", month: "long", year: "numeric" }), [c === "1" ? "fehlte" : "war dabei"]); svg.append(rect);
+    });
+  });
+  return svg;
+}
+
+function cashChart() {
+  const keys = []; for (let y = 2023, m = 1; !(y === 2026 && m === 11); m++) { if (m > 12) { m = 1; y++; } keys.push(y + "-" + String(m).padStart(2, "0")); if (y === 2026 && m === 10) break; }
+  let last = 0; const vals = keys.map((k) => { if (D.cash[k] != null) last = D.cash[k]; return last; });
+  const H_ = 190, pl = 34, pr = 14, pt = 16, pb = 20, iw = W - pl - pr, sx = (i) => pl + i * iw / (keys.length - 1), sy = (v) => pt + (H_ - pt - pb) * (1 - v / 4000);
+  const svg = S("svg", { viewBox: `0 0 ${W} ${H_}`, width: "100%", role: "group", "aria-label": "Kassenstand 2023 bis 2026" });
+  [0, 2000, 4000].forEach((t) => svg.append(S("line", { x1: pl, x2: W - pr, y1: sy(t), y2: sy(t), stroke: "var(--grid)" }), S("text", { x: pl - 6, y: sy(t) + 4, "text-anchor": "end", "font-size": 10, fill: "var(--muted)" }, t ? (t / 1000) + " Tsd." : "0")));
+  [0, 12, 24, 36].forEach((i) => svg.append(S("text", { x: sx(i), y: H_ - 4, "text-anchor": i === 0 ? "start" : "middle", "font-size": 10, fill: "var(--muted)" }, keys[i].slice(0, 4))));
+  const line = vals.map((v, i) => (i ? "L" : "M") + sx(i).toFixed(1) + "," + sy(v).toFixed(1)).join("");
+  svg.append(S("path", { d: line + `L${sx(vals.length - 1)},${sy(0)}L${sx(0)},${sy(0)}Z`, fill: "var(--s1)", opacity: 0.1 }), S("path", { d: line, fill: "none", stroke: "var(--s1)", "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+  const notes = [["2023-08", "Kos-Umlage", -2, -10], ["2026-01", "Malta-Flüge", 4, 20]];
+  notes.forEach(([k, label, dx, dy]) => { const i = keys.indexOf(k); svg.append(S("circle", { cx: sx(i), cy: sy(vals[i]), r: 4, fill: "var(--s3)", stroke: "var(--card)", "stroke-width": 2 }), S("text", { x: sx(i) + dx, y: sy(vals[i]) + dy, "text-anchor": i < 20 ? "start" : "end", "font-size": 10.5, "font-weight": 700, fill: "var(--ink)" }, label)); });
+  const cross = S("line", { y1: pt, y2: sy(0), stroke: "var(--muted)", "stroke-width": 1, opacity: 0 }), dot = S("circle", { r: 4.5, fill: "var(--s1)", stroke: "var(--card)", "stroke-width": 2, opacity: 0 });
+  svg.append(cross, dot, S("circle", { cx: sx(vals.length - 1), cy: sy(vals.at(-1)), r: 4, fill: "var(--s1)", stroke: "var(--card)", "stroke-width": 2 }), S("text", { x: sx(vals.length - 1) - 6, y: sy(vals.at(-1)) - 9, "text-anchor": "end", "font-size": 11, "font-weight": 700, fill: "var(--ink)" }, eur(vals.at(-1))));
+  const ov = S("rect", { x: pl, y: 0, width: iw, height: H_, fill: "transparent", tabindex: 0, "aria-label": "Kassenstand je Monat" });
+  const at = (ev) => { const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * (W / r.width), i = Math.max(0, Math.min(keys.length - 1, Math.round((px - pl) / iw * (keys.length - 1)))); cross.setAttribute("x1", sx(i)); cross.setAttribute("x2", sx(i)); cross.setAttribute("opacity", 1); dot.setAttribute("cx", sx(i)); dot.setAttribute("cy", sy(vals[i])); dot.setAttribute("opacity", 1); showTip(ev, eur(vals[i], vals[i] % 1 ? 2 : 0), [fmt(keys[i] + "-01", { month: "long", year: "numeric" }), D.cash[keys[i]] == null ? "(Stand vom Vormonat)" : "PayPal-Saldo Monatsende"]); };
+  ov.addEventListener("pointermove", at); ov.addEventListener("pointerdown", at); ov.addEventListener("pointerleave", () => { hideTip(); cross.setAttribute("opacity", 0); dot.setAttribute("opacity", 0); });
+  svg.append(ov); return { svg, rows: keys.filter((_, i) => i % 3 === 0).map((k) => [fmt(k + "-01", { month: "short", year: "numeric" }), eur(D.cash[k] ?? vals[keys.indexOf(k)])]) };
+}
+
+const CATS = [["Geburtstag", "--s1"], ["Abwesenheit", "--s2"], ["Sonderumlage", "--s3"], ["Gäste", "--s4"]];
+function incomeChart() {
+  const years = Object.keys(D.inc), H_ = 200, pl = 34, pr = 6, pt = 20, pb = 20, iw = W - pl - pr, band = iw / years.length, bw = 24, sy = (v) => pt + (H_ - pt - pb) * (1 - v / 4000);
+  const svg = S("svg", { viewBox: `0 0 ${W} ${H_}`, width: "100%", role: "group", "aria-label": "Einnahmen pro Jahr nach Art" });
+  [0, 1000, 2000, 3000, 4000].forEach((t) => svg.append(S("line", { x1: pl, x2: W - pr, y1: sy(t), y2: sy(t), stroke: "var(--grid)" }), S("text", { x: pl - 6, y: sy(t) + 4, "text-anchor": "end", "font-size": 10, fill: "var(--muted)" }, t ? (t / 1000) + " Tsd." : "0")));
+  years.forEach((y, i) => {
+    let acc = 0; const cx = pl + band * i + band / 2, tot = Object.values(D.inc[y]).reduce((s, v) => s + v, 0), segs = CATS.filter(([c]) => D.inc[y][c] > 0);
+    const g = S("g", { class: "mark" });
+    segs.forEach(([c, v], k) => { const val = D.inc[y][c], y1 = sy(acc + val), y0 = sy(acc), isTop = k === segs.length - 1;
+      g.append(S("path", { d: rrTop(cx - bw / 2, y1, bw, Math.max(1.5, y0 - y1 - (k > 0 ? 2 : 0)), isTop ? 4 : 0), fill: "var(" + v + ")" }));
+      acc += val; });
+    g.append(S("rect", { x: cx - band / 2, y: 0, width: band, height: H_, fill: "transparent" }));
+    hit(g, y + " · " + eur(tot), CATS.filter(([c]) => D.inc[y][c] > 0).reverse().map(([c]) => c + ": " + eur(D.inc[y][c])));
+    svg.append(g, S("text", { x: cx, y: sy(tot) - 6, "text-anchor": "middle", "font-size": 10.5, "font-weight": 700, fill: "var(--ink)" }, tot >= 1000 ? (tot / 1000).toLocaleString("de-DE", { maximumFractionDigits: 1 }) + " Tsd." : tot), S("text", { x: cx, y: H_ - 4, "text-anchor": "middle", "font-size": 10, fill: "var(--muted)" }, y));
+  });
+  return svg;
+}
+
+function chairChart() {
+  const rows = D.chairs.map(([n, d]) => [n, d, days(dd(d), TODAY) / 30.44]).sort((a, b) => b[2] - a[2]).slice(0, 8);
+  const rh = 26, pl = 64, pr = 52, svg = S("svg", { viewBox: `0 0 ${W} ${rows.length * rh + 4}`, width: "100%", role: "group", "aria-label": "Monate seit dem letzten Vorsitz" }), mx = 20;
+  rows.forEach(([n, d, m], i) => {
+    const y = i * rh + 2, w = (W - pl - pr) * m / mx, top = i === 0;
+    const g = S("g", { class: "mark" });
+    g.append(S("text", { x: pl - 8, y: y + 16, "text-anchor": "end", "font-size": 12, "font-weight": top ? 800 : 400, fill: "var(--ink)" }, n), S("path", { d: `M${pl},${y + 3}H${pl + w - 4}Q${pl + w},${y + 3} ${pl + w},${y + 7}V${y + 15}Q${pl + w},${y + 19} ${pl + w - 4},${y + 19}H${pl}Z`, fill: top ? "var(--accent)" : "var(--seq-hi)", opacity: top ? 1 : 0.35 }),
+      S("text", { x: pl + w + 6, y: y + 16, "font-size": 11, "font-weight": 700, fill: "var(--ink)" }, Math.round(m) + " Mon."), S("rect", { x: 0, y, width: W, height: rh, fill: "transparent" }));
+    if (top) g.append(S("text", { x: pl + 8, y: y + 15, "font-size": 10, "font-weight": 800, fill: "#2a2200" }, "Vorschlag"));
+    hit(g, n, ["zuletzt " + fmt(d, { day: "numeric", month: "long", year: "numeric" }), "vor " + Math.round(m) + " Monaten"]); svg.append(g);
+  });
+  return svg;
+}
+
+function yearChart() {
+  const ys = Object.keys(D.yr), H_ = 150, pl = 26, pr = 4, pt = 18, pb = 18, iw = W - pl - pr, band = iw / ys.length, bw = 18, sy = (v) => pt + (H_ - pt - pb) * (1 - v / 50);
+  const svg = S("svg", { viewBox: `0 0 ${W} ${H_}`, width: "100%", role: "group", "aria-label": "Abwesenheiten pro Jahr" });
+  [0, 25, 50].forEach((t) => svg.append(S("line", { x1: pl, x2: W - pr, y1: sy(t), y2: sy(t), stroke: "var(--grid)" }), S("text", { x: pl - 6, y: sy(t) + 4, "text-anchor": "end", "font-size": 10, fill: "var(--muted)" }, t)));
+  ys.forEach((y, i) => { const v = D.yr[y], cx = pl + band * i + band / 2, cur = y === "2026", g = S("g", { class: "mark" });
+    g.append(S("path", { d: rrTop(cx - bw / 2, sy(v), bw, sy(0) - sy(v), 4), fill: cur ? "var(--s1)" : "var(--seq-hi)", opacity: cur ? 1 : 0.32 }), S("rect", { x: cx - band / 2, y: 0, width: band, height: H_, fill: "transparent" }));
+    hit(g, y + (cur ? " (bis Oktober)" : ""), [v + " Abwesenheiten"]); svg.append(g);
+    if (cur || y === "2025" || y === "2021") svg.append(S("text", { x: cx, y: sy(v) - 5, "text-anchor": "middle", "font-size": 11, "font-weight": 700, fill: "var(--ink)" }, v));
+    if (i % 2 === 0 || cur) svg.append(S("text", { x: cx, y: H_ - 3, "text-anchor": "middle", "font-size": 10, fill: "var(--muted)" }, "'" + y.slice(2)));
+  });
+  return svg;
+}
+
+/* ===== Karten mit Tabellen-Ansicht ===== */
+function chartCard(title, sub, chart, tableRows, extra) {
+  const wrap = H("div", {}), tbl = H("div", { hidden: true });
+  if (tableRows) tbl.append(H("table", { class: "tv" }, H("tbody", {}, tableRows.map((r) => H("tr", {}, r.map((c, i) => H(i ? "td" : "th", {}, c)))))));
+  const btn = H("button", { class: "tbl", "aria-expanded": "false", onclick: () => { const open = tbl.hidden; tbl.hidden = !open; btn.setAttribute("aria-expanded", String(open)); btn.textContent = open ? "Tabelle ausblenden" : "Als Tabelle anzeigen"; } }, "Als Tabelle anzeigen");
+  wrap.append(chart); if (tableRows) wrap.append(btn, tbl);
+  return H("section", { class: "card" }, H("div", { class: "head" }, H("div", {}, H("h2", {}, title), H("p", { class: "sub" }, sub)), extra || null), wrap);
+}
+const legend = () => H("div", { class: "legend" }, CATS.map(([c, v]) => H("span", {}, H("i", { style: `background:var(${v})` }), c)));
+
+/* ===== Startseiten A, B, C ===== */
+function startA() {
+  const ph = H("div", { class: "A t-light" });
+  ph.append(
+    H("div", { class: "pad", style: "padding-bottom:10px" }, H("p", { class: "muted small" }, "Sonntag, 4. Oktober"), H("h1", { style: "font-size:1.5rem;font-weight:800;letter-spacing:-.02em" }, "Servus, Mitglied G 👋")),
+    H("div", { class: "hero" }, H("span", { class: "chip" }, `in ${daysToNext} Tagen`), H("div", { class: "date" }, "Freitag,", H("br"), "6. November"), H("p", { style: "opacity:.85" }, "Vorsitz: ", H("b", {}, "Mitglied B"), " · Location noch offen"), H("button", { class: "cta" }, "Ich komme nicht")),
+    H("div", { class: "tiles" },
+      H("div", { class: "tile" }, H("p", { class: "muted small" }, "Ø Anwesende"), H("p", { class: "num" }, mean(att12).toLocaleString("de-DE", { maximumFractionDigits: 1 })), H("p", { class: "muted small" }, "von 13, letzte 12 Abende")),
+      H("div", { class: "tile" }, H("p", { class: "muted small" }, "Kassenstand"), H("p", { class: "num" }, "841 €"), H("p", { class: "muted small" }, "inkl. 50 € offen")),
+      H("div", { class: "tile wide" }, H("div", { style: "display:flex;justify-content:space-between;align-items:baseline" }, H("p", { style: "font-weight:700" }, "Wer war dabei?"), H("p", { class: "muted small" }, "letzte 24 Abende")), H("div", { style: "margin-top:6px" }, attendanceChart(24, true))),
+      H("div", { class: "tile wide", style: "display:flex;justify-content:space-between;align-items:center" }, H("div", {}, H("p", { class: "muted small" }, "Dein Konto"), H("p", { style: "font-weight:800;font-size:1.2rem;color:var(--brand)" }, "Alles bezahlt ✓")), H("span", { style: "font-size:1.8rem" }, "🍺")),
+    ),
+    H("div", { class: "tabbar" }, [["🏠", "Start", 1], ["📊", "Statistik"], ["💶", "Konto"], ["📖", "Chronik"]].map(([i, l, on]) => H("span", { class: on ? "on" : "" }, H("i", {}, i), l))));
+  return ph;
+}
+function startB() {
+  const ph = H("div", { class: "B t-dark" });
+  const ring = (() => { const r = 34, c = 2 * Math.PI * r, f = 1 - daysToNext / 35; return S("svg", { viewBox: "0 0 90 90", width: 84, "aria-hidden": "true" }, S("circle", { cx: 45, cy: 45, r, fill: "none", stroke: "var(--line)", "stroke-width": 9 }), S("circle", { cx: 45, cy: 45, r, fill: "none", stroke: "var(--accent)", "stroke-width": 9, "stroke-linecap": "round", "stroke-dasharray": `${c * f} ${c}`, transform: "rotate(-90 45 45)" })); })();
+  ph.append(
+    H("div", { style: "padding:18px 16px 12px;display:flex;justify-content:space-between;align-items:center" }, H("div", {}, H("p", { class: "muted small" }, "Griassgottbeinand"), H("h1", { style: "font-size:1.45rem;font-weight:800;letter-spacing:-.02em" }, "Servus, Mitglied G")), H("span", { class: "pill" }, "🔒 Admin")),
+    H("div", { class: "grid" },
+      H("div", { class: "tile wide glow" }, H("div", { style: "display:flex;justify-content:space-between;align-items:center;gap:10px" }, H("div", {}, H("p", { class: "muted small" }, "Nächster Stammtisch"), H("p", { class: "big" }, daysToNext), H("p", { style: "font-weight:700" }, "Tage · Fr, 6. November")), ring), H("div", { style: "display:flex;gap:6px;flex-wrap:wrap;margin-top:10px" }, H("span", { class: "pill" }, "👑 Vorsitz Mitglied B"), H("span", { class: "pill" }, "📍 Location offen")), H("button", { class: "cta" }, "Ich komme nicht")),
+      H("div", { class: "tile" }, H("p", { class: "muted small" }, "Ø Anwesende"), H("p", { class: "num" }, mean(att12).toLocaleString("de-DE", { maximumFractionDigits: 1 })), sparkline(attAll, 120, 34, "var(--s1)")),
+      H("div", { class: "tile" }, H("p", { class: "muted small" }, "Kassenstand"), H("p", { class: "num" }, "841 €"), sparkline(Object.values(D.cash).slice(-18), 120, 34, "var(--accent)")),
+      H("div", { class: "tile wide" }, H("div", { style: "display:flex;justify-content:space-between" }, H("p", { style: "font-weight:700" }, "Wer war dabei?"), H("p", { class: "muted small" }, "24 Abende")), attendanceChart(24, true)),
+      H("div", { class: "tile" }, H("p", { class: "muted small" }, "Abwesenheiten 2026"), H("p", { class: "num" }, "40"), H("p", { class: "muted small" }, "4,0 pro Abend")),
+      H("div", { class: "tile" }, H("p", { class: "muted small" }, "Dein Konto"), H("p", { class: "num", style: "color:var(--brand)" }, "0 €"), H("p", { class: "muted small" }, "alles bezahlt ✓")),
+    ));
+  return ph;
+}
+function startC() {
+  const ph = H("div", { class: "C t-paper pad", style: "padding:20px 18px 26px" });
+  const strip = (() => { const g = H("div", { style: "display:flex;gap:3px;margin-top:8px" }); D.att.forEach((x) => g.append(H("span", { style: `flex:1;height:30px;border-radius:2px;background:var(--s1);opacity:${0.25 + 0.75 * (x.a - 6) / 6}`, title: fmt(x.d, { month: "short", year: "numeric" }) + ": " + x.a }))); return g; })();
+  ph.append(
+    H("div", { style: "display:flex;justify-content:space-between;align-items:baseline" }, H("span", { class: "eyebrow" }, "Griassgottbeinand"), H("span", { class: "eyebrow muted" }, "seit 2011")),
+    H("hr", { class: "rule", style: "margin:8px 0 18px" }),
+    H("p", { class: "eyebrow", style: "color:var(--accent)" }, `Nächster Stammtisch · in ${daysToNext} Tagen`),
+    H("div", { style: "display:flex;align-items:flex-end;gap:12px;margin:6px 0 4px" }, H("span", { class: "giant" }, "06"), H("div", { style: "padding-bottom:6px" }, H("p", { style: "font-size:1.5rem;font-weight:900;letter-spacing:-.03em;line-height:1" }, "NOV"), H("p", { class: "muted small" }, "Freitag 2026"))),
+    H("p", { style: "margin-top:6px" }, "Vorsitz ", H("b", {}, "Mitglied B"), " · Location offen"),
+    H("button", { class: "cta fill" }, "Ich komme nicht"),
+    H("hr", { class: "rule", style: "margin:22px 0 0" }),
+    H("div", { class: "row2" }, H("span", { class: "eyebrow" }, "Ø Anwesende"), H("span", { class: "stat" }, mean(att12).toLocaleString("de-DE", { maximumFractionDigits: 1 }), H("span", { class: "muted", style: "font-size:1rem;font-weight:700;letter-spacing:0" }, " / 13"))),
+    H("div", { class: "row2" }, H("span", { class: "eyebrow" }, "Abwesenheiten 2026"), H("span", { class: "stat" }, "40")),
+    H("div", { class: "row2" }, H("span", { class: "eyebrow" }, "Kassenstand"), H("span", { class: "stat" }, "841 €")),
+    H("p", { class: "eyebrow", style: "margin-top:20px" }, "Die letzten 24 Abende"), strip,
+    H("div", { style: "display:flex;justify-content:space-between", class: "muted small" }, H("span", {}, "Nov 2024"), H("span", {}, "Okt 2026")),
+    H("p", { class: "small", style: "margin-top:16px;font-weight:700" }, "Dein Konto: alles bezahlt ✓"));
+  return ph;
+}
+
+/* ===== Statistik (Empfehlung: Bento-Struktur im warmen Look, hell und dunkel) ===== */
+function statistik(dark) {
+  const root = H("div", { class: "S " + (dark ? "t-dark" : "t-light") });
+  const att = H("div", {}); let n = 24;
+  const drawAtt = () => att.replaceChildren(attendanceChart(n, false));
+  const seg = H("div", { class: "seg", role: "group", "aria-label": "Zeitraum" }, [[12, "12"], [24, "24"]].map(([v, l]) => H("button", { "aria-pressed": String(v === n), onclick: (e) => { n = v; seg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === e.currentTarget))); drawAtt(); } }, l + " Abende")));
+  drawAtt();
+  const cash = cashChart();
+  root.append(
+    H("div", { class: "top" }, H("h1", {}, "Statistik"), H("button", { class: "themebtn", onclick: () => { stat = !stat; render(); } }, dark ? "☀️ Hell" : "🌙 Dunkel")),
+    H("div", { class: "kpis" },
+      H("div", { class: "kpi" }, H("p", { class: "muted small" }, "Ø Anwesende"), H("p", { class: "v" }, mean(attAll).toLocaleString("de-DE", { maximumFractionDigits: 1 })), sparkline(attAll, 80, 24, "var(--s1)"), H("p", { class: "d" }, "von 13, 24 Abende")),
+      H("div", { class: "kpi" }, H("p", { class: "muted small" }, "Fehlen pro Abend"), H("p", { class: "v" }, "4,0"), H("p", { class: "d" }, "2026 · 2025: 3,3")),
+      H("div", { class: "kpi" }, H("p", { class: "muted small" }, "Kassenstand"), H("p", { class: "v" }, "841 €"), H("p", { class: "d" }, "791 € PayPal + 50 € offen"))),
+    H("section", { class: "card" }, H("div", { class: "head" }, H("div", {}, H("h2", {}, "Wer war dabei?"), H("p", { class: "sub" }, "Anwesende Mitglieder pro Stammtisch")), seg),
+      H("div", { class: "legend" }, H("span", {}, H("i", { style: "background:var(--s1)" }), "Mitglieder"), H("span", {}, H("i", { style: "background:var(--s2)" }), "Gäste")), att,
+      H("p", { class: "small muted", style: "margin-top:4px" }, "Tippe auf einen Balken: Datum, Gäste und wer gefehlt hat.")),
+    chartCard("Wer fehlt wie oft?", "Die letzten 12 Abende, tippe auf ein Feld", heatmap(), null),
+    chartCard("Kassenstand im Zeitverlauf", "PayPal-Saldo am Monatsende, Tippen und Wischen zeigt den Monat", cash.svg, cash.rows),
+    H("section", { class: "card" }, H("div", { class: "head" }, H("div", {}, H("h2", {}, "Einnahmen pro Jahr"), H("p", { class: "sub" }, "Was die Kasse jeweils eingenommen hat"))), legend(), incomeChart(), H("p", { class: "small muted" }, "2023 dominiert die Sonderumlage für Kos (2.400 €).")),
+    chartCard("Wer ist als Nächstes dran?", "Monate seit dem letzten Vorsitz, die Top 8", chairChart(), null),
+    chartCard("Abwesenheiten pro Jahr", "Alle Einträge Abwesenheit, 2026 bis Oktober", yearChart(), null),
+    H("p", { class: "fine" }, "Entwurf mit deinen echten Zahlen (Stand 04.10.2026). Anwesende = 13 minus Abwesenheiten, wie im alten Sheet.")
+  );
+  return root;
+}
+
+/* ===== Umschalten ===== */
+let view = "A", stat = false;
+function render() {
+  const ph = document.getElementById("phone"); ph.replaceChildren(); hideTip();
+  const el = view === "A" ? startA() : view === "B" ? startB() : view === "C" ? startC() : statistik(stat);
+  ph.className = "phone " + (el.className.match(/t-\w+/) || [""])[0]; ph.append(el);
+  document.querySelectorAll(".selector button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === view)));
+  const m = el.className.match(/t-\w+/); document.body.style.background = view === "B" || (view === "S" && stat) ? "#0b1210" : "#d9d6cf";
+  const t = getComputedStyle(ph); document.getElementById("tip").style.setProperty("--tipbg", t.getPropertyValue("--tipbg")); document.getElementById("tip").style.setProperty("--tipink", t.getPropertyValue("--tipink"));
+}
+document.querySelectorAll(".selector button").forEach((b) => b.addEventListener("click", () => { view = b.dataset.v; render(); window.scrollTo(0, 0); }));
+const q = new URLSearchParams(location.search); if (q.get("v")) view = q.get("v"); if (q.get("dark")) stat = true;
+render();
+</script>
+</body>
+</html>

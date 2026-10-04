@@ -10,7 +10,7 @@ Die App wirkt heute bieder. Sie soll warm, modern und lebendig werden und aus de
 
 ## 2. Gestaltungsrichtungen (Prototyp)
 
-Der Prototyp `redesign.html` ist eine einzelne Datei mit eingebetteten Daten. Er liegt nicht im Repo, weil er echte Namen enthält. Er wurde in der Claude-Sitzung als Datei übergeben. Wichtig: Buttons A, B, C, Statistik. Mit `?v=S&dark=1` startet er in der Statistik im Dunkelmodus.
+Der Prototyp liegt als `docs/redesign-prototyp.html` im Repo. Es ist eine einzelne Datei mit eingebetteten Daten. Die Namen sind anonymisiert (Mitglied A bis M), die Zahlen sind echt. Lokal einfach im Browser öffnen. Wichtig: Buttons A, B, C, Statistik. Mit `?v=S&dark=1` startet er in der Statistik im Dunkelmodus.
 
 | | Richtung | Charakter | Einschätzung |
 |---|---|---|---|
