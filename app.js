@@ -50,8 +50,8 @@
       loc
         ? [h("p", {}, h("strong", {}, loc.name), addr && h("span", { class: "muted" }, " · " + addr)),
             h("div", { class: "locLinks" },
-              routes.map(([label, href]) => h("a", { class: "btn hbtn", href, target: "_blank", rel: "noopener noreferrer" }, "📍 " + label)),
-              web && h("a", { class: "btn hbtn", href: web, target: "_blank", rel: "noopener noreferrer" }, "🌐 Website"))]
+              routes.map(([label, href]) => h("a", { class: "btn hbtn", href, title: `Route zur Location in ${label} starten`, target: "_blank", rel: "noopener noreferrer" }, "📍 " + label)),
+              web && h("a", { class: "btn hbtn", href: web, title: "Website der Location öffnen", target: "_blank", rel: "noopener noreferrer" }, "🌐 Website"))]
         : h("p", { class: "muted" }, "Location noch offen"),
       h("p", { class: "muted small" }, locked ? "Die Anmeldefrist ist abgelaufen. Bitte beim Admin melden." : m.deadline_passed ? "Die Anmeldefrist ist abgelaufen." : "Abmelden oder Gäste anmelden bis 19 Uhr am Stammtischtag."),
       nextLine,
@@ -87,19 +87,19 @@
       const label = tgt.scope === "upcoming"
         ? (changing ? `Vorsitz ${verb}` : "Vorsitz festlegen")
         : changing ? `Vorsitz für ${tgt.scope === "current" ? "aktuellen" : "nächsten"} Stammtisch ${verb}` : "Vorsitz für nächsten Stammtisch festlegen";
-      panels.chair = { label, build: () => h("div", { class: "stack" },
+      panels.chair = { tip: "Den Vorsitz für den Stammtisch an ein Mitglied vergeben", label, build: () => h("div", { class: "stack" },
         h("p", { class: "muted small", style: "margin:0" }, info),
         changing && me.chair_change_until ? h("p", { class: "notice", style: "margin:0" }, `Du kannst den Vorsitz noch bis einschließlich ${dateShort(me.chair_change_until)} ändern. Danach nur noch ${tgt.chair}.`) : null,
         chairPicker(d, changing)) };
     }
     if (me.can_set_location) {
-      panels.loc = { label: tgt.scope === "next" ? "Location für nächsten Stammtisch festlegen" : m && m.location ? "Location ändern" : "Location festlegen", build: () => locationForm(d) };
+      panels.loc = { tip: "Name und Adresse der Location für den Stammtisch eintragen", label: tgt.scope === "next" ? "Location für nächsten Stammtisch festlegen" : m && m.location ? "Location ändern" : "Location festlegen", build: () => locationForm(d) };
     }
 
     // Bewerten geht erst, wenn der Stammtisch an der Location begonnen hat (Termin heute).
-    if (m && m.location && m.date <= todayBerlin()) panels.rate = { label: hasRated(d, m.location.name) ? "Bewertung ändern" : "Location bewerten", build: () => ratingForm(d, m.location.name) };
+    if (m && m.location && m.date <= todayBerlin()) panels.rate = { tip: "Essen, Getränke, Service, Ambiente und Preis-Leistung mit Sternen bewerten", label: hasRated(d, m.location.name) ? "Bewertung ändern" : "Location bewerten", build: () => ratingForm(d, m.location.name) };
 
-    if (m) panels.guest = { label: d.my_guests.length ? "Gäste ändern" : "Gast anmelden", build: () => guestForm(d) };
+    if (m) panels.guest = { tip: "Einen Gast für diesen Stammtisch anmelden oder abmelden", label: d.my_guests.length ? "Gäste ändern" : "Gast anmelden", build: () => guestForm(d) };
 
     const toggles = {};
     const panelBox = h("div", {});
@@ -122,7 +122,7 @@
     }
     for (const key of ["rate", "guest", "chair", "loc"]) {
       if (!panels[key]) continue;
-      toggles[key] = h("button", { type: "button", class: "hbtn " + (mustTransfer && key === "chair" ? "main" : "alt"), "aria-expanded": "false", onclick: () => { heroPanel = heroPanel === key ? null : key; draw(); } }, panels[key].label);
+      toggles[key] = h("button", { type: "button", class: "hbtn " + (mustTransfer && key === "chair" ? "main" : "alt"), "aria-expanded": "false", title: panels[key].tip, onclick: () => { heroPanel = heroPanel === key ? null : key; draw(); } }, panels[key].label);
       buttons.push(toggles[key]);
     }
     draw();
@@ -296,13 +296,14 @@
     const mine = (d.my_ratings || []).find((r) => r.location === name) || {};
     const val = Object.fromEntries(RATE_KEYS.map((k) => [k, mine[k] ?? null]));
     const rows = RATING_LABELS.map(([k, label]) => {
-      const btns = [1, 2, 3, 4, 5].map((n) => h("button", { type: "button", class: "starbtn", "aria-label": `${label}: ${n} von 5`, onclick: () => { val[k] = val[k] === n ? null : n; paint(); } }));
+      const btns = [1, 2, 3, 4, 5].map((n) => h("button", { type: "button", class: "starbtn", "aria-label": `${label}: ${n} von 5`, title: `${label}: ${n} von 5 Sternen`, onclick: () => { val[k] = val[k] === n ? null : n; paint(); } }));
       const paint = () => btns.forEach((b, i) => { b.textContent = i < (val[k] || 0) ? "★" : "☆"; b.setAttribute("aria-pressed", String(i + 1 === val[k])); });
       paint();
       return h("div", { class: "rateRow" }, h("span", {}, label), h("span", { class: "starset", role: "group", "aria-label": label }, btns));
     });
     return h("div", { class: "stack" },
       h("p", { class: "muted small", style: "margin:0" }, mine.food != null || RATE_KEYS.some((k) => mine[k] != null) ? `Deine Bewertung für ${name}. Du kannst sie ändern.` : `Wie war ${name}? Du musst nicht alles bewerten.`),
+      h("p", { class: "muted small", style: "margin:0" }, "Tippe auf einen Stern, um zu bewerten. Nochmal auf denselben Stern tippen nimmt ihn zurück."),
       ...rows,
       h("button", { type: "button", class: "primary full", onclick: (e) => {
         if (!RATE_KEYS.some((k) => val[k] != null)) { toast("Bitte mindestens einen Stern vergeben.", true); return; }
@@ -322,7 +323,7 @@
         h("span", { class: "muted small" }, r.location ? [r.location, " ", h("span", { class: "rate" }, hasRated(d, r.location) ? "★" : "☆")] : "")];
       if (!r.location) return { r, att, el: h("div", { class: "row" }, head) };
       return { r, att, el: h("details", { class: "loc" },
-        h("summary", { class: "row", style: "border:0", "aria-label": `${r.location}, bewerten` }, head),
+        h("summary", { class: "row", style: "border:0", title: "Antippen, um die Location zu bewerten", "aria-label": `${r.location}, bewerten` }, head),
         h("div", { style: "padding:4px 0 12px" }, ratingForm(d, r.location))) };
     });
     getStats().then((st) => {
@@ -333,6 +334,7 @@
       });
     }).catch(() => {});
     return card("Letzte Abende",
+      rows.length ? h("p", { class: "muted small", style: "margin:0 0 4px" }, "Tippe auf einen Abend, um die Location zu bewerten. ★ heißt: von dir bewertet.") : null,
       rows.length ? rows.map((x) => x.el) : h("p", { class: "muted", style: "margin:0" }, "Noch keine Abende."));
   }
 
@@ -359,7 +361,7 @@
           h("span", { class: "muted small" }, ` · ${l.city || ""} · ${l.visits}× zuletzt ${dateShort(l.last)}`));
         if (l.avg == null) return h("div", { class: "row" }, head, h("span", { class: "muted small" }, "noch nicht bewertet"));
         return h("details", { class: "loc" },
-          h("summary", { class: "row", style: "border:0" }, head, h("span", { class: "rate", title: `${l.n} Bewertung${l.n === 1 ? "" : "en"}` }, "★ " + fmt1(l.avg))),
+          h("summary", { class: "row", style: "border:0", title: "Antippen für die einzelnen Bewertungen" }, head, h("span", { class: "rate", title: `${l.n} Bewertung${l.n === 1 ? "" : "en"}` }, "★ " + fmt1(l.avg))),
           h("div", { style: "padding:0 0 8px" },
             RATING_LABELS.map(([k, label]) => l[k] == null ? null : h("div", { class: "row small" }, h("span", {}, label), h("span", {}, h("span", { class: "stars" }, stars(l[k])), " " + fmt1(l[k])))),
             h("p", { class: "muted small", style: "margin:4px 0 0" }, `${l.n} Bewertung${l.n === 1 ? "" : "en"}, Skala 1 bis 5`)));
@@ -373,6 +375,7 @@
     return h("section", { class: "card" },
       h("details", {},
         h("summary", {}, `Besuchte Locations (${all.length})`),
+        h("p", { class: "muted small", style: "margin:8px 0 0" }, "Locations mit ★ lassen sich antippen und zeigen die Bewertungen im Detail. Bewerten kannst du unter \"Letzte Abende\"."),
         h("div", { class: "inline", style: "margin-top:10px" }, search, h("div", { style: "flex:0 0 46%" }, sort)),
         listEl));
   }

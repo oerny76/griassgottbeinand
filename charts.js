@@ -217,7 +217,7 @@
 
   function heatmapCard(data) {
     const { svg, people } = heatmap(data);
-    return chartCard("Wer fehlt wie oft?", `Die letzten ${data.dates.length} Abende, Namen sind für alle Mitglieder sichtbar`,
+    return chartCard("Wer fehlt wie oft?", `Die letzten ${data.dates.length} Abende, Tippen auf ein Feld zeigt Name und Datum`,
       [legend([["fehlte (×)", "--seq-hi"], ["war dabei", "--seq-lo"]]), svg],
       { headers: ["Mitglied", `Fehlte (von ${data.dates.length})`], rows: people.map((p) => [p.name, p.count]) });
   }
