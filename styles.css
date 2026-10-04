@@ -58,8 +58,6 @@ details.loc { border-bottom: 1px solid var(--line); }
 details.loc > summary { font-weight: 400; }
 
 /* ---------- Admin: eigener Look, damit man immer sieht, wo man ist ---------- */
-.adminbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; background: #1d3557; color: #fff; border-radius: 12px; padding: 8px 10px; margin: 0 0 12px; }
-.adminbar .badge { font-weight: 700; white-space: nowrap; }
 .adminsel { flex: 1 1 150px; min-height: 40px; background: #fff; color: #1d3557; border: 0; border-radius: 10px; padding: 6px 10px; }
 .btn.adminbtn { min-height: 40px; background: #f4c542; border-color: #f4c542; color: #2a2200; padding: 6px 12px; white-space: nowrap; }
 .viewbanner { position: sticky; top: 8px; z-index: 5; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; background: #f4c542; color: #2a2200; border-radius: 12px; padding: 10px 12px; margin: 0 0 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, .25); }
@@ -125,7 +123,7 @@ input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; m
 .tile.tap { cursor: pointer; text-align: left; font-weight: 400; min-height: 0; display: block; }
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8; background: var(--card); border-top: 1px solid var(--line); padding: 0 max(8px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(8px, env(safe-area-inset-left)); }
 .tabbar-in { max-width: 520px; margin: 0 auto; display: flex; justify-content: space-around; }
-.tabbar button { flex: 1 1 0; min-height: var(--tabbar-h); flex-direction: column; gap: 3px; border: 0; border-radius: 0; background: transparent; color: var(--muted); font-size: .72rem; font-weight: 600; padding: 8px 4px; }
+.tabbar button, .tabbar a { display: flex; align-items: center; justify-content: center; text-decoration: none; flex: 1 1 0; min-height: var(--tabbar-h); flex-direction: column; gap: 3px; border: 0; border-radius: 0; background: transparent; color: var(--muted); font-size: .72rem; font-weight: 600; padding: 8px 4px; }
 .tabbar button[aria-current="page"] { color: var(--brand); }
 .tabbar svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 body:has(.tabbar) #toast { bottom: calc(var(--tabbar-h) + max(20px, env(safe-area-inset-bottom))); }

@@ -253,23 +253,10 @@
       btn);
   }
 
-  // ---------- Nur für Admins: Ansicht wechseln ----------
+  // ---------- Nur für Admins: Mitglied ansehen (Einstieg über den Admin-Bereich) ----------
   const getView = () => session.get(VIEW_KEY) || "self";
   const getViewAs = () => session.get(VIEW_AS_KEY) || "";
   function setView(view, name) { session.set(VIEW_KEY, view); session.set(VIEW_AS_KEY, name || ""); load(); }
-
-  function adminBar(own, mode) {
-    const names = memberNames(own);
-    const sel = h("select", { id: "viewSel", "aria-label": "Ansicht wählen", class: "adminsel",
-      onchange: (e) => { const v = e.target.value; if (v === "self" || v === "plain") setView(v); else setView("as", v.slice(3)); } },
-      h("option", { value: "self", selected: mode === "self" }, "Meine Ansicht (Admin)"),
-      h("option", { value: "plain", selected: mode === "plain" }, "Wie ein normales Mitglied"),
-      h("optgroup", { label: "Mitglied ansehen (nur lesen)" }, names.map((n) => h("option", { value: "as:" + n, selected: mode === "as" && getViewAs() === n }, n))));
-    return h("div", { class: "adminbar" },
-      h("span", { class: "badge" }, "🔒 Admin"),
-      sel,
-      h("a", { class: "btn adminbtn", href: "admin.html" }, "Admin-Bereich →"));
-  }
 
   function viewBanner(mode, name) {
     return h("div", { class: "viewbanner", role: "status" },
@@ -504,9 +491,12 @@
     window.scrollTo(0, 0);
   }
 
-  function tabBar() {
+  const ADMIN_ICON = "M12 3l7 3v5.5c0 4.5-3 8-7 9.5-4-1.5-7-5-7-9.5V6zM9 12l2.2 2.2L15 10";
+
+  function tabBar(admin) {
     return h("nav", { class: "tabbar", "aria-label": "Bereiche" }, h("div", { class: "tabbar-in" },
-      TABS.map(([id, label, path]) => h("button", { type: "button", "aria-current": id === tab ? "page" : null, onclick: () => goTab(id) }, icon(path), label))));
+      TABS.map(([id, label, path]) => h("button", { type: "button", "aria-current": id === tab ? "page" : null, onclick: () => goTab(id) }, icon(path), label)),
+      admin ? h("a", { href: "admin.html" }, icon(ADMIN_ICON), "Admin") : null));
   }
 
   // Statistik (Gruppenwerte für alle): wird erst gebraucht geladen, Tab und Chronik teilen sich eine Anfrage.
@@ -539,7 +529,6 @@
     const mode = admin ? getView() : "self";
     let d = own, readOnly = false;
     if (mode === "as" && as) { d = Object.assign({}, as.dashboard, { overview: as.overview }); readOnly = true; }
-    if (mode === "plain") d = Object.assign({}, own, { me: Object.assign({}, own.me, { is_admin: false, can_set_next_chair: false, can_set_location: false }) });
     const today = new Date(todayBerlin() + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
     // Nur der geöffnete Tab wird gebaut (der Statistik-Tab lädt Daten).
     const pages = {
@@ -549,15 +538,14 @@
       chronik: () => [recentCard(d), chairsCard(d), locationsCard(d), absencesCard(d)],
     };
     const root = h("div", {},
-      admin ? adminBar(own, mode) : null,
-      admin && mode !== "self" ? viewBanner(mode, d.me.name) : null,
+      admin && mode === "as" ? viewBanner(mode, d.me.name) : null,
       tab === "start"
         ? [h("p", { class: "hello" }, readOnly ? `Ansicht von ${d.me.name}` : today), h("h1", {}, readOnly ? d.me.name : `Servus, ${d.me.name}!`)]
         : h("h1", {}, TABS.find(([id]) => id === tab)[1]),
       pages[tab](),
       footer());
     $app.classList.add("tabs");
-    $app.replaceChildren(root, tabBar());
+    $app.replaceChildren(root, tabBar(admin));
   }
 
   function showNoToken() {
