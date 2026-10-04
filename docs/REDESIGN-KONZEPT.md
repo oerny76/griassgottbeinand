@@ -97,6 +97,5 @@ Jede Phase einzeln als Pull Request, damit sie sich leicht prüfen und zurückne
 
 ## 10. Offene Punkte
 
-- Richtung festlegen (A, B, C oder Mischung).
 - Aus früheren Schritten: SQL-Migrationen als Dateien ins Repo legen, leere Spalte `entries.payment_reported_at` entfernen, alten Apps Script abschalten.
 - iPhone: Code speichern per Eingabefeld ist getestet. Offen: ob das Manifest mit `start_url` samt Code beim Anlegen des Icons greift.
