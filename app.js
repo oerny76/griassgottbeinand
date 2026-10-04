@@ -91,6 +91,8 @@
       panels.loc = { label: tgt.scope === "next" ? "Location für nächsten Stammtisch festlegen" : m && m.location ? "Location ändern" : "Location festlegen", build: () => locationForm(d) };
     }
 
+    if (m) panels.guest = { label: d.my_guests.length ? "Gäste ändern" : "Gast anmelden", build: () => guestForm(d) };
+
     const toggles = {};
     const panelBox = h("div", {});
     const draw = () => {
@@ -110,7 +112,7 @@
           (r) => d.my_absent ? "Abmeldung zurückgezogen." : `Abwesenheit eingetragen (${euro.format(r.amount)}).`),
       }, d.my_absent ? "Doch teilnehmen" : "Ich komme nicht"));
     }
-    for (const key of ["chair", "loc"]) {
+    for (const key of ["guest", "chair", "loc"]) {
       if (!panels[key]) continue;
       toggles[key] = h("button", { type: "button", class: "hbtn " + (mustTransfer && key === "chair" ? "main" : "alt"), "aria-expanded": "false", onclick: () => { heroPanel = heroPanel === key ? null : key; draw(); } }, panels[key].label);
       buttons.push(toggles[key]);
@@ -118,6 +120,7 @@
     draw();
     return [
       mustTransfer ? h("p", { class: "muted small", style: "margin-top:12px" }, "Du hast den Vorsitz. Um dich abzumelden, übertrage ihn zuerst.") : null,
+      d.my_guests.length ? h("p", {}, "Meine Gäste: ", h("strong", {}, d.my_guests.map(stripGast).join(", "))) : null,
       buttons.length ? h("div", { class: "actions" }, buttons) : null,
       panelBox];
   }
@@ -148,12 +151,15 @@
 
   function signupCard(d, readOnly) {
     const m = d.meeting, me = d.me;
-    if (!m) return null;
-    if (readOnly) {
-      return card(`Anmeldung von ${me.name}`,
-        h("p", { style: "margin:0" }, d.my_absent ? h("span", { class: "chip" }, "entschuldigt") : "Kommt (nicht abgemeldet)."),
-        d.my_guests.length ? h("p", { style: "margin:10px 0 0" }, "Gäste: ", d.my_guests.map(stripGast).join(", ")) : null);
-    }
+    if (!m || !readOnly) return null; // Im normalen Modus sitzt der Gast-Bereich in der Hauptkarte
+    return card(`Anmeldung von ${me.name}`,
+      h("p", { style: "margin:0" }, d.my_absent ? h("span", { class: "chip" }, "entschuldigt") : "Kommt (nicht abgemeldet)."),
+      d.my_guests.length ? h("p", { style: "margin:10px 0 0" }, "Gäste: ", d.my_guests.map(stripGast).join(", ")) : null);
+  }
+
+  // Gast anmelden und entfernen. Klappt in der Hauptkarte auf.
+  function guestForm(d) {
+    const m = d.meeting, me = d.me;
     const locked = m.deadline_passed && !me.is_admin;
     const children = [];
     if (locked) children.push(h("p", { class: "notice" }, "Gäste lassen sich nach Fristende (19 Uhr am Stammtischtag) nicht mehr ändern. Bitte beim Admin melden."));
@@ -174,7 +180,7 @@
         h("div", { class: "row" }, h("span", {}, stripGast(g)),
           h("button", { class: "link", disabled: locked, onclick: (e) => act(e.currentTarget, () => rpc("app_cancel_guest", { p_guest: stripGast(g) }), "Gast entfernt.") }, "Entfernen")))));
     }
-    return card("Gäste", ...children);
+    return h("div", {}, ...children);
   }
 
   function whoCard(d) {
