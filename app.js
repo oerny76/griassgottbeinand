@@ -26,7 +26,13 @@
     const loc = m.location;
     const web = loc && safeUrl(loc.url);
     const addr = loc ? [loc.street, [loc.zip, loc.city].filter(Boolean).join(" ")].filter(Boolean).join(", ") : "";
-    const maps = loc ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([loc.name, addr].filter(Boolean).join(", "))}` : null;
+    // Route: Google Maps (öffnet auf dem Handy die App, wenn installiert), auf Apple-Geräten zusätzlich Apple Karten.
+    const dest = loc ? encodeURIComponent([loc.name, addr].filter(Boolean).join(", ")) : "";
+    const apple = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
+    const routes = loc ? [
+      apple && ["Apple Karten", `https://maps.apple.com/?daddr=${dest}&dirflg=d`],
+      ["Google Maps", `https://www.google.com/maps/dir/?api=1&destination=${dest}`],
+    ].filter(Boolean) : [];
     const day = new Date(m.date + "T12:00:00");
     const sameYear = day.getFullYear() === new Date(todayBerlin() + "T12:00:00").getFullYear();
     const locked = m.deadline_passed && !d.me.is_admin;
@@ -42,9 +48,10 @@
         h("small", {}, day.toLocaleDateString("de-DE", sameYear ? { day: "numeric", month: "long" } : { day: "numeric", month: "long", year: "numeric" }))),
       h("p", {}, "Vorsitz: ", h("strong", {}, m.chair ? (m.chair === d.me.name ? "ich" : m.chair) : "noch offen")),
       loc
-        ? h("p", {}, h("strong", {}, loc.name), addr && h("span", { class: "muted" }, " · " + addr), " ",
-            maps && h("a", { href: maps, target: "_blank", rel: "noopener noreferrer" }, "Karte"),
-            web && [" · ", h("a", { href: web, target: "_blank", rel: "noopener noreferrer" }, "Website")])
+        ? [h("p", {}, h("strong", {}, loc.name), addr && h("span", { class: "muted" }, " · " + addr)),
+            h("div", { class: "locLinks" },
+              routes.map(([label, href]) => h("a", { class: "btn hbtn", href, target: "_blank", rel: "noopener noreferrer" }, "📍 " + label)),
+              web && h("a", { class: "btn hbtn", href: web, target: "_blank", rel: "noopener noreferrer" }, "🌐 Website"))]
         : h("p", { class: "muted" }, "Location noch offen"),
       h("p", { class: "muted small" }, locked ? "Die Anmeldefrist ist abgelaufen. Bitte beim Admin melden." : m.deadline_passed ? "Die Anmeldefrist ist abgelaufen." : "Abmelden oder Gäste anmelden bis 19 Uhr am Stammtischtag."),
       nextLine,
