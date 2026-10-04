@@ -162,6 +162,9 @@ table.tv thead th { color: var(--muted); font-weight: 600; position: sticky; top
 .hero .state { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: .8rem; font-weight: 700; background: rgba(255, 255, 255, .2); color: #fff; }
 .hero .locLinks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .hero .locLinks .hbtn { min-height: 40px; padding: 6px 12px; font-size: .9rem; }
+.rateRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.starset { display: inline-flex; gap: 2px; }
+.starbtn { min-height: 40px; min-width: 40px; padding: 0; border: 0; background: transparent; font-size: 1.5rem; line-height: 1; color: var(--accent); }
 .hero .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .hero .hbtn { flex: 1 1 auto; min-height: 46px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, .6); background: transparent; color: #fff; padding: 8px 14px; }
 .hero .hbtn.main { background: #fff; border-color: #fff; color: #1f5c4a; }

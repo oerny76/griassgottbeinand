@@ -96,6 +96,9 @@
       panels.loc = { label: tgt.scope === "next" ? "Location für nächsten Stammtisch festlegen" : m && m.location ? "Location ändern" : "Location festlegen", build: () => locationForm(d) };
     }
 
+    // Bewerten geht erst, wenn der Stammtisch an der Location begonnen hat (Termin heute).
+    if (m && m.location && m.date <= todayBerlin()) panels.rate = { label: hasRated(d, m.location.name) ? "Bewertung ändern" : "Location bewerten", build: () => ratingForm(d, m.location.name) };
+
     if (m) panels.guest = { label: d.my_guests.length ? "Gäste ändern" : "Gast anmelden", build: () => guestForm(d) };
 
     const toggles = {};
@@ -117,7 +120,7 @@
           (r) => d.my_absent ? "Abmeldung zurückgezogen." : `Abwesenheit eingetragen (${euro.format(r.amount)}).`),
       }, d.my_absent ? "Doch teilnehmen" : "Ich komme nicht"));
     }
-    for (const key of ["guest", "chair", "loc"]) {
+    for (const key of ["rate", "guest", "chair", "loc"]) {
       if (!panels[key]) continue;
       toggles[key] = h("button", { type: "button", class: "hbtn " + (mustTransfer && key === "chair" ? "main" : "alt"), "aria-expanded": "false", onclick: () => { heroPanel = heroPanel === key ? null : key; draw(); } }, panels[key].label);
       buttons.push(toggles[key]);
@@ -286,15 +289,41 @@
             h("strong", {}, c.count + "×"))))));
   }
 
+  // Bewertung einer Location: je Kategorie 1 bis 5 Sterne, nochmal auf den gewählten Stern tippen nimmt ihn zurück.
+  // Gespeichert wird eine Bewertung je Mitglied und Location, erneutes Speichern überschreibt sie.
+  const RATE_KEYS = ["food", "drinks", "service", "ambience", "value"];
+  function ratingForm(d, name) {
+    const mine = (d.my_ratings || []).find((r) => r.location === name) || {};
+    const val = Object.fromEntries(RATE_KEYS.map((k) => [k, mine[k] ?? null]));
+    const rows = RATING_LABELS.map(([k, label]) => {
+      const btns = [1, 2, 3, 4, 5].map((n) => h("button", { type: "button", class: "starbtn", "aria-label": `${label}: ${n} von 5`, onclick: () => { val[k] = val[k] === n ? null : n; paint(); } }));
+      const paint = () => btns.forEach((b, i) => { b.textContent = i < (val[k] || 0) ? "★" : "☆"; b.setAttribute("aria-pressed", String(i + 1 === val[k])); });
+      paint();
+      return h("div", { class: "rateRow" }, h("span", {}, label), h("span", { class: "starset", role: "group", "aria-label": label }, btns));
+    });
+    return h("div", { class: "stack" },
+      h("p", { class: "muted small", style: "margin:0" }, mine.food != null || RATE_KEYS.some((k) => mine[k] != null) ? `Deine Bewertung für ${name}. Du kannst sie ändern.` : `Wie war ${name}? Du musst nicht alles bewerten.`),
+      ...rows,
+      h("button", { type: "button", class: "primary full", onclick: (e) => {
+        if (!RATE_KEYS.some((k) => val[k] != null)) { toast("Bitte mindestens einen Stern vergeben.", true); return; }
+        act(e.currentTarget, () => rpc("app_rate_location", { p_location: name, p_food: val.food, p_drinks: val.drinks, p_service: val.service, p_ambience: val.ambience, p_value: val.value }),
+          () => "Bewertung gespeichert.");
+      } }, "Bewertung speichern"));
+  }
+  const hasRated = (d, name) => (d.my_ratings || []).some((r) => r.location === name);
+
   function recentCard(d) {
     const o = d.overview;
     if (!o) return null;
     // Anwesende kommen aus der Statistik und werden nachgetragen, sobald sie da sind. Ohne sie bleibt die Zeile wie sie ist.
     const rows = o.recent.map((r) => {
       const att = h("span", { class: "muted small" });
-      return { r, att, el: h("div", { class: "row" },
-        h("span", {}, dateShort(r.date), " · ", r.chair || "?", " ", att),
-        h("span", { class: "muted small" }, r.location || "")) };
+      const head = [h("span", {}, dateShort(r.date), " · ", r.chair || "?", " ", att),
+        h("span", { class: "muted small" }, r.location ? [r.location, " ", h("span", { class: "rate" }, hasRated(d, r.location) ? "★" : "☆")] : "")];
+      if (!r.location) return { r, att, el: h("div", { class: "row" }, head) };
+      return { r, att, el: h("details", { class: "loc" },
+        h("summary", { class: "row", style: "border:0", "aria-label": `${r.location}, bewerten` }, head),
+        h("div", { style: "padding:4px 0 12px" }, ratingForm(d, r.location))) };
     });
     getStats().then((st) => {
       const by = new Map(st.attendance.map((a) => [a.date, a]));
@@ -532,8 +561,9 @@
     if (loading) return;
     loading = true;
     try {
-      const [own, overview] = await Promise.all([rpc("app_dashboard"), rpc("app_overview").catch(() => null)]);
+      const [own, overview, ratings] = await Promise.all([rpc("app_dashboard"), rpc("app_overview").catch(() => null), rpc("app_my_ratings").catch(() => [])]);
       own.overview = overview;
+      own.my_ratings = ratings;
       render(own);
       if (manual) { statsCache = null; toast("Aktualisiert."); }
     } catch (e) {

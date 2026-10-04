@@ -12,7 +12,7 @@ Ohne Build-Schritt: reines HTML, CSS und JavaScript. Daten liegen in Supabase (P
 | `config.js` | Öffentliche Verbindungsdaten (URL, öffentlicher Schlüssel, PayPal-Name) |
 | `charts.js` | Statistik-Seite mit den Diagrammen |
 | `trend.js` | Rechenlogik für Durchschnitt und Tendenz der Abwesenheiten (reine Funktionen, mit `node` testbar) |
-| `db/` | SQL der Datenbankfunktionen (`app_stats.sql`, `app_stats_absent.sql`, `app_add_absence.sql`, `chair_target.sql`; die übrigen liegen noch nur in Supabase) |
+| `db/` | SQL der Datenbankfunktionen (`app_stats.sql`, `app_stats_absent.sql`, `app_add_absence.sql`, `chair_target.sql`, `location_ratings.sql`; die übrigen liegen noch nur in Supabase) |
 | `docs/` | Redesign-Konzept und Prototyp (nur Entwurf, wird nicht ausgeliefert genutzt) |
 | `manifest.webmanifest`, `sw.js`, `icons/` | Installierbare App, Offline-Hülle |
 
@@ -22,6 +22,7 @@ Untere Tab-Leiste mit vier Bereichen (Konzept: `docs/REDESIGN-KONZEPT.md`):
 
 - **Start:** Hauptkarte mit dem nächsten Termin ("in X Tagen") und den Aktionen direkt darin ("Ich komme nicht" oder "Doch teilnehmen", für den Vorsitz "Vorsitz übertragen" oder "Vorsitz ändern" und "Location festlegen" oder "Location ändern"; Auswahl und Eingabe klappen in der Karte auf), darunter die Karte "Wer fehlt, wer kommt dazu" (Entschuldigte und Gäste), dann Kacheln (Konto mit PayPal-Link, Kassenstand, Geburtstag, Abwesenheiten mit Durchschnitt pro Abend und Tendenz der letzten 12 Monate).
 - **Statistik:** Anwesenheit pro Abend (12 oder 24 Abende), Heatmap "Wer fehlt wie oft?", Kassenstand über die Zeit, Einnahmen pro Jahr, Wartezeit auf den Vorsitz, Abwesenheiten pro Abend und Jahr. Siehe unten.
+- **Locations bewerten:** Je Mitglied und Location eine Bewertung (Essen, Getränke, Service, Ambiente, Preis-Leistung, 1 bis 5 Sterne, nicht alles muss gesetzt sein, später änderbar). Zu erreichen über "Location bewerten" in der Hauptkarte (ab dem Stammtischtag) und über die Abende unter Chronik > Letzte Abende (aufklappen). Bewerten geht nur für Locations, an denen schon ein Stammtisch war. Funktionen `app_my_ratings` und `app_rate_location` in `db/location_ratings.sql`. Die alten importierten Bewertungen haben kein Mitglied und bleiben unverändert.
 - **Konto:** eigene Posten und die offenen Beträge im Stammtisch.
 - **Chronik:** letzte Abende (mit Anzahl Anwesender und Gästen, sobald die Statistik geladen ist), Vorsitz-Historie, besuchte Locations, Abwesenheiten.
 
