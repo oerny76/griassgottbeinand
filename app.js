@@ -1,6 +1,7 @@
 (() => {
   "use strict";
   const { h, card, options, rpc, toast, euro, dateShort, dateLong, dateDay, stripGast, safeUrl, act, session, hooks } = window.App;
+  const NS = "http://www.w3.org/2000/svg";
   const DOC_HOSTS = ["drive.google.com", "docs.google.com"];
   let linksCache = null; // Satzung und Gebührenordnung kommen aus der Datenbank, nicht aus dem Code
   const $app = document.getElementById("app");
@@ -384,6 +385,15 @@
     return h("div", { class: "tiles" }, konto, ...small, absencesTile(a, absSum));
   }
 
+  // Stilisierter Pfeil: schräg hoch (mehr), waagerecht (ähnlich), schräg runter (weniger). Neutrale Farbe, keine Wertung.
+  function arrow(direction) {
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("class", "arrow" + (direction === "mehr" ? " a-up" : direction === "weniger" ? " a-down" : ""));
+    const p = document.createElementNS(NS, "path"); p.setAttribute("d", "M4 12h15M13 6l6 6-6 6"); svg.append(p);
+    return svg;
+  }
+
   // Abwesenheiten: Durchschnitt pro Abend im laufenden Jahr und Tendenz der letzten 12 Monate (aus der Statistik).
   // Bis die Statistik da ist steht "…", fällt sie aus, bleibt die Summe aller Mitglieder.
   function absencesTile(a, absSum) {
@@ -396,15 +406,16 @@
         h("p", { class: "num" }, fmt1(t.yearAvg), h("span", { class: "unit" }, " pro Abend")),
         h("p", { class: "label" }, `Durchschnitt ${t.year}, bisher ${t.yearEvenings} ${t.yearEvenings === 1 ? "Abend" : "Abende"}`)];
       if (t.series.length >= 3) {
-        const arrow = { mehr: "↑", weniger: "↓", "ähnlich": "→" }[t.direction] || "";
-        const text = t.prev == null
-          ? `Letzte 12 Monate: Ø\u00a0${fmt1(t.last)} pro Abend`
-          : `Letzte 12 Monate: Ø\u00a0${fmt1(t.last)}, davor Ø\u00a0${fmt1(t.prev)}`;
-        parts.push(h("div", { class: "sep" },
-          h("p", { class: "label" }, "Tendenz der letzten 12 Monate"),
-          window.Charts.sparkline(t.series),
-          h("p", { class: "small" }, t.direction ? h("strong", {}, `${arrow} ${t.direction}`) : null, t.direction ? ". " : "", text),
-          t.direction === "mehr" || t.direction === "weniger" ? null : h("p", { class: "label" }, "Pro Abend schwankt die Zahl stark, kleine Unterschiede sind Zufall.")));
+        const nums = t.prev == null
+          ? `Letzte 12 Monate Ø\u00a0${fmt1(t.last)} pro Abend`
+          : `Letzte 12 Monate Ø\u00a0${fmt1(t.last)}, davor Ø\u00a0${fmt1(t.prev)}`;
+        const head = { mehr: "Mehr als davor", weniger: "Weniger als davor", "ähnlich": "Ähnlich wie davor" }[t.direction];
+        parts.push(h("div", { class: "sep trend" },
+          t.direction ? h("span", { class: "bubble", "aria-hidden": "true" }, arrow(t.direction)) : null,
+          h("div", {},
+            head ? h("p", {}, h("strong", {}, head)) : null,
+            h("p", { class: "label" }, nums),
+            t.direction === "ähnlich" ? h("p", { class: "label" }, "Kleine Unterschiede sind Zufall.") : null)));
       }
       body.replaceChildren(...parts);
     }).catch(fallback);
@@ -435,7 +446,6 @@
     ["konto", "Konto", "M3.5 7h17v12h-17zM3.5 7l2-3h13l2 3M15.5 13h2"],
     ["chronik", "Chronik", "M5 4.5h11a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3zM5 16.5a3 3 0 0 1 3-3h11"],
   ];
-  const NS = "http://www.w3.org/2000/svg";
   const icon = (path) => {
     const svg = document.createElementNS(NS, "svg");
     svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true");

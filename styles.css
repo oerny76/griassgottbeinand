@@ -171,8 +171,11 @@ table.tv thead th { color: var(--muted); font-weight: 600; position: sticky; top
 @media (prefers-reduced-motion: reduce) { #charttip { transition: none; } }
 .tile .unit { font-size: 1rem; font-weight: 600; color: var(--muted); letter-spacing: 0; }
 .tile .sep { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; }
-.tile .sep > p { margin: 0; }
-.tile .spark { margin: 6px 0; }
+.tile .trend { display: flex; align-items: center; gap: 12px; }
+.tile .bubble { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; height: 44px; border-radius: 50%; background: var(--wash); color: var(--ink); }
+.tile .arrow { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.tile .arrow.a-up { transform: rotate(-35deg); }
+.tile .arrow.a-down { transform: rotate(35deg); }
 
 /* ---------- Aktionen direkt in der Hauptkarte ---------- */
 .hero .badges { display: flex; flex-wrap: wrap; gap: 6px; }
