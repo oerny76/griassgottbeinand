@@ -10,7 +10,37 @@ Ohne Build-Schritt: reines HTML, CSS und JavaScript. Daten liegen in Supabase (P
 | `index.html`, `styles.css`, `common.js`, `app.js` | Mitglieder-App (`common.js` ist gemeinsam mit dem Admin-Bereich) |
 | `admin.html`, `admin.js`, `paypal.js` | Admin-Bereich: Zahlungen, Buchungen, Offen, Letzte |
 | `config.js` | Öffentliche Verbindungsdaten (URL, öffentlicher Schlüssel, PayPal-Name) |
+| `charts.js` | Statistik-Seite mit den Diagrammen |
+| `db/` | SQL der Datenbankfunktionen (`app_stats.sql`, `app_stats_admin.sql`; die übrigen liegen noch nur in Supabase) |
+| `docs/` | Redesign-Konzept und Prototyp (nur Entwurf, wird nicht ausgeliefert genutzt) |
 | `manifest.webmanifest`, `sw.js`, `icons/` | Installierbare App, Offline-Hülle |
+
+## Aufbau der Mitglieder-App
+
+Untere Tab-Leiste mit vier Bereichen (Konzept: `docs/REDESIGN-KONZEPT.md`):
+
+- **Start:** Hauptkarte mit dem nächsten Termin ("in X Tagen"), Kacheln (Konto mit PayPal-Link, Kassenstand, Geburtstag, Abwesenheiten), Anmeldung, Vorsitz.
+- **Statistik:** Anwesenheit pro Abend (12 oder 24 Abende), Kassenstand über die Zeit, Einnahmen pro Jahr, Wartezeit auf den Vorsitz, Abwesenheiten pro Abend und Jahr. Siehe unten.
+- **Konto:** eigene Posten und die offenen Beträge im Stammtisch.
+- **Chronik:** letzte Abende (mit Anzahl Anwesender und Gästen, sobald die Statistik geladen ist), Vorsitz-Historie, besuchte Locations, Abwesenheiten.
+
+Hell und Dunkel folgen dem Gerät. Farben und Formen stehen als Variablen oben in `styles.css`.
+
+## Statistik
+
+Eigene SVG-Diagramme in `charts.js`, keine Bibliothek. Tooltip per Hover, Antippen und Tastatur (Pfeiltasten im Kassen-Diagramm), jedes Diagramm hat eine Tabellenansicht.
+Daten kommen aus der Funktion `app_stats` (`db/app_stats.sql`). Sie liefert nur Gruppenwerte, keine Einzelpersonen (Datenschutz-Stufe 1).
+
+Annahmen, die man kennen sollte:
+
+- **Anwesende** = aktuelle Mitgliederzahl minus Entschuldigte (Abwesenheit 1x und unentschuldigt) pro Abend. Nur die letzten 24 Abende, denn die Mitgliederzahl hat sich früher geändert. Die Buchung "Abwesenheit (6x)" zählt nicht als Abwesenheit an diesem Abend.
+- **Kassenstand** = Summe der PayPal-Zahlungen ohne Altbestand (`money_pool` leer), am Monatsende. Monate ohne Zahlung übernehmen den Vormonat. Punkte markieren Monate mit Auszahlungen ab 1.000 €.
+- **Einnahmen** = nur positive Buchungen nach Buchungsdatum, nicht nach Zahlung. Ausgaben sind nicht abgezogen. Gäste = Gastbeitrag und Gast unangemeldet.
+- **Wartezeit auf den Vorsitz:** Monate seit dem letzten Vorsitz, gleiche Rangliste wie der Vorschlag bei "Vorsitz übertragen" (`vorsitz.js`). Der schon bestimmte Vorsitz fehlt in der Liste. Diese Angaben sehen alle ohnehin in der Vorsitz-Historie.
+- **Abwesenheiten pro Abend:** Abwesenheiten je Jahr geteilt durch die Zahl der Abende, seit 2015. Gezählt nach Buchungsdatum, denn vor 2021 sind einige Abwesenheiten keinem Abend zugeordnet.
+- Das laufende Jahr ist unvollständig und mit * markiert.
+
+**Nur Admin:** Im Admin-Bereich zeigt der Tab "Fehlen" eine Heatmap, wer bei den letzten zwölf Abenden fehlte (`db/app_stats_admin.sql`, Funktion prüft die Admin-Rolle). Einzelpersonen mit Namen sehen nur Admins.
 
 ## Sicherheit in Kürze
 
@@ -57,10 +87,11 @@ sehen "Kein Zugriff". Die Prüfung liegt in der Datenbank, nicht in der Seite.
 - **Buchen:** manuelle Buchungen, auch für alle Mitglieder (z. B. Geburtstagsbeitrag).
 - **Offen:** offene Posten je Mitglied und Abgleich mit dem PayPal-Saldo.
 - **Letzte:** letzte Buchungen, unbezahlte lassen sich stornieren.
+- **Fehlen:** Heatmap, wer bei den letzten zwölf Abenden fehlte.
 
 Tests der Logik: `node` mit `paypal.js` (reine Funktionen, kein Browser nötig).
 
 ## Noch offen
 
-- Datenbank-Migrationen als SQL-Dateien im Repo ablegen.
+- Übrige Datenbank-Migrationen als SQL-Dateien in `db/` ablegen.
 - Aufräumen der leeren Spalte `entries.payment_reported_at`.
