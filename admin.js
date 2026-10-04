@@ -3,7 +3,7 @@
   "use strict";
   const L = window.StammtischLogic;
   const A = () => window.App;
-  const TABS = [["pay", "Zahlung"], ["book", "Buchen"], ["open", "Offen"], ["recent", "Letzte"]];
+  const TABS = [["pay", "Zahlung"], ["book", "Buchen"], ["open", "Offen"], ["recent", "Letzte"], ["heat", "Fehlen"]];
   let tab = "pay";
   let meta = null;
   let nextMeetingDate = null;
@@ -24,11 +24,11 @@
     const body = h("div", {});
     const nav = h("div", { class: "inline", style: "margin:0 0 12px", role: "tablist" },
       TABS.map(([id, label]) => h("button", {
-        class: id === tab ? "primary full" : "full", role: "tab", "aria-selected": String(id === tab), style: "flex:1 1 0;min-width:0;padding:10px 4px",
+        class: id === tab ? "primary full" : "full", role: "tab", "aria-selected": String(id === tab), style: "flex:1 1 0;min-width:0;padding:10px 2px;font-size:.82rem",
         onclick: () => { tab = id; render($app, d); },
       }, label)));
     $app.replaceChildren(h("div", {}, nav, body));
-    ({ pay: payTab, book: bookTab, open: openTab, recent: recentTab })[tab](body).catch((e) => A().toast(e.message, true));
+    ({ pay: payTab, book: bookTab, open: openTab, recent: recentTab, heat: heatTab })[tab](body).catch((e) => A().toast(e.message, true));
   }
 
   // ---------- Seite starten ----------
@@ -64,6 +64,11 @@
       if (e.forbidden) return noAccess("Dieser Bereich ist nur für den Admin. Du bist als normales Mitglied angemeldet.");
       $app.replaceChildren(A().h("div", { class: "card center pad" }, A().h("p", {}, e.message), A().h("button", { class: "primary", onclick: start }, "Nochmal versuchen")));
     }
+  }
+
+  // ---------- Wer fehlt wie oft (nur Admin, mit Namen) ----------
+  async function heatTab(body) {
+    body.append(window.Charts.heatmapCard(await A().rpc("app_stats_admin")));
   }
 
   // ---------- Zahlung erfassen ----------

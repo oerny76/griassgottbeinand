@@ -58,6 +58,18 @@ begin
         from generate_series(first_year, extract(year from today)::int) y(y)
         left join public.entries e on extract(year from e.entry_date) = y.y and e.cancelled_at is null and e.amount > 0
         group by y.y
+      ) r), '[]'::jsonb),
+    -- Abwesenheiten pro Jahr seit 2015 und Zahl der Abende, damit sich Jahre vergleichen lassen (laufendes Jahr ist unvollständig).
+    -- Gezählt nach Buchungsdatum, weil ältere Abwesenheiten teils keinem Abend zugeordnet sind.
+    'absences_by_year', coalesce((
+      select jsonb_agg(to_jsonb(r) order by r.year)
+      from (
+        select y.y as year,
+               (select count(*) from public.entries e
+                 where e.cancelled_at is null and e.category in ('Abwesenheit (1x)', 'Abwesenheit unentschuldigt') and extract(year from e.entry_date) = y.y) as absences,
+               (select count(*) from public.meetings mt
+                 where extract(year from mt.meeting_date) = y.y and mt.meeting_date < today and coalesce(mt.note, '') not ilike 'AUSFALL%') as meetings
+        from generate_series(2015, extract(year from today)::int) y(y)
       ) r), '[]'::jsonb)
   );
 end

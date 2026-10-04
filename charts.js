@@ -151,6 +151,77 @@
     return svg;
   }
 
+  // ---------- Wer ist als Nächstes dran? ----------
+  // rows: Ergebnis von Vorsitz.rankMembers (längste Zeit ohne Vorsitz zuerst). Diese Angaben sehen alle schon in der Vorsitz-Historie.
+  function chairWait(rows) {
+    const top = rows.slice(0, 8), rh = 28, pl = 84, pr = 58, iw = W - pl - pr;
+    const mx = Math.max(12, ...top.filter((r) => r.days != null).map((r) => r.days / 30.44));
+    const svg = s("svg", { class: "ch", viewBox: `0 0 ${W} ${top.length * rh + 4}`, width: "100%", role: "group", "aria-label": "Monate seit dem letzten Vorsitz" });
+    top.forEach((r, i) => {
+      const y = i * rh + 2, never = r.days == null, m = never ? null : r.days / 30.44, w = Math.max(4, iw * (never ? 1 : m / mx)), first = i === 0;
+      svg.append(text(pl - 8, y + 18, r.name, "ink name" + (first ? " strong" : ""), "end"),
+        s("path", { d: `M${pl},${y + 4}H${pl + w - 4}Q${pl + w},${y + 4} ${pl + w},${y + 8}V${y + 16}Q${pl + w},${y + 20} ${pl + w - 4},${y + 20}H${pl}Z`, style: first ? fill("--accent") : fill("--s1") }),
+        text(pl + w + 6, y + 18, never ? "noch nie" : `${Math.round(m)} Mon.`, "ink strong", "start"));
+      if (first) svg.append(text(pl + 8, y + 17, "Vorschlag", "dark strong", "start"));
+      const hit = s("rect", { class: "hit", x: 0, y, width: W, height: rh });
+      bindTip(hit, r.name, [r.last ? `zuletzt ${fmtDate(r.last, { day: "numeric", month: "long", year: "numeric" })}` : "bisher noch kein Vorsitz", `${r.count}× Vorsitz`]);
+      svg.append(hit);
+    });
+    return svg;
+  }
+
+  // ---------- Abwesenheiten pro Jahr, je Abend ----------
+  function absencesYear(d, thisYear) {
+    const rows = d.absences_by_year.filter((r) => r.meetings > 0).map((r) => Object.assign({ avg: r.absences / r.meetings }, r));
+    const H = 170, pl = 26, pr = 4, pt = 18, pb = 20, iw = W - pl - pr, band = iw / rows.length, bw = Math.min(18, band * 0.7);
+    const ymax = niceMax(Math.max(...rows.map((r) => r.avg)), 2), sy = (v) => pt + (H - pt - pb) * (1 - v / ymax);
+    const svg = s("svg", { class: "ch", viewBox: `0 0 ${W} ${H}`, width: "100%", role: "group", "aria-label": "Abwesenheiten pro Abend und Jahr" });
+    [0, ymax / 2, ymax].forEach((t) => svg.append(s("line", { x1: pl, x2: W - pr, y1: sy(t), y2: sy(t), class: "grid" }), text(pl - 6, sy(t) + 4, num1(t), "muted", "end")));
+    const hi = rows.reduce((a, r, i) => (r.avg > rows[a].avg ? i : a), 0), lo = rows.reduce((a, r, i) => (r.avg < rows[a].avg ? i : a), 0);
+    rows.forEach((r, i) => {
+      const cx = pl + band * i + band / 2, cur = r.year === thisYear;
+      svg.append(s("path", { d: barTop(cx - bw / 2, sy(r.avg), bw, sy(0) - sy(r.avg), 4), style: fill("--s1") }));
+      if (i === hi || i === lo || cur) svg.append(text(cx, sy(r.avg) - 5, num1(r.avg), "ink strong"));
+      if (i % 2 === 0 || cur) svg.append(text(cx, H - 4, `'${String(r.year).slice(2)}${cur ? "*" : ""}`, "muted"));
+      const hit = s("rect", { class: "hit", x: cx - band / 2, y: 0, width: band, height: H });
+      bindTip(hit, `${r.year}${cur ? " (läuft noch)" : ""}`, [`${num1(r.avg)} Abwesenheiten pro Abend`, `${r.absences} Abwesenheiten bei ${r.meetings} Abenden`]);
+      svg.append(hit);
+    });
+    return svg;
+  }
+
+  // ---------- Nur Admin: Wer fehlte bei den letzten Abenden ----------
+  // data: Antwort von app_stats_admin. Ein "×" in der Zelle zeigt das Fehlen auch ohne Farbe.
+  function heatmap(data) {
+    const n = data.dates.length;
+    const people = data.rows.map((r) => ({ name: r.name, cells: [...r.absent].map((c) => c === "1") }))
+      .map((p) => Object.assign(p, { count: p.cells.filter(Boolean).length }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "de"));
+    const pl = 70, pr = 30, top = 18, ch = 22, cell = (W - pl - pr) / n;
+    const svg = s("svg", { class: "ch", viewBox: `0 0 ${W} ${top + people.length * ch + 4}`, width: "100%", role: "group", "aria-label": "Wer fehlte bei den letzten Stammtischen" });
+    data.dates.forEach((d, i) => svg.append(text(pl + cell * i + cell / 2, 11, fmtDate(d, { month: "short" }).replace(".", ""), "muted small9")));
+    people.forEach((p, r) => {
+      const y = top + r * ch;
+      svg.append(text(pl - 8, y + ch / 2 + 4, p.name, "ink name", "end"), text(W - 2, y + ch / 2 + 4, `${p.count}×`, "muted strong", "end"));
+      p.cells.forEach((absent, i) => {
+        const x = pl + cell * i + 1;
+        svg.append(s("rect", { x, y: y + 1, width: cell - 2, height: ch - 2, rx: 4, style: fill(absent ? "--seq-hi" : "--seq-lo") }));
+        if (absent) svg.append(text(x + (cell - 2) / 2, y + ch / 2 + 4, "×", "onseq strong"));
+        const hit = s("rect", { class: "hit", x, y: y + 1, width: cell - 2, height: ch - 2, rx: 4 });
+        bindTip(hit, `${p.name}, ${fmtDate(data.dates[i], { day: "numeric", month: "long", year: "numeric" })}`, [absent ? "fehlte" : "war dabei"]);
+        svg.append(hit);
+      });
+    });
+    return { svg, people };
+  }
+
+  function heatmapCard(data) {
+    const { svg, people } = heatmap(data);
+    return chartCard("Wer fehlt wie oft?", `Die letzten ${data.dates.length} Abende, nur für den Admin sichtbar`,
+      [legend([["fehlte (×)", "--seq-hi"], ["war dabei", "--seq-lo"]]), svg],
+      { headers: ["Mitglied", `Fehlte (von ${data.dates.length})`], rows: people.map((p) => [p.name, p.count]) });
+  }
+
   // ---------- Karten, Legende, Tabellenansicht ----------
   function table(headers, rows) {
     return h("div", { class: "tvwrap" }, h("table", { class: "tv" },
@@ -174,8 +245,8 @@
     return h("div", { class: "kpi" }, h("p", { class: "label" }, label), h("p", { class: "v" }, value), h("p", { class: "label" }, sub));
   }
 
-  // d: Antwort von app_stats
-  function statsPage(d) {
+  // d: Antwort von app_stats, chairs: Rangliste für den Vorsitz (oder null, wenn die Übersicht fehlt)
+  function statsPage(d, chairs) {
     const last12 = d.attendance.slice(-12).map((x) => x.present);
     const thisYear = Number(String(d.asof).slice(0, 4));
     const cur = d.income.find((r) => r.year === thisYear);
@@ -204,8 +275,13 @@
         { headers: ["Monat", "Saldo", "Veränderung"], rows: d.cash.slice().reverse().map((p) => [fmtDate(p.month + "-01", { month: "long", year: "numeric" }), money(p.balance), money(p.change)]) }),
       chartCard("Einnahmen pro Jahr", "Was die Kasse eingenommen hat, Ausgaben sind nicht abgezogen",
         [legend(CATS.map(([, label, col]) => [label, col])), income(d, thisYear), h("p", { class: "muted small", style: "margin:4px 0 0" }, `* ${thisYear} läuft noch. Gezählt nach Buchungsdatum, nicht nach Zahlung.`)],
-        { headers: ["Jahr", ...CATS.map(([, label]) => label)], rows: d.income.slice().reverse().map((r) => [r.year, ...CATS.map(([k]) => money(r[k]))]) }));
+        { headers: ["Jahr", ...CATS.map(([, label]) => label)], rows: d.income.slice().reverse().map((r) => [r.year, ...CATS.map(([k]) => money(r[k]))]) }),
+      chairs && chairs.length ? chartCard("Wer ist als Nächstes dran?", "Monate seit dem letzten Vorsitz, ohne den schon bestimmten Vorsitz", chairWait(chairs),
+        { headers: ["Mitglied", "Zuletzt", "Vorsitze"], rows: chairs.map((r) => [r.name, r.last ? fmtDate(r.last, { day: "2-digit", month: "2-digit", year: "numeric" }) : "noch nie", r.count]) }) : null,
+      d.absences_by_year && d.absences_by_year.length ? chartCard("Abwesenheiten pro Abend", "Durchschnitt je Stammtisch und Jahr, damit die Jahre vergleichbar sind",
+        [absencesYear(d, thisYear), h("p", { class: "muted small", style: "margin:4px 0 0" }, `* ${thisYear} läuft noch. Vor 2021 sind einige Abwesenheiten keinem Abend zugeordnet, die Jahreswerte zählen sie trotzdem.`)],
+        { headers: ["Jahr", "Abwesenheiten", "Abende", "Ø pro Abend"], rows: d.absences_by_year.filter((r) => r.meetings > 0).slice().reverse().map((r) => [r.year, r.absences, r.meetings, num1(r.absences / r.meetings)]) }) : null);
   }
 
-  window.Charts = { statsPage };
+  window.Charts = { statsPage, heatmapCard };
 })();

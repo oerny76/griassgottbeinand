@@ -1,6 +1,6 @@
 # Redesign-Konzept: Stammtisch-App
 
-Stand: 04.10.2026. Status: Phase 1 (Look und Navigation) und Phase 2 (Statistik-Tab mit Anwesenheit, Kasse, Einnahmen) umgesetzt. Richtung Mischung aus A und B, Datenschutz-Stufe 1. Phase 3 steht aus.
+Stand: 04.10.2026. Status: Alle drei Phasen umgesetzt. Richtung Mischung aus A und B, Datenschutz-Stufe 1 (Heatmap mit Namen nur im Admin-Bereich).
 
 Hinweis: GitHub Pages ist öffentlich. Diese Datei enthält deshalb bewusst keine Namen und keine echten Zahlen einzelner Mitglieder.
 

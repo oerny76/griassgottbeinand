@@ -280,9 +280,22 @@
   function recentCard(d) {
     const o = d.overview;
     if (!o) return null;
+    // Anwesende kommen aus der Statistik und werden nachgetragen, sobald sie da sind. Ohne sie bleibt die Zeile wie sie ist.
+    const rows = o.recent.map((r) => {
+      const att = h("span", { class: "muted small" });
+      return { r, att, el: h("div", { class: "row" },
+        h("span", {}, dateShort(r.date), " · ", r.chair || "?", " ", att),
+        h("span", { class: "muted small" }, r.location || "")) };
+    });
+    getStats().then((st) => {
+      const by = new Map(st.attendance.map((a) => [a.date, a]));
+      rows.forEach(({ r, att }) => {
+        const a = by.get(r.date);
+        if (a) att.textContent = `· ${a.present} da${a.guests ? `, ${a.guests} ${a.guests === 1 ? "Gast" : "Gäste"}` : ""}`;
+      });
+    }).catch(() => {});
     return card("Letzte Abende",
-      o.recent.length ? o.recent.map((r) => h("div", { class: "row" }, h("span", {}, dateShort(r.date), " · ", r.chair || "?"), h("span", { class: "muted small" }, r.location || "")))
-        : h("p", { class: "muted", style: "margin:0" }, "Noch keine Abende."));
+      rows.length ? rows.map((x) => x.el) : h("p", { class: "muted", style: "margin:0" }, "Noch keine Abende."));
   }
 
   const RATING_LABELS = [["food", "Essen"], ["drinks", "Getränke"], ["service", "Service"], ["ambience", "Ambiente"], ["value", "Preis-Leistung"]];
@@ -406,18 +419,26 @@
       TABS.map(([id, label, path]) => h("button", { type: "button", "aria-current": id === tab ? "page" : null, onclick: () => goTab(id) }, icon(path), label))));
   }
 
-  // Statistik: Gruppenwerte für alle, wird erst beim Öffnen geladen.
-  function statsPage() {
+  // Statistik (Gruppenwerte für alle): wird erst gebraucht geladen, Tab und Chronik teilen sich eine Anfrage.
+  function getStats() {
+    if (statsCache) return Promise.resolve(statsCache);
+    if (!statsReq) statsReq = rpc("app_stats").then((d) => { statsReq = null; return (statsCache = d); }, (e) => { statsReq = null; throw e; });
+    return statsReq;
+  }
+
+  // Rangliste für "Wer ist als Nächstes dran?": gleiche Logik wie der Vorschlag bei der Vorsitz-Übertragung (vorsitz.js).
+  function chairRanking(d) {
+    if (!(d.overview && d.overview.chairs)) return null;
+    return window.Vorsitz.rankMembers(memberNames(d), d.overview.chairs, d.meeting && d.meeting.chair, todayBerlin());
+  }
+
+  function statsPage(d) {
     const box = h("div", {});
-    const show = (d) => box.replaceChildren(window.Charts.statsPage(d));
+    const show = (st) => box.replaceChildren(window.Charts.statsPage(st, chairRanking(d)));
     const fail = (e) => box.replaceChildren(h("div", { class: "card center" }, h("p", {}, e.message || "Die Statistik ist gerade nicht erreichbar."),
-      h("button", { class: "primary", onclick: () => { box.replaceChildren(h("p", { class: "muted center pad" }, "Lade ...")); fetchStats().then(show, fail); } }, "Nochmal versuchen")));
-    function fetchStats() {
-      if (!statsReq) statsReq = rpc("app_stats").then((d) => { statsReq = null; return (statsCache = d); }, (e) => { statsReq = null; throw e; });
-      return statsReq;
-    }
+      h("button", { class: "primary", onclick: () => { box.replaceChildren(h("p", { class: "muted center pad" }, "Lade ...")); getStats().then(show, fail); } }, "Nochmal versuchen")));
     if (statsCache) show(statsCache);
-    else { box.append(h("p", { class: "muted center pad" }, "Lade ...")); fetchStats().then(show, (e) => { if (e.invalid) { window.App.forgetToken(); showNoToken(); } else fail(e); }); }
+    else { box.append(h("p", { class: "muted center pad" }, "Lade ...")); getStats().then(show, (e) => { if (e.invalid) { window.App.forgetToken(); showNoToken(); } else fail(e); }); }
     return box;
   }
 
@@ -434,7 +455,7 @@
     // Nur der geöffnete Tab wird gebaut (der Statistik-Tab lädt Daten).
     const pages = {
       start: () => [heroCard(d), tilesBlock(d, goTab), signupCard(d, readOnly), readOnly ? actAsPanel(d) : null, whoCard(d), canChair ? chairCard(d) : null],
-      stat: () => [statsPage()],
+      stat: () => [statsPage(d)],
       konto: () => [accountCard(d), openCard(d)],
       chronik: () => [recentCard(d), chairsCard(d), locationsCard(d), absencesCard(d)],
     };
