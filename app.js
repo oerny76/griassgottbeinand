@@ -32,6 +32,10 @@
     const day = new Date(m.date + "T12:00:00");
     const sameYear = day.getFullYear() === new Date(todayBerlin() + "T12:00:00").getFullYear();
     const locked = m.deadline_passed && !d.me.is_admin;
+    // Heute ab 19 Uhr: zeigen, was für den nächsten Stammtisch schon feststeht.
+    const tgt = chairTarget(d);
+    const nextLine = tgt.scope === "next" && tgt.date
+      ? h("p", {}, "Nächster Stammtisch: ", h("strong", {}, dateShort(tgt.date)), tgt.chair ? [", Vorsitz ", h("strong", {}, tgt.chair === d.me.name ? "ich" : tgt.chair)] : null) : null;
     return h("section", { class: "hero" },
       h("div", { class: "badges" },
         h("span", { class: "when" }, whenText(inDays(m.date))),
@@ -45,8 +49,17 @@
             web && [" · ", h("a", { href: web, target: "_blank", rel: "noopener noreferrer" }, "Website")])
         : h("p", { class: "muted" }, "Location noch offen"),
       h("p", { class: "muted small" }, locked ? "Die Anmeldefrist ist abgelaufen. Bitte beim Admin melden." : m.deadline_passed ? "Die Anmeldefrist ist abgelaufen." : "Abmelden oder Gäste anmelden bis 19 Uhr am Stammtischtag."),
+      nextLine,
       ...actions);
   }
+
+  // Wofür "Vorsitz übertragen" und "Location eintragen" gelten, bestimmt die Datenbank (me.chair_scope):
+  //   upcoming: der anstehende Termin, current: der heutige Stammtisch bis 19 Uhr, next: heute ab 19 Uhr der nächste Stammtisch.
+  function chairTarget(d) {
+    const me = d.me;
+    return { scope: me.chair_scope || "upcoming", date: me.chair_target_date || null, chair: me.chair_target_chair || null };
+  }
+  const STAMM = { current: "den aktuellen Stammtisch", next: "den nächsten Stammtisch", upcoming: "den Stammtisch" };
 
   // Knöpfe in der Hauptkarte: Abmelden oder doch teilnehmen, Vorsitz, Location.
   // Auswahl und Eingabe klappen direkt darunter auf. Es ist immer nur ein Fenster offen.
@@ -54,18 +67,29 @@
     const m = d.meeting, me = d.me;
     const locked = !!m && m.deadline_passed && !me.is_admin;
     const panels = {};
+    const tgt = chairTarget(d);
     if (me.can_set_next_chair) {
-      // Gibt es schon einen Termin mit Vorsitz, wird dieser Vorsitz übertragen. Das Datum bleibt dann wie es ist.
-      const changing = !!(me.has_upcoming && m && m.chair);
-      panels.chair = changing
-        ? { label: m.chair === me.name ? "Vorsitz übertragen" : "Vorsitz ändern",
-            build: () => h("div", { class: "stack" },
-              me.chair_change_until ? h("p", { class: "notice", style: "margin:0" }, `Du kannst den Vorsitz noch bis einschließlich ${dateShort(me.chair_change_until)} ändern. Danach nur noch ${m.chair}.`) : null,
-              chairPicker(d, true)) }
-        : { label: "Vorsitz festlegen",
-            build: () => h("div", {}, h("p", { class: "muted small", style: "margin:0 0 8px" }, "Noch kein Vorsitz für den nächsten Termin. Wähle das Mitglied:"), chairPicker(d, false)) };
+      // Gibt es schon einen Vorsitz für das Ziel, wird er übertragen (das Datum bleibt). Sonst wird der Vorsitz für einen neuen Termin festgelegt.
+      const changing = !!(me.has_upcoming && tgt.chair);
+      const mine = tgt.chair === me.name;
+      const verb = mine ? "übertragen" : "ändern";
+      const when = tgt.date ? ` am ${dateShort(tgt.date)}` : "";
+      const info = {
+        current: `Gilt für den aktuellen Stammtisch${when}. Ab 19 Uhr gilt es für den nächsten Stammtisch.`,
+        next: `Gilt für den nächsten Stammtisch${when}. Der heutige Stammtisch läuft schon.`,
+        upcoming: changing ? `Gilt für den Stammtisch${when}.` : "Noch kein Vorsitz für den nächsten Termin. Wähle das Mitglied:",
+      }[tgt.scope];
+      const label = tgt.scope === "upcoming"
+        ? (changing ? `Vorsitz ${verb}` : "Vorsitz festlegen")
+        : changing ? `Vorsitz für ${tgt.scope === "current" ? "aktuellen" : "nächsten"} Stammtisch ${verb}` : "Vorsitz für nächsten Stammtisch festlegen";
+      panels.chair = { label, build: () => h("div", { class: "stack" },
+        h("p", { class: "muted small", style: "margin:0" }, info),
+        changing && me.chair_change_until ? h("p", { class: "notice", style: "margin:0" }, `Du kannst den Vorsitz noch bis einschließlich ${dateShort(me.chair_change_until)} ändern. Danach nur noch ${tgt.chair}.`) : null,
+        chairPicker(d, changing)) };
     }
-    if (me.can_set_location) panels.loc = { label: m && m.location ? "Location ändern" : "Location festlegen", build: () => locationForm(d) };
+    if (me.can_set_location) {
+      panels.loc = { label: tgt.scope === "next" ? "Location für nächsten Stammtisch festlegen" : m && m.location ? "Location ändern" : "Location festlegen", build: () => locationForm(d) };
+    }
 
     const toggles = {};
     const panelBox = h("div", {});
@@ -75,7 +99,8 @@
       Object.entries(toggles).forEach(([k, b]) => b.setAttribute("aria-expanded", String(k === heroPanel)));
     };
     // Wer den Vorsitz hat, kann sich nicht einfach abmelden: Zuerst den Vorsitz übertragen, dann erscheint "Ich komme nicht".
-    const mustTransfer = !!m && !!m.chair && m.chair === me.name && !d.my_absent && !!panels.chair;
+    // Die Datenbank erzwingt das ebenfalls, bis 19 Uhr am Stammtischtag (danach lässt sich der Vorsitz dieses Abends nicht mehr übertragen).
+    const mustTransfer = !!m && tgt.scope !== "next" && !!m.chair && m.chair === me.name && !d.my_absent && !!panels.chair;
     const buttons = [];
     if (m && !mustTransfer) {
       buttons.push(h("button", {
@@ -99,7 +124,8 @@
 
   // Eingabe der Location für den nächsten Termin (auch zum Ändern einer schon eingetragenen).
   function locationForm(d) {
-    const cur = d.meeting && d.meeting.location;
+    const tgt = chairTarget(d);
+    const cur = tgt.scope === "next" ? null : d.meeting && d.meeting.location; // beim nächsten Stammtisch ist noch keine Location bekannt
     const list = h("datalist", { id: "locList" });
     rpc("app_locations").then((names) => names.forEach((n) => list.append(h("option", { value: n })))).catch(() => {});
     const loc = h("input", { id: "loc", type: "text", list: "locList", maxlength: "80", placeholder: cur ? "Name der neuen Location" : "Name der Location", autocomplete: "off" });
@@ -108,7 +134,7 @@
     const city = h("input", { type: "text", maxlength: "60", placeholder: "Ort", autocomplete: "off" });
     const url = h("input", { type: "url", maxlength: "200", placeholder: "Website (https://…)", autocomplete: "off" });
     return h("div", { class: "stack" },
-      h("div", {}, h("label", { for: "loc" }, cur ? `Andere Location für den nächsten Termin (aktuell: ${cur.name})` : "Location für den nächsten Termin"), loc, list),
+      h("div", {}, h("label", { for: "loc" }, cur ? `Andere Location für den nächsten Termin (aktuell: ${cur.name})` : tgt.scope === "next" && tgt.date ? `Location für den nächsten Stammtisch am ${dateShort(tgt.date)}` : "Location für den nächsten Termin"), loc, list),
       h("details", {}, h("summary", {}, "Neue Location? Adresse ergänzen"), h("div", { class: "stack", style: "margin-top:10px" }, street, h("div", { class: "inline" }, zip, city), url)),
       h("button", {
         class: "primary full",
@@ -184,7 +210,8 @@
   // Auswahl der Mitglieder mit Vorschlag: längste Zeit ohne Vorsitz zuerst.
   function chairPicker(d, changing) {
     const V = window.Vorsitz;
-    const exclude = changing ? d.meeting.chair : null;
+    const tgt = chairTarget(d);
+    const exclude = changing ? tgt.chair : null;
     const hasData = !!(d.overview && d.overview.chairs);
     const ranked = V.rankMembers(memberNames(d), hasData ? d.overview.chairs : null, exclude, todayBerlin());
     // Ohne Daten gibt es keinen Vorschlag: nichts vorauswählen und nichts behaupten.
@@ -206,10 +233,10 @@
     }));
     btn.addEventListener("click", (e) => {
       if (!chosen) { toast("Bitte ein Mitglied wählen.", true); return; }
-      const wer = d.meeting && d.meeting.chair === d.me.name ? "mir" : d.meeting && d.meeting.chair;
-      if (changing && !confirm(`Vorsitz am ${dateShort(d.meeting.date)} von ${wer} an ${chosen} übergeben?`)) return;
+      const wer = tgt.chair === d.me.name ? "mir" : tgt.chair;
+      if (changing && !confirm(`Vorsitz für ${STAMM[tgt.scope]} am ${dateShort(tgt.date)} von ${wer} an ${chosen} übergeben?`)) return;
       act(e.currentTarget, () => rpc("app_set_next_chair", { p_chair: chosen, p_date: changing ? null : (date.value || null) }),
-        (r) => `${r.chair} hat den Vorsitz am ${dateShort(r.date)}.`);
+        (r) => `${r.chair} hat den Vorsitz für ${STAMM[tgt.scope]} am ${dateShort(r.date)}.`);
     });
     return h("div", { class: "stack" },
       h("p", { class: "muted small", style: "margin:0" }, hasData
@@ -250,7 +277,7 @@
   function actAsPanel(d) {
     const who = d.me.name;
     // Auch für andere gilt: Wer den Vorsitz hat, wird erst abgemeldet, wenn der Vorsitz übertragen ist.
-    const isChair = !!d.meeting && d.meeting.chair === who && !d.my_absent;
+    const isChair = !!d.meeting && d.me.chair_scope !== "next" && d.meeting.chair === who && !d.my_absent;
     const guest = h("input", { type: "text", maxlength: "60", placeholder: "Name des Gastes", autocomplete: "off", "aria-label": "Gast" });
     return h("section", { class: "card admincard" },
       h("h2", {}, `Admin-Aktion für ${who}`),
@@ -486,7 +513,7 @@
   // Rangliste für "Wer ist als Nächstes dran?": gleiche Logik wie der Vorschlag bei der Vorsitz-Übertragung (vorsitz.js).
   function chairRanking(d) {
     if (!(d.overview && d.overview.chairs)) return null;
-    return window.Vorsitz.rankMembers(memberNames(d), d.overview.chairs, d.meeting && d.meeting.chair, todayBerlin());
+    return window.Vorsitz.rankMembers(memberNames(d), d.overview.chairs, chairTarget(d).chair, todayBerlin());
   }
 
   function statsPage(d) {
