@@ -67,7 +67,7 @@ Aus dem Admin-Bereich öffnet "Mitglied ansehen" dieselbe Ansicht (`index.html#a
 
 - Mitglied: eigene Abwesenheit und Gäste (bis 19 Uhr am Stammtischtag), eigene offene Posten.
 - Vorsitz des letzten Abends: bestimmt den nächsten Vorsitz. Ist er vergeben, darf er ihn nur noch bis einschließlich zum Tag nach dem Stammtisch ändern.
-- Designierter Vorsitz ("ich" in der App): überträgt den Vorsitz mit "Vorsitz übertragen" (Auswahl mit Vorschlag nach der längsten Zeit ohne Vorsitz, `vorsitz.js`) und trägt die Location ein.
+- Designierter Vorsitz ("ich" in der App): kann sich nicht einfach abmelden. Statt "Ich komme nicht" steht zuerst "Vorsitz übertragen", erst danach erscheint "Ich komme nicht" (nur in der Oberfläche, die Datenbank erzwingt es nicht). Er überträgt den Vorsitz mit "Vorsitz übertragen" (Auswahl mit Vorschlag nach der längsten Zeit ohne Vorsitz, `vorsitz.js`) und trägt die Location ein.
 - Admin: alles, auch für andere Mitglieder und ohne Frist.
 
 ## Veröffentlichen
