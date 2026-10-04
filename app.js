@@ -486,7 +486,7 @@
     const today = new Date(todayBerlin() + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
     // Nur der geöffnete Tab wird gebaut (der Statistik-Tab lädt Daten).
     const pages = {
-      start: () => [heroCard(d), tilesBlock(d, goTab), whoCard(d)],
+      start: () => [heroCard(d), whoCard(d), tilesBlock(d, goTab)],
       stat: () => [statsPage(d)],
       konto: () => [accountCard(d), openCard(d)],
       chronik: () => [recentCard(d), chairsCard(d), locationsCard(d), absencesCard(d)],
