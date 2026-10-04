@@ -108,6 +108,7 @@
       parts.push(
         h("div", { class: "stack" },
           h("div", {}, h("label", { for: "nextChair" }, changing ? `Vorsitz ändern (aktuell: ${d.meeting.chair})` : "Nächster Vorsitz"), sel),
+          me.chair_change_until ? h("p", { class: "notice", style: "margin:0" }, `Du kannst den Vorsitz noch bis einschließlich ${dateShort(me.chair_change_until)} ändern. Danach nur noch ${d.meeting.chair}.`) : null,
           changing ? null : h("div", {}, h("label", { for: "nextDate" }, "Datum (leer lassen: erster Freitag im Folgemonat)"), date),
           h("button", {
             class: "primary full",
