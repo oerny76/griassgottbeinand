@@ -21,13 +21,13 @@
     days: [
       { day: "Donnerstag 15.10.", items: [
         ["11:00", "Flug nach Malta", "KM 307, München Terminal 2, 10 Personen, mit Gepäckaufgabe"],
-        ["13:20", "Landung (ETA)", "Transfer für 10 Personen zum Hotel Vita in Paceville", P.airport, P.hotel],
+        ["13:20", "Landung (ETA)", "Transfer für 10 Personen zum Hotel Vita in Paceville", P.hotel],
         ["19:30", "Abendessen", "Bayview Restaurant, Paceville", P.bayview],
       ] },
       { day: "Freitag 16.10.", items: [
         ["12:30", "Hafentour ab Sliema", "10 Personen, danach Besichtigung von Valletta. Transfer noch offen: Bus oder zu Fuß.", P.valletta],
         ["11:00", "Flug Ernest und Stefan", "KM 307, München Terminal 2 nach Malta, Landung 13:20. Economy, aufgegebenes Gepäck 10 kg."],
-        ["13:20", "Ernest und Stefan: Landung", "Werden vom Flughafen abgeholt und zum Noru Hotel Malta gebracht. Danach kommen sie je nach Lust und Laune direkt nach Valletta.", P.airport, P.noru],
+        ["13:20", "Ernest und Stefan: Landung", "Werden vom Flughafen abgeholt und zum Noru Hotel Malta gebracht. Danach kommen sie je nach Lust und Laune direkt nach Valletta.", P.noru],
         ["20:00", "Abendessen", "Lubelli, Paceville", P.lubelli],
       ] },
       { day: "Samstag 17.10.", items: [
@@ -37,7 +37,7 @@
       ] },
       { day: "Sonntag 18.10.", items: [
         ["", "Freie Verfügung", ""],
-        ["16:25", "Rückflug", "KM 3306 nach München Terminal 2, Landung 18:55, 10 Personen (Ernest und Stefan sind im selben Flug). Transfer zum Flughafen ist gebucht, die genaue Abholzeit wird noch vereinbart."],
+        ["16:25", "Rückflug", "KM 3306 nach München Terminal 2, Landung 18:55, 10 Personen (Ernest und Stefan sind im selben Flug). Transfer zum Flughafen ist gebucht, die genaue Abholzeit wird noch vereinbart.", P.airport],
       ] },
     ],
     tips: "Badehandtuch und Badeschuhe oder Flip-Flops schaden nicht. Das Hotel hat einen Pool, das Meer ist circa 300 Meter entfernt. Jetzt heißt es Daumen drücken, dass das Wetter hält!",
