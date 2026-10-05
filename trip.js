@@ -8,6 +8,7 @@
     airport: { name: "Malta International Airport", addr: "Luqa, Malta", url: "https://www.maltairport.com" },
     hotel: { name: "VITA Hotel", addr: "146 St George's Road, St Julian's STJ 3203, Malta", url: "https://www.vitahotel.com.mt" },
     bayview: { name: "Bayview Restaurant, Marina Hotel Corinthia", addr: "St George's Bay, St Julian's, Malta", url: "https://corinthiagroup.com/property/marina-hotel-corinthia-beach-resort-malta/" },
+    noru: { name: "Noru Hotel Malta", addr: "Triq Elija Zammit, San Ġiljan STJ 3151, Malta" },
     valletta: { name: "Valletta", addr: "Valletta, Malta" },
     lubelli: { name: "Lubelli, InterContinental Malta", addr: "St George's Bay, St Julian's STJ 3310, Malta", url: "https://www.ihg.com/intercontinental/hotels/gb/en/malta/malha/hoteldetail/dining" },
   };
@@ -17,7 +18,7 @@
     place: "Malta",
     from: "2026-10-15",
     to: "2026-10-18",
-    hotel: "Hotel Vita, Paceville",
+    hotel: "Hotel Vita, Paceville (Ernest und Stefan: Noru Hotel Malta)",
     hotelPlace: P.hotel,
     days: [
       { day: "Donnerstag 15.10.", items: [
@@ -27,7 +28,8 @@
       ] },
       { day: "Freitag 16.10.", items: [
         ["12:30", "Hafentour ab Sliema", "10 Personen, danach Besichtigung von Valletta. Transfer noch offen: Bus oder zu Fuß.", P.valletta],
-        ["", "Ernest und Stefan", "Werden vom Flughafen abgeholt und zum Hotel gebracht. Danach kommen sie je nach Lust und Laune direkt nach Valletta."],
+        ["11:00", "Flug Ernest und Stefan", "KM 307, München Terminal 2 nach Malta, Landung 13:20. Economy, aufgegebenes Gepäck 10 kg."],
+        ["13:20", "Ernest und Stefan: Landung", "Werden vom Flughafen abgeholt und zum Noru Hotel Malta gebracht. Danach kommen sie je nach Lust und Laune direkt nach Valletta.", P.airport, P.noru],
         ["20:00", "Abendessen", "Lubelli, Paceville", P.lubelli],
       ] },
       { day: "Samstag 17.10.", items: [
@@ -38,6 +40,7 @@
       { day: "Sonntag 18.10.", items: [
         ["", "Freie Verfügung", ""],
         ["16:25", "Rückflug", "Transfer zum Flughafen ist gebucht, die genaue Abholzeit wird noch vereinbart."],
+        ["16:25", "Rückflug Ernest und Stefan", "KM 3306, Malta nach München Terminal 2, Landung 18:55. Economy, aufgegebenes Gepäck 10 kg."],
       ] },
     ],
     tips: "Badehandtuch und Badeschuhe oder Flip-Flops schaden nicht. Das Hotel hat einen Pool, das Meer ist circa 300 Meter entfernt. Jetzt heißt es Daumen drücken, dass das Wetter hält!",
