@@ -13,7 +13,7 @@ Ohne Build-Schritt: reines HTML, CSS und JavaScript. Daten liegen in Supabase (P
 | `config.js` | Öffentliche Verbindungsdaten (URL, öffentlicher Schlüssel, PayPal-Name) |
 | `charts.js` | Statistik-Seite mit den Diagrammen |
 | `trend.js` | Rechenlogik für Durchschnitt und Tendenz der Abwesenheiten (reine Funktionen, mit `node` testbar) |
-| `db/` | SQL der Datenbankfunktionen (`app_stats.sql`, `app_stats_absent.sql`, `app_add_absence.sql`, `chair_target.sql`, `location_ratings.sql`, `payer.sql`, `deckel.sql`; die übrigen liegen noch nur in Supabase) |
+| `db/` | SQL der Datenbankfunktionen (`app_stats.sql`, `app_stats_absent.sql`, `app_add_absence.sql`, `chair_target.sql`, `location_ratings.sql`, `payer.sql`, `deckel.sql`, `app_stats_beer.sql`; die übrigen liegen noch nur in Supabase) |
 | `docs/` | Redesign-Konzept und Prototyp (nur Entwurf, wird nicht ausgeliefert genutzt) |
 | `manifest.webmanifest`, `sw.js`, `icons/` | Installierbare App, Offline-Hülle |
 

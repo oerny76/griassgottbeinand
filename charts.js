@@ -1,5 +1,5 @@
 // Statistik-Seite: eigene SVG-Diagramme ohne Bibliothek. Alle Texte gehen über textContent, nie über innerHTML.
-// Die Daten (Funktion app_stats) enthalten nur Gruppenwerte. Nur die Heatmap (app_stats_absent) zeigt Namen.
+// Die Daten (Funktion app_stats) enthalten nur Gruppenwerte. Nur die Heatmap (app_stats_absent) zeigt Namen. Die Bier-Karte (app_stats_beer) zeigt nur Summen ab 5 zählenden Mitgliedern je Abend.
 (() => {
   "use strict";
   const { h } = window.App;
@@ -78,6 +78,38 @@
       svg.append(hit);
     });
     return svg;
+  }
+
+  // ---------- Bier pro Abend (nur Abende mit genug zählenden Mitgliedern, siehe app_stats_beer) ----------
+  function beerChart(evs) {
+    const data = evs;
+    const H = 170, pl = 28, pr = 4, pt = 16, pb = 20, iw = W - pl - pr, band = iw / data.length, bw = Math.min(16, band * 0.62);
+    const ymax = niceMax(Math.max(...data.map((x) => x.beers)), 10);
+    const sy = (v) => pt + (H - pt - pb) * (1 - v / ymax);
+    const svg = s("svg", { class: "ch", viewBox: `0 0 ${W} ${H}`, width: "100%", role: "group", "aria-label": "Gezählte Biere pro Stammtisch" });
+    [0, ymax / 2, ymax].forEach((t) => svg.append(s("line", { x1: pl, x2: pl + iw, y1: sy(t), y2: sy(t), class: "grid" }), text(pl - 6, sy(t) + 4, t, "muted", "end")));
+    const hi = data.findIndex((x) => x.beers === Math.max(...data.map((y) => y.beers)));
+    data.forEach((x, i) => {
+      const cx = pl + band * i + band / 2, top = sy(x.beers);
+      svg.append(s("path", { d: barTop(cx - bw / 2, top, bw, sy(0) - top, 4), style: fill("--s1") }));
+      if (i === hi) svg.append(text(cx, top - 5, x.beers, "ink strong"));
+      if (i % Math.ceil(data.length / 5) === 0 || i === data.length - 1) svg.append(text(cx, H - 4, fmtDate(x.date, { month: "short", year: "2-digit" }), "muted"));
+      const hit = s("rect", { class: "hit", x: cx - band / 2, y: 0, width: band, height: H });
+      bindTip(hit, fmtDate(x.date, { weekday: "short", day: "numeric", month: "long", year: "numeric" }),
+        [`${x.beers} Bier`, `${x.people} Mitglieder gezählt`, `Ø ${num1(x.beers / x.people)} pro Mitglied`]);
+      svg.append(hit);
+    });
+    return svg;
+  }
+
+  function beerCard(b) {
+    const ev = b.evenings;
+    const intro = h("p", { class: "muted small", style: "margin:4px 0 0" },
+      `Gezählt werden Helles, Weißbier, Dunkles, Kellerbier und Draftbier, nur von Mitgliedern, die es freiwillig zählen lassen. Abende mit weniger als ${b.min_group} zählenden Mitgliedern werden nicht gezeigt.`);
+    if (!ev.length) return chartCard("Bier", "Wie viel am Stammtisch getrunken wurde", [h("p", { style: "margin:8px 0 0" }, "Noch nicht genug Zählungen."), intro], null);
+    const total = ev.reduce((a, x) => a + x.beers, 0);
+    return chartCard("Bier", `Gezählte Biere pro Stammtisch, insgesamt ${total} an ${ev.length} Abenden`, [beerChart(ev), intro],
+      { headers: ["Jahr", "Bier", "Abende", "Ø pro Mitglied und Abend"], rows: b.years.slice().reverse().map((y) => [y.year, y.beers, y.evenings, num1(y.beers / y.people)]) });
   }
 
   // ---------- Kassenstand über die Zeit ----------
@@ -271,6 +303,7 @@
         h("p", { class: "muted small", style: "margin:4px 0 0" }, `Anwesende = ${d.members} Mitglieder minus Entschuldigte. Tippe auf einen Balken für Datum und Gäste.`)],
         { headers: ["Abend", "Mitglieder", "Gäste"], rows: d.attendance.slice().reverse().map((x) => [fmtDate(x.date, { day: "2-digit", month: "2-digit", year: "numeric" }), x.present, x.guests]) }, seg),
       d.absent_grid && d.absent_grid.dates.length ? heatmapCard(d.absent_grid) : null,
+      d.beer ? beerCard(d.beer) : null,
       chartCard("Kassenstand", "PayPal-Saldo am Monatsende, Tippen und Wischen zeigt den Monat",
         [d.cash.some((p) => Number(p.change) <= BIG_DROP) ? legend([["Saldo", "--s1"], ["Auszahlung ab 1.000 € im Monat", "--s3"]]) : null, cash(d)],
         { headers: ["Monat", "Saldo", "Veränderung"], rows: d.cash.slice().reverse().map((p) => [fmtDate(p.month + "-01", { month: "long", year: "numeric" }), money(p.balance), money(p.change)]) }),

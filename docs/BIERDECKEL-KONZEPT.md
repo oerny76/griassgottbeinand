@@ -61,4 +61,4 @@ In die Datenbank geht **nur die Anzahl Bier** eines Stammtischabends, je Mitglie
 - wird ein gezählter Eintrag im Deckelbuch gelöscht, wird die Zahl auch aus der Datenbank entfernt,
 - Zugriff nur über die Funktionen mit persönlichem Code. Einzelwerte pro Mitglied liegen in der Tabelle (per SQL für den Betreiber sichtbar), in der App erscheinen später nur Gruppensummen.
 
-Offen: Gruppenauswertung in der Statistik (Phase 3).
+Gruppenauswertung (Phase 3): Karte "Bier" im Statistik-Tab (`db/app_stats_beer.sql`, `beerCard` in `charts.js`). Balken je Stammtisch (letzte 24 Abende), Tabelle je Jahr mit Summe und Durchschnitt pro Mitglied und Abend. Nur Summen, und nur Abende, an denen mindestens 5 Mitglieder gezählt haben. Die Zahlen zeigen nur die Mitglieder, die mitzählen.
