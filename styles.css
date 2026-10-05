@@ -204,3 +204,5 @@ table.tv thead th { color: var(--muted); font-weight: 600; position: sticky; top
 .trip-row { display: flex; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
 .trip-row:first-of-type { border-top: 0; }
 .trip-time { flex: 0 0 3.2rem; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--brand); }
+.trip-row.off { opacity: .45; }
+.trip-row.off .trip-time { color: var(--muted); }

@@ -53,15 +53,16 @@
 
   const nowBerlin = () => new Date().toLocaleString("sv-SE", { timeZone: "Europe/Berlin" }).slice(0, 16).replace(" ", "T");
 
+  // Betrifft der Punkt diese Person? Ohne Zielgruppe gilt er für alle.
+  const applies = (rest, name) => {
+    const aud = (rest.find((x) => x.aud) || {}).aud;
+    return !aud || (aud === "es") === isEs(name);
+  };
+
   // Alle Programmpunkte mit Uhrzeit, für die angegebene Person, nach Zeit sortiert.
   function events(name) {
-    const es = isEs(name);
     return TRIP.days.flatMap((d) => d.items
-      .filter(([time, , , ...rest]) => {
-        if (!time) return false;
-        const aud = (rest.find((x) => x.aud) || {}).aud;
-        return !aud || (aud === "es") === es;
-      })
+      .filter(([time, , , ...rest]) => time && applies(rest, name))
       .map(([time, what, note]) => ({ at: `${d.date}T${time}`, time, what, note, date: d.date })))
       .sort((a, b) => a.at.localeCompare(b.at));
   }
@@ -123,7 +124,7 @@
         h("p", { class: "muted" }, range(name))),
       TRIP.days.map((d) => h("section", { class: "card" },
         h("h2", { style: "margin:0 0 6px;font-size:1.05rem" }, d.day),
-        d.items.map(([time, what, note, ...rest]) => h("div", { class: "trip-row" },
+        d.items.map(([time, what, note, ...rest]) => h("div", { class: "trip-row" + (applies(rest, name) ? "" : " off") },
           h("span", { class: "trip-time" }, time || "·"),
           h("span", {}, h("strong", {}, what), note ? h("span", { class: "muted small", style: "display:block" }, note) : null, places(h, rest.filter((x) => x.name)), rest.some((x) => x.aud) ? h("span", { class: "chip", style: "margin-top:4px" }, rest.find((x) => x.aud).aud === "es" ? "nur Ernest und Stefan" : "ohne Ernest und Stefan") : null))))),
       h("section", { class: "card" },
