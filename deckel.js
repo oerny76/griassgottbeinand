@@ -64,7 +64,7 @@
   const priceKey = (loc, label) => `${loc || ""}|${label}`;
   const qtyText = (i) => `${i.qty}× ${i.label}`;
   const money = (n) => euro.format(n);
-  const LOCAL_NOTE = "Lokal gespeichert: Deckel und Deckelbuch liegen nur in diesem Browser auf diesem Gerät. Sie werden nirgends hochgeladen und verschwinden, wenn du sie löschst oder die Browserdaten löschst.";
+  const LOCAL_NOTE = "Lokal gespeichert: Bierdeggl und Bierdeggl-Buch liegen nur in diesem Browser auf diesem Gerät. Sie werden nirgends hochgeladen und verschwinden, wenn du sie löschst oder die Browserdaten löschst.";
 
   function render(ctx) {
     const loc = (ctx && ctx.location) || "";
@@ -109,16 +109,16 @@
     function deckView() {
       const o = state.open;
       if (!o) {
-        return [card("Mein Deckel",
+        return [card("Mein Bierdeggl",
           h("p", { class: "muted", style: "margin:0 0 10px" }, "Schreib auf, was du bestellst, und lass dir am Ende die Schlussrechnung geben."),
-          h("button", { class: "primary full", onclick: () => { state.open = { started: today(), location: loc, items: [] }; commit(); } }, "Neuen Deckel starten"),
+          h("button", { class: "primary full", onclick: () => { state.open = { started: today(), location: loc, items: [] }; commit(); } }, "Neuen Bierdeggl starten"),
           note())];
       }
       const s = root.Deckel.summary(o.items);
       const free = h("input", { type: "text", placeholder: "Etwas anderes, z. B. Salat", autocomplete: "off", "aria-label": "Eigene Bestellung" });
       const addFree = () => { const v = free.value.trim(); if (!v) { free.focus(); return; } add(v, "other"); };
       free.addEventListener("keydown", (e) => { if (e.key === "Enter") addFree(); });
-      return [card("Mein Deckel",
+      return [card("Mein Bierdeggl",
         h("p", { class: "muted small", style: "margin:0 0 8px" }, `${dateShort(o.started)}${o.location ? " · " + o.location : ""}`),
         h("ul", { class: "chips" }, CHIPS.map(([label, cat]) => h("li", {}, h("button", { type: "button", class: "chip", onclick: () => add(label, cat) }, "+ " + label)))),
         h("div", { class: "inline", style: "margin-top:10px" }, free, h("button", { type: "button", onclick: addFree }, "Hinzufügen")),
@@ -130,7 +130,7 @@
             s.units_no_price ? h("span", { class: "muted small" }, `  + ${s.units_no_price} Stück ohne Preis`) : null) : null,
           h("div", { class: "inline" },
             h("button", { class: "primary", disabled: !o.items.length, style: "flex:1", onclick: () => { view = "bill"; draw(); } }, "Schlussrechnung"),
-            h("button", { class: "link", onclick: () => { if (!o.items.length || confirm("Deckel verwerfen?")) { state.open = null; commit(); } } }, "Verwerfen"))),
+            h("button", { class: "link", onclick: () => { if (!o.items.length || confirm("Bierdeggl verwerfen?")) { state.open = null; commit(); } } }, "Verwerfen"))),
         note())];
     }
 
@@ -161,7 +161,7 @@
             h("button", { class: "primary", style: "flex:1", onclick: () => { view = "asked"; draw(); } }, "Ja"),
             h("button", { style: "flex:1", onclick: () => { view = "deck"; draw(); } }, "Nein, weiter bestellen")));
       } else {
-        body.push(h("p", { style: "margin:14px 0 6px" }, h("strong", {}, "In mein Deckelbuch speichern?")),
+        body.push(h("p", { style: "margin:14px 0 6px" }, h("strong", {}, "In mein Bierdeggl-Buch speichern?")),
           h("p", { class: "muted small", style: "margin:0 0 8px" }, "Es bleibt nur auf diesem Gerät."));
         if (atMeeting) {
           const cb = h("input", { type: "checkbox", id: "dk-share", checked: share ? "" : null, onchange: (e) => { share = e.target.checked; } });
@@ -188,7 +188,7 @@
       const list = state.book;
       if (!list.length) return [];
       const beers = list.reduce((a, b) => a + (b.beers || 0), 0);
-      return [card("Deckelbuch",
+      return [card("Bierdeggl-Buch",
         h("p", { class: "muted small", style: "margin:0 0 6px" }, `${list.length} Abende, ${beers} Bier.`),
         list.map((b) => h("details", {},
           h("summary", {}, `${dateShort(b.date)}${b.location ? " · " + b.location : ""} · ${money(b.total)}${b.no_price ? " +" : ""}`),
@@ -227,7 +227,7 @@
     if (!fab) return;
     const n = openUnits(), b = fab.querySelector(".dk-badge");
     b.textContent = String(n); b.hidden = n === 0;
-    fab.setAttribute("aria-label", n ? `Mein Deckel öffnen, ${n} Posten` : "Mein Deckel öffnen");
+    fab.setAttribute("aria-label", n ? `Mein Bierdeggl öffnen, ${n} Posten` : "Mein Bierdeggl öffnen");
   }
   function openSheet() {
     sheetBody.replaceChildren(render(Object.assign({}, getCtx(), { onChange: updateBadge })));
@@ -249,8 +249,8 @@
     closeBtn = h("button", { type: "button", class: "link", onclick: closeSheet }, "Schließen");
     sheetBody = h("div", { class: "dk-body" });
     back = h("div", { class: "dk-back", hidden: "", onclick: (e) => { if (e.target === back) closeSheet(); } },
-      h("div", { class: "dk-sheet", role: "dialog", "aria-modal": "true", "aria-label": "Mein Deckel" },
-        h("div", { class: "dk-head" }, h("strong", {}, "🍺 Mein Deckel"), closeBtn), sheetBody));
+      h("div", { class: "dk-sheet", role: "dialog", "aria-modal": "true", "aria-label": "Mein Bierdeggl" },
+        h("div", { class: "dk-head" }, h("strong", {}, "🍺 Mein Bierdeggl"), closeBtn), sheetBody));
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
     document.body.append(fab, back);
     updateBadge();

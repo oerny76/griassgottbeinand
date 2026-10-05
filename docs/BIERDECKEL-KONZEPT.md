@@ -64,3 +64,5 @@ In die Datenbank geht **nur die Anzahl Bier** eines Stammtischabends, je Mitglie
 Gruppenauswertung (Phase 3): Karte "Bier" im Statistik-Tab (`db/app_stats_beer.sql`, `beerCard` in `charts.js`). Balken je Stammtisch (letzte 24 Abende), Tabelle je Jahr mit Summe und Durchschnitt pro Mitglied und Abend. Nur Summen, und nur Abende, an denen mindestens 5 Mitglieder gezählt haben. Die Zahlen zeigen nur die Mitglieder, die mitzählen.
 
 Oberfläche: Der Deckel ist ein schwebender Knopf unten rechts (mit Anzahl der Posten) auf allen Seiten. Er öffnet ein Overlay mit Bestellen, Schlussrechnung und Deckelbuch. Der Reiter "Deckel" entfällt. Der Durchschnitt in der Bier-Karte zählt nur Mitglieder mit mindestens einem Bier.
+
+Name in der App: **Bierdeggl** ("Mein Bierdeggl", "Bierdeggl-Buch"), passend zum Spruch auf dem Schild der Runde. Im Code und in den Dateinamen bleibt es bei "Deckel".
