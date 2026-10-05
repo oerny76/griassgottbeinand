@@ -22,7 +22,7 @@
     hotelPlace: P.hotel,
     days: [
       { day: "Donnerstag 15.10.", items: [
-        ["11:00", "Flug nach Malta", "10 Personen, mit Gepäckaufgabe"],
+        ["11:00", "Flug nach Malta", "KM 307, München Terminal 2, 10 Personen, mit Gepäckaufgabe"],
         ["13:20", "Landung (ETA)", "Transfer für 10 Personen zum Hotel Vita in Paceville", P.airport],
         ["19:30", "Abendessen", "Bayview Restaurant, Paceville", P.bayview],
       ] },
@@ -39,8 +39,7 @@
       ] },
       { day: "Sonntag 18.10.", items: [
         ["", "Freie Verfügung", ""],
-        ["16:25", "Rückflug", "Transfer zum Flughafen ist gebucht, die genaue Abholzeit wird noch vereinbart."],
-        ["16:25", "Rückflug Ernest und Stefan", "KM 3306, Malta nach München Terminal 2, Landung 18:55. Economy, aufgegebenes Gepäck 10 kg."],
+        ["16:25", "Rückflug", "KM 3306 nach München Terminal 2, Landung 18:55, 10 Personen (Ernest und Stefan sind im selben Flug). Transfer zum Flughafen ist gebucht, die genaue Abholzeit wird noch vereinbart."],
       ] },
     ],
     tips: "Badehandtuch und Badeschuhe oder Flip-Flops schaden nicht. Das Hotel hat einen Pool, das Meer ist circa 300 Meter entfernt. Jetzt heißt es Daumen drücken, dass das Wetter hält!",
