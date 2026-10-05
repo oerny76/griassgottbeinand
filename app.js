@@ -351,9 +351,11 @@
         if (a) att.textContent = `· ${a.present} da${a.guests ? `, ${a.guests} ${a.guests === 1 ? "Gast" : "Gäste"}` : ""}`;
       });
     }).catch(() => {});
-    return card("Letzte Abende",
-      rows.length ? h("p", { class: "muted small", style: "margin:0 0 4px" }, "Tippe auf einen Abend, um die Location zu bewerten. ★ heißt: von dir bewertet.") : null,
-      rows.length ? rows.map((x) => x.el) : h("p", { class: "muted", style: "margin:0" }, "Noch keine Abende."));
+    return h("section", { class: "card" },
+      h("details", {},
+        h("summary", {}, "Letzte Abende"),
+        rows.length ? h("p", { class: "muted small", style: "margin:8px 0 4px" }, "Tippe auf einen Abend, um die Location zu bewerten. ★ heißt: von dir bewertet.") : null,
+        rows.length ? rows.map((x) => x.el) : h("p", { class: "muted", style: "margin:8px 0 0" }, "Noch keine Abende.")));
   }
 
   const RATING_LABELS = [["food", "Essen"], ["drinks", "Getränke"], ["service", "Service"], ["ambience", "Ambiente"], ["value", "Preis-Leistung"]];
@@ -561,7 +563,7 @@
       start: () => [heroCard(d), whoCard(d), tilesBlock(d, goTab)],
       stat: () => [statsPage(d)],
       konto: () => [accountCard(d), openCard(d)],
-      chronik: () => [recentCard(d), chairsCard(d), locationsCard(d), absencesCard(d)],
+      chronik: () => [recentCard(d), absencesCard(d), chairsCard(d), locationsCard(d)],
       admin: () => [window.AdminView.render(own)],
     };
     const root = h("div", {},
