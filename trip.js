@@ -8,10 +8,8 @@
     airport: { name: "Malta International Airport", addr: "Luqa, Malta", url: "https://www.maltairport.com" },
     hotel: { name: "VITA Hotel", addr: "146 St George's Road, St Julian's STJ 3203, Malta", url: "https://www.vitahotel.com.mt" },
     bayview: { name: "Bayview Restaurant, Marina Hotel Corinthia", addr: "St George's Bay, St Julian's, Malta", url: "https://corinthiagroup.com/property/marina-hotel-corinthia-beach-resort-malta/" },
-    sliema: { name: "Sliema Ferries", addr: "The Strand, Sliema, Malta" },
     valletta: { name: "Valletta", addr: "Valletta, Malta" },
     lubelli: { name: "Lubelli, InterContinental Malta", addr: "St George's Bay, St Julian's STJ 3310, Malta", url: "https://www.ihg.com/intercontinental/hotels/gb/en/malta/malha/hoteldetail/dining" },
-    brasserie: { name: "Brasserie", addr: "Paceville, St Julian's, Malta", unsure: true },
   };
 
   const TRIP = {
@@ -28,14 +26,14 @@
         ["19:30", "Abendessen", "Bayview Restaurant, Paceville", P.bayview],
       ] },
       { day: "Freitag 16.10.", items: [
-        ["12:30", "Hafentour ab Sliema", "10 Personen, danach Besichtigung von Valletta. Transfer noch offen: Bus oder zu Fuß.", P.sliema, P.valletta],
+        ["12:30", "Hafentour ab Sliema", "10 Personen, danach Besichtigung von Valletta. Transfer noch offen: Bus oder zu Fuß.", P.valletta],
         ["", "Ernest und Stefan", "Werden vom Flughafen abgeholt und zum Hotel gebracht. Danach kommen sie je nach Lust und Laune direkt nach Valletta."],
         ["20:00", "Abendessen", "Lubelli, Paceville", P.lubelli],
       ] },
       { day: "Samstag 17.10.", items: [
         ["09:20", "Abholung am Hotel", "", P.hotel],
         ["10:00", "Inselrundfahrt", "Dauer circa 7,5 Stunden"],
-        ["20:00", "Abendessen", "Brasserie, Paceville", P.brasserie],
+        ["20:00", "Abendessen", "Brasserie, Paceville"],
       ] },
       { day: "Sonntag 18.10.", items: [
         ["", "Freie Verfügung", ""],
@@ -63,7 +61,7 @@
 
   function places(h, list) {
     return list.map((p) => h("span", { class: "muted small", style: "display:block" },
-      "📍 ", p.name, " · ", p.addr, p.unsure ? " (Ort bitte bestätigen)" : "", " · ",
+      "📍 ", p.name, " · ", p.addr, " · ",
       h("a", { href: mapsUrl(p), target: "_blank", rel: "noopener noreferrer" }, "Karte"),
       p.url ? [" · ", h("a", { href: p.url, target: "_blank", rel: "noopener noreferrer" }, "Website")] : null));
   }
