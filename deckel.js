@@ -42,6 +42,7 @@
   const KEY = "stammtisch_deckel_v1";
   const CHIPS = [
     ["Helles", "beer"], ["Weißbier", "beer"], ["Dunkles", "beer"], ["Radler", "beer"],
+    ["Helles alkoholfrei", "nonalc"], ["Weißbier alkoholfrei", "nonalc"], ["Dunkles alkoholfrei", "nonalc"], ["Radler alkoholfrei", "nonalc"],
     ["Spezi", "soft"], ["Wasser", "soft"], ["Apfelschorle", "soft"], ["Essen", "food"],
   ];
 

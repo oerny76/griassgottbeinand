@@ -47,7 +47,7 @@ Nur aus gespeicherten Deckeln mit Freigabe: Bier gesamt, pro Abend, pro Jahr, An
 ## Entscheidungen
 - Erfassung: eine Zeile mit Menge, Tipp erhöht die Zeile.
 - Zeitpunkt: jederzeit, am Stammtischtag kommt die Location des Termins automatisch dazu.
-- Getränke: Bier-Sorten (Helles, Weißbier, Dunkles, Radler), dazu Spezi, Wasser, Apfelschorle, Essen und Freitext.
+- Getränke: Bier-Sorten (Helles, Weißbier, Dunkles, Radler) und deren alkoholfreie Pendants (eigene Kategorie, zählen nicht als Bier), dazu Spezi, Wasser, Apfelschorle, Essen und Freitext.
 - Komfort: Preise werden je Location gemerkt. Kein Trinkgeld.
 - Gruppenstatistik: Freigabe je Mitglied, Anzeige ab 5 Teilnehmern (Phase 3).
 - Start: Phase 1.
