@@ -1,4 +1,5 @@
-// Virtueller Bierdeckel (Phase 1): läuft nur auf diesem Gerät (localStorage), nichts geht an die Datenbank.
+// Virtueller Bierdeckel: der laufende Deckel liegt lokal im Browser (localStorage, Empfang im Wirtshaus),
+// das Deckelbuch (abgerechnete Deckel) in der Datenbank (db/deckel.sql), nur für das Mitglied selbst lesbar.
 // Reine Rechenfunktionen oben, Oberfläche unten (window.Deckel.render).
 (function (root) {
   "use strict";
@@ -38,7 +39,7 @@
 (function (root) {
   "use strict";
   if (typeof document === "undefined" || !root.App) return;
-  const { h, card, euro, dateShort, toast } = root.App;
+  const { h, card, euro, dateShort, toast, rpc } = root.App;
   const KEY = "stammtisch_deckel_v1";
   const CHIPS = [
     ["Helles", "beer"], ["Weißbier", "beer"], ["Dunkles", "beer"], ["Radler", "beer"],
@@ -50,6 +51,7 @@
   function load() {
     try { const v = JSON.parse(localStorage.getItem(KEY)); return v && typeof v === "object" ? Object.assign(empty(), v) : empty(); } catch { return empty(); }
   }
+  const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
   function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { toast("Speichern auf diesem Gerät nicht möglich.", true); } }
 
   const today = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
@@ -61,6 +63,9 @@
     const loc = (ctx && ctx.location) || "";
     const state = load();
     let view = "deck"; // deck | bill | asked
+    let book = null; // Deckelbuch aus der Datenbank, null = lädt noch
+    let bookError = null;
+    let saving = false;
     const box = h("div", {});
     const commit = () => { save(state); draw(); };
 
@@ -84,6 +89,19 @@
           price));
     }
 
+    // Deckel aus früheren Versionen (nur lokal gespeichert) einmalig in die Datenbank übernehmen.
+    async function migrateLocal() {
+      for (const b of state.book.slice()) {
+        if (!b.cid) { b.cid = uid(); save(state); }
+        await rpc("app_deckel_save", { p_date: b.date, p_location: b.location || "", p_items: b.items, p_client_id: b.cid });
+        state.book = state.book.filter((x) => x !== b); save(state);
+      }
+    }
+    function loadBook() {
+      bookError = null;
+      return migrateLocal().then(() => rpc("app_deckel_history")).then((b) => { book = b; draw(); }, (e) => { bookError = e.message; draw(); });
+    }
+
     function add(label, cat) {
       const remembered = state.prices[priceKey(loc, label)];
       root.Deckel.addItem(state.open.items, label, cat, remembered == null ? null : remembered);
@@ -94,8 +112,8 @@
       const o = state.open;
       if (!o) {
         return [card("Mein Deckel",
-          h("p", { class: "muted", style: "margin:0 0 10px" }, "Schreib auf, was du bestellst, und lass dir am Ende die Schlussrechnung geben. Der Deckel bleibt auf diesem Gerät und ist nur für dich."),
-          h("button", { class: "primary full", onclick: () => { state.open = { started: today(), location: loc, items: [] }; commit(); } }, "Neuen Deckel starten"))];
+          h("p", { class: "muted", style: "margin:0 0 10px" }, "Schreib auf, was du bestellst, und lass dir am Ende die Schlussrechnung geben. Der laufende Deckel bleibt auf diesem Gerät, das Deckelbuch ist nur für dich sichtbar."),
+          h("button", { class: "primary full", onclick: () => { state.open = { started: today(), location: loc, items: [], cid: uid() }; commit(); } }, "Neuen Deckel starten"))];
       }
       const s = root.Deckel.summary(o.items);
       const free = h("input", { type: "text", placeholder: "Etwas anderes, z. B. Salat", autocomplete: "off", "aria-label": "Eigene Bestellung" });
@@ -136,23 +154,36 @@
             h("button", { style: "flex:1", onclick: () => { view = "deck"; draw(); } }, "Nein, weiter bestellen")));
       } else {
         body.push(h("p", { style: "margin:14px 0 6px" }, h("strong", {}, "In mein Deckelbuch speichern?")),
-          h("p", { class: "muted small", style: "margin:0 0 8px" }, "Das siehst nur du, auf diesem Gerät."),
+          h("p", { class: "muted small", style: "margin:0 0 8px" }, "Das siehst nur du."),
           h("div", { class: "inline" },
-            h("button", { class: "primary", style: "flex:1", onclick: () => { state.book.unshift({ date: o.started, location: o.location, items: o.items, total: s.total, no_price: s.units_no_price, beers: s.beers }); state.open = null; view = "deck"; save(state); draw(); toast("Im Deckelbuch gespeichert."); } }, "Ja, speichern"),
+            h("button", { class: "primary", style: "flex:1", disabled: saving, onclick: async () => {
+              saving = true; draw();
+              try {
+                if (!o.cid) { o.cid = uid(); save(state); }
+                await rpc("app_deckel_save", { p_date: o.started, p_location: o.location || "", p_items: o.items, p_client_id: o.cid });
+                state.open = null; view = "deck"; save(state); toast("Im Deckelbuch gespeichert.");
+                saving = false; await loadBook();
+              } catch (e) { saving = false; toast(e.message, true); draw(); }
+            } }, "Ja, speichern"),
             h("button", { style: "flex:1", onclick: () => { state.open = null; view = "deck"; commit(); } }, "Nein, verwerfen")));
       }
       return [card("Schlussrechnung", ...body)];
     }
 
     function bookView() {
-      if (!state.book.length) return [];
-      const beers = state.book.reduce((a, b) => a + (b.beers || 0), 0);
+      if (bookError) return [card("Deckelbuch", h("p", { style: "margin:0 0 8px" }, bookError), h("button", { onclick: () => { book = null; draw(); loadBook(); } }, "Nochmal versuchen"))];
+      if (book == null) return [card("Deckelbuch", h("p", { class: "muted", style: "margin:0" }, "Lade ..."))];
+      if (!book.length) return [];
+      const beers = book.reduce((a, b) => a + (b.beers || 0), 0);
       return [card("Deckelbuch",
-        h("p", { class: "muted small", style: "margin:0 0 6px" }, `${state.book.length} Abende, ${beers} Bier. Nur auf diesem Gerät.`),
-        state.book.map((b, n) => h("details", {},
+        h("p", { class: "muted small", style: "margin:0 0 6px" }, `${book.length} Abende, ${beers} Bier. Nur für dich sichtbar.`),
+        book.map((b) => h("details", {},
           h("summary", {}, `${dateShort(b.date)}${b.location ? " · " + b.location : ""} · ${money(b.total)}${b.no_price ? " +" : ""}`),
           h("div", { style: "margin-top:6px" }, billLines(b.items)),
-          h("button", { class: "link", onclick: () => { if (confirm("Diesen Eintrag löschen?")) { state.book.splice(n, 1); commit(); } } }, "Löschen"))))];
+          h("button", { class: "link", onclick: async () => {
+            if (!confirm("Diesen Eintrag löschen?")) return;
+            try { await rpc("app_deckel_delete", { p_id: b.id }); book = book.filter((x) => x.id !== b.id); draw(); } catch (e) { toast(e.message, true); }
+          } }, "Löschen"))))];
     }
 
     function draw() {
@@ -160,6 +191,7 @@
       box.replaceChildren(...main, ...bookView());
     }
     draw();
+    loadBook();
     return box;
   }
 

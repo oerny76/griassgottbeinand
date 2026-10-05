@@ -53,4 +53,4 @@ Nur aus gespeicherten Deckeln mit Freigabe: Bier gesamt, pro Abend, pro Jahr, An
 - Start: Phase 1.
 
 ## Stand
-Phase 1 ist gebaut (`deckel.js`, Reiter "Deckel"). Der Deckel und das Deckelbuch liegen nur im Browser des Geräts (`localStorage`). Phase 2 verschiebt das Deckelbuch in die Datenbank.
+Phase 1 (`deckel.js`, Reiter "Deckel") und Phase 2 sind gebaut. Der laufende Deckel liegt weiter lokal im Browser (Empfang im Wirtshaus). Abgerechnete Deckel landen beim Speichern im Deckelbuch in der Datenbank (`db/deckel.sql`: `deckel_tabs`, `deckel_items`, Funktionen `app_deckel_save`, `app_deckel_history`, `app_deckel_delete`). Nur das Mitglied selbst kann sie lesen. Speichern ist wiederholbar (Client-ID), alte lokale Einträge werden beim ersten Öffnen einmalig übernommen. Offen: private Kennzahlen im Deckelbuch, Phase 3.
