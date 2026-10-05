@@ -18,12 +18,10 @@
     place: "Malta",
     from: "2026-10-15",
     to: "2026-10-18",
-    hotel: "Hotel Vita, Paceville (Ernest und Stefan: Noru Hotel Malta)",
-    hotelPlace: P.hotel,
     days: [
       { day: "Donnerstag 15.10.", items: [
         ["11:00", "Flug nach Malta", "KM 307, München Terminal 2, 10 Personen, mit Gepäckaufgabe"],
-        ["13:20", "Landung (ETA)", "Transfer für 10 Personen zum Hotel Vita in Paceville", P.airport],
+        ["13:20", "Landung (ETA)", "Transfer für 10 Personen zum Hotel Vita in Paceville", P.airport, P.hotel],
         ["19:30", "Abendessen", "Bayview Restaurant, Paceville", P.bayview],
       ] },
       { day: "Freitag 16.10.", items: [
@@ -85,8 +83,7 @@
       h("div", { class: "hero" },
         h("p", { class: "when" }, status(today)),
         h("p", { class: "date" }, TRIP.title),
-        h("p", { class: "muted" }, `${range()} · ${TRIP.hotel}`),
-        h("p", { class: "muted small" }, h("a", { href: mapsUrl(TRIP.hotelPlace), target: "_blank", rel: "noopener noreferrer" }, "Hotel auf der Karte"))),
+        h("p", { class: "muted" }, range())),
       TRIP.days.map((d) => h("section", { class: "card" },
         h("h2", { style: "margin:0 0 6px;font-size:1.05rem" }, d.day),
         d.items.map(([time, what, note, ...pl]) => h("div", { class: "trip-row" },
