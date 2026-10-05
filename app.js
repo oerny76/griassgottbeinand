@@ -36,6 +36,8 @@
     const day = new Date(m.date + "T12:00:00");
     const sameYear = day.getFullYear() === new Date(todayBerlin() + "T12:00:00").getFullYear();
     const locked = m.deadline_passed && !d.me.is_admin;
+    // Teilnehmer = Mitglieder (Liste der Abwesenheiten enthält alle) minus Entschuldigte plus Gäste.
+    const total = Math.max(d.absences_year.list.length - d.absent.length, 0) + d.guests.length;
     // Heute ab 19 Uhr: zeigen, was für den nächsten Stammtisch schon feststeht.
     const tgt = chairTarget(d);
     const nextLine = tgt.scope === "next" && tgt.date
@@ -46,6 +48,7 @@
         d.my_absent ? h("span", { class: "state" }, "Du bist entschuldigt") : null),
       h("p", { class: "date" }, day.toLocaleDateString("de-DE", { weekday: "long" }) + ",",
         h("small", {}, day.toLocaleDateString("de-DE", sameYear ? { day: "numeric", month: "long" } : { day: "numeric", month: "long", year: "numeric" }))),
+      h("p", {}, "Teilnehmer: ", h("strong", {}, String(total)), d.guests.length ? h("span", { class: "muted" }, ` (inkl. ${d.guests.length} ${d.guests.length === 1 ? "Gast" : "Gäste"})`) : null),
       h("p", {}, "Vorsitz: ", h("strong", {}, m.chair ? (m.chair === d.me.name ? "ich" : m.chair) : "noch offen")),
       loc
         ? [h("p", {}, h("strong", {}, loc.name), addr && h("span", { class: "muted" }, " · " + addr)),
