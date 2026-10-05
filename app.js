@@ -398,12 +398,21 @@
     const o = d.my_open, b = d.birthday, t = d.budget, a = d.absences_year;
     const pay = safeUrl(o.paypal_url, ["paypal.me", "www.paypal.me"]);
     const owes = o.items.length > 0;
+    const covered = (d.covered_open || []).map((c) => ({ c, url: safeUrl(c.paypal_url, ["paypal.me", "www.paypal.me"]) }));
+    const wide = owes || covered.length > 0;
     const absSum = a.list.reduce((x, y) => x + Number(y.count), 0);
-    const konto = owes
+    const coveredBlocks = covered.map(({ c, url }) => h("div", { style: "margin-top:12px" },
+      h("p", { class: "label" }, `Offen bei ${c.name}`),
+      h("p", { class: "num" }, euro.format(c.total)),
+      url && h("a", { class: "btn paypal full", href: url, target: "_blank", rel: "noopener noreferrer" }, `${c.name} per PayPal zahlen (${euro.format(c.total)})`)));
+    const konto = wide
       ? h("div", { class: "tile wide" },
-          h("p", { class: "label" }, "Dein Konto: offen"),
-          h("p", { class: "num" }, euro.format(o.total)),
-          pay && h("a", { class: "btn paypal full", href: pay, target: "_blank", rel: "noopener noreferrer" }, `Mit PayPal bezahlen (${euro.format(o.total)})`),
+          h("p", { class: "label" }, owes ? "Dein Konto: offen" : "Dein Konto"),
+          owes
+            ? [h("p", { class: "num" }, euro.format(o.total)),
+              pay && h("a", { class: "btn paypal full", href: pay, target: "_blank", rel: "noopener noreferrer" }, `Mit PayPal bezahlen (${euro.format(o.total)})`)]
+            : h("p", { class: "num text zero" }, "Alles bezahlt ✓"),
+          ...coveredBlocks,
           h("button", { class: "link", onclick: () => goTab("konto") }, "Posten ansehen"))
       : h("div", { class: "tile" }, h("p", { class: "label" }, "Dein Konto"), h("p", { class: "num text zero" }, "Alles bezahlt ✓"));
     // Immer volle Zeilen: Die kleinen Kacheln füllen das Raster, eine einzelne Kachel wird breit. Die Abwesenheiten-Kachel ist immer breit.
@@ -417,7 +426,7 @@
         h("p", { class: "num text" }, b.name),
         h("p", { class: "label" }, `${dateDay(b.date)} (${b.turns})`)) : null,
     ].filter(Boolean);
-    if ((small.length + (owes ? 0 : 1)) % 2 === 1) small[small.length - 1].classList.add("wide");
+    if ((small.length + (wide ? 0 : 1)) % 2 === 1) small[small.length - 1].classList.add("wide");
     return h("div", { class: "tiles" }, konto, ...small, absencesTile(a, absSum));
   }
 
