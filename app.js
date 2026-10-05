@@ -143,15 +143,29 @@
     const tgt = chairTarget(d);
     const cur = tgt.scope === "next" ? null : d.meeting && d.meeting.location; // beim nächsten Stammtisch ist noch keine Location bekannt
     const list = h("datalist", { id: "locList" });
-    rpc("app_locations").then((names) => names.forEach((n) => list.append(h("option", { value: n })))).catch(() => {});
+    const known = new Set();
+    rpc("app_locations").then((names) => { names.forEach((n) => { known.add(n); list.append(h("option", { value: n })); }); sync(); }).catch(() => {});
     const loc = h("input", { id: "loc", type: "text", list: "locList", maxlength: "80", placeholder: cur ? "Name der neuen Location" : "Name der Location", autocomplete: "off" });
     const street = h("input", { type: "text", maxlength: "80", placeholder: "Straße und Hausnummer", autocomplete: "off" });
     const zip = h("input", { type: "text", maxlength: "10", placeholder: "PLZ", inputmode: "numeric", autocomplete: "off" });
     const city = h("input", { type: "text", maxlength: "60", placeholder: "Ort", autocomplete: "off" });
     const url = h("input", { type: "url", maxlength: "200", placeholder: "Website (https://…)", autocomplete: "off" });
+    // Bestehende Location: keine Adresse nötig (die ist schon gespeichert). Unbekannter Name: Adresse und Website eintragen.
+    const hint = h("p", { class: "muted small", style: "margin:0" });
+    const addr = h("div", { class: "stack" }, street, h("div", { class: "inline" }, zip, city), url);
+    function sync() {
+      const name = loc.value.replace(/\s+/g, " ").trim();
+      const isKnown = known.has(name), isNew = name !== "" && !isKnown;
+      addr.hidden = !isNew;
+      hint.hidden = name === "";
+      hint.textContent = isKnown ? "Bekannte Location: Adresse und Website sind schon gespeichert." : "Neue Location: bitte Adresse und gern die Website ergänzen.";
+      if (!isNew) [street, zip, city, url].forEach((i) => { i.value = ""; });
+    }
+    loc.addEventListener("input", sync);
+    sync();
     return h("div", { class: "stack" },
       h("div", {}, h("label", { for: "loc" }, cur ? `Andere Location für den nächsten Termin (aktuell: ${cur.name})` : tgt.scope === "next" && tgt.date ? `Location für den nächsten Stammtisch am ${dateShort(tgt.date)}` : "Location für den nächsten Termin"), loc, list),
-      h("details", {}, h("summary", {}, "Neue Location? Adresse ergänzen"), h("div", { class: "stack", style: "margin-top:10px" }, street, h("div", { class: "inline" }, zip, city), url)),
+      hint, addr,
       h("button", {
         class: "primary full",
         onclick: (e) => {
