@@ -1,0 +1,56 @@
+# Virtueller Bierdeckel: Konzept (Entwurf)
+
+## Idee
+Am Stammtischabend führt jedes Mitglied einen privaten Deckel: Bestellungen antippen, Preise optional, am Ende die Schlussrechnung. Auf Wunsch wandert der abgerechnete Deckel in die persönliche Historie. Später optional: gemeinsame Auswertung (z. B. wie viel Bier wir getrunken haben).
+
+Der Deckel ist **kein Teil der Stammtischkasse**. Er verändert keine Buchungen und keine offenen Posten. Er ist nur ein Gedächtnis- und Rechenhelfer.
+
+## Ablauf
+1. **Deckel starten** (Knopf auf der Startseite, am Stammtischtag hervorgehoben, sonst auch möglich).
+2. **Bestellen:**
+   - Schnellwahl-Chips: Bier, Spezi, Radler, Weißbier, Wasser, Essen, Sonstiges. Ein Tipp = +1.
+   - Eigene Freitexte ("Salat") mit optionalem Preis. Häufig genutzte Freitexte erscheinen später als eigene Chips.
+   - Preis optional, pro Stück oder je Posten. "−" nimmt den letzten Eintrag zurück.
+   - Pro Zeile: Menge, Name, Preis (leer erlaubt), Uhrzeit.
+3. **Zwischenstand** immer sichtbar: Summe der bekannten Preise plus "3 Posten ohne Preis".
+4. **Schlussrechnung:** Positionen gruppiert (4× Bier, 2× Spezi, 1× Salat), Summe, optional Trinkgeld (Prozent oder Betrag), Gesamtbetrag.
+5. **Abschluss-Frage:** "Hast du abgerechnet?"
+   - Nein: Deckel bleibt offen und kann weitergeführt werden.
+   - Ja: "In meine Historie speichern?" Ja = gespeichert, Nein = verworfen.
+
+## Datenschutz
+- Deckel und Historie sind **nur für das Mitglied selbst** lesbar (Zugriff nur über die Funktionen mit dem eigenen Token, wie bei `app_my_ratings`). Auch der Admin sieht sie nicht.
+- Gruppenauswertung nur mit **Einwilligung je Mitglied** (Schalter "Meine Mengen in der Gruppenstatistik zählen") und nur als Summen ohne Namen, erst ab z. B. 5 teilnehmenden Mitgliedern, damit niemand herausgerechnet werden kann. Vor dem Bau intern abstimmen.
+
+## Daten (Supabase)
+- `tabs`: id, member_id, meeting_id (optional), location (kopiert, falls Termin fehlt), tip, status (`open`, `saved`), created_at, settled_at, share_stats (bool)
+- `tab_items`: id, tab_id, label, category (`beer`, `softdrink`, `food`, `other`), qty, unit_price (nullable), created_at
+- Funktionen nach vorhandenem Muster: `app_tab_get`, `app_tab_add_item`, `app_tab_remove_item`, `app_tab_save`, `app_tab_discard`, `app_tab_history`.
+- Kategorie kommt von den Chips. Freitext fällt auf `other`, optional wählbar. Nur so ist "wie viel Bier" später zählbar.
+
+## Offline
+Wirtshäuser haben oft schlechten Empfang. Der laufende Deckel liegt zuerst lokal (`localStorage`) und geht erst beim Speichern in die Datenbank. Dadurch ist Phase 1 ohne Datenbank machbar.
+
+## Oberfläche
+- Neuer Reiter mit zwei Bereichen: **Heute** (laufender Deckel) und **Historie** (gespeicherte Abende mit Summe, aufklappbar).
+- Namensvorschläge: **"Mein Deckel"** (Reiter, empfohlen), Historie **"Deckelbuch"**; Alternativen: "Mein Konsum", "Meine Runde", "Zapfbuch".
+- Historie später mit privaten Kennzahlen: Ausgaben pro Abend und Jahr, Durchschnitt, Bier pro Abend, Lieblingsgetränk.
+
+## Gruppenauswertung (Phase 3)
+Nur aus gespeicherten Deckeln mit Freigabe: Bier gesamt, pro Abend, pro Jahr, Anteil alkoholfrei, Verlauf. Anzeige in der Statistik, wie die vorhandenen Kennzahlen (`app_stats`).
+
+## Phasen
+1. **Deckel lokal:** Chips, Freitext, Preise, Schlussrechnung, Abschlussdialog. Keine Datenbank, sofort nutzbar.
+2. **Historie:** Tabellen und Funktionen, Reiter "Deckelbuch", private Kennzahlen.
+3. **Gruppenauswertung:** Einwilligung, anonyme Summen in der Statistik.
+
+## Entscheidungen
+- Erfassung: eine Zeile mit Menge, Tipp erhöht die Zeile.
+- Zeitpunkt: jederzeit, am Stammtischtag kommt die Location des Termins automatisch dazu.
+- Getränke: Bier-Sorten (Helles, Weißbier, Dunkles, Radler), dazu Spezi, Wasser, Apfelschorle, Essen und Freitext.
+- Komfort: Preise werden je Location gemerkt. Kein Trinkgeld.
+- Gruppenstatistik: Freigabe je Mitglied, Anzeige ab 5 Teilnehmern (Phase 3).
+- Start: Phase 1.
+
+## Stand
+Phase 1 ist gebaut (`deckel.js`, Reiter "Deckel"). Der Deckel und das Deckelbuch liegen nur im Browser des Geräts (`localStorage`). Phase 2 verschiebt das Deckelbuch in die Datenbank.
