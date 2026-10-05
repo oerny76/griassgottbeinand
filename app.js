@@ -195,18 +195,31 @@
   function accountCard(d) {
     const o = d.my_open;
     const pay = safeUrl(o.paypal_url, ["paypal.me", "www.paypal.me"]);
-    if (!o.items.length) {
-      return card("Dein Konto", h("p", { class: "total zero" }, "Alles bezahlt ✓"));
-    }
+    // Mitglieder, für die ich per Hinterlegung (members.payer_id) zahle: eigener Knopf, solange bei ihnen etwas offen ist.
+    const covered = (d.covered_open || []).map((c) => {
+      const url = safeUrl(c.paypal_url, ["paypal.me", "www.paypal.me"]);
+      return h("div", { style: "margin-top:16px" },
+        h("p", { class: "muted small", style: "margin:0" }, `Offen bei ${c.name}`),
+        h("p", { class: "total", style: "margin:0 0 10px" }, euro.format(c.total)),
+        url && h("a", { class: "btn paypal full", href: url, target: "_blank", rel: "noopener noreferrer" }, `${c.name} per PayPal zahlen (${euro.format(c.total)})`),
+        h("div", { style: "margin-top:12px" }, c.items.map((i) =>
+          h("div", { class: "row" },
+            h("span", {}, dateShort(i.date), " · ", i.category, i.sub ? h("span", { class: "muted" }, " (" + stripGast(i.sub) + ")") : null),
+            h("strong", {}, euro.format(i.open))))));
+    });
+    const own = o.items.length
+      ? [h("p", { class: "muted small", style: "margin:0" }, "Offen"),
+        h("p", { class: "total", style: "margin:0 0 10px" }, euro.format(o.total)),
+        pay && h("a", { class: "btn paypal full", href: pay, target: "_blank", rel: "noopener noreferrer" }, `Mit PayPal bezahlen (${euro.format(o.total)})`),
+        h("div", { style: "margin-top:12px" }, o.items.map((i) =>
+          h("div", { class: "row" },
+            h("span", {}, dateShort(i.date), " · ", i.category, i.sub ? h("span", { class: "muted" }, " (" + stripGast(i.sub) + ")") : null),
+            h("strong", {}, euro.format(i.open)))))]
+      : [h("p", { class: "total zero" }, "Alles bezahlt ✓")];
     return card("Dein Konto",
-      h("p", { class: "muted small", style: "margin:0" }, "Offen"),
-      h("p", { class: "total", style: "margin:0 0 10px" }, euro.format(o.total)),
-      pay && h("a", { class: "btn paypal full", href: pay, target: "_blank", rel: "noopener noreferrer" }, `Mit PayPal bezahlen (${euro.format(o.total)})`),
-      h("div", { style: "margin-top:12px" }, o.items.map((i) =>
-        h("div", { class: "row" },
-          h("span", {}, dateShort(i.date), " · ", i.category, i.sub ? h("span", { class: "muted" }, " (" + stripGast(i.sub) + ")") : null),
-          h("strong", {}, euro.format(i.open))))),
-      h("p", { class: "muted small", style: "margin:10px 0 0" }, "Nach der Zahlung bucht der Admin den Eingang. Das kann etwas dauern."));
+      ...own,
+      ...covered,
+      (o.items.length || covered.length) ? h("p", { class: "muted small", style: "margin:10px 0 0" }, "Nach der Zahlung bucht der Admin den Eingang. Das kann etwas dauern.") : null);
   }
 
   function memberNames(d) { return d.absences_year.list.map((x) => x.name).sort((a, b) => a.localeCompare(b, "de")); }
