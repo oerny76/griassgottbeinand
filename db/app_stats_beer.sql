@@ -16,11 +16,11 @@ begin
     'min_group', k,
     'evenings', coalesce((
       select jsonb_agg(jsonb_build_object('date', e.d, 'beers', e.b, 'people', e.p) order by e.d)
-      from (select meeting_date d, sum(beers)::int b, count(*)::int p from public.beer_counts group by meeting_date having count(*) >= k order by meeting_date desc limit 24) e), '[]'::jsonb),
+      from (select meeting_date d, sum(beers)::int b, count(*)::int p from public.beer_counts where beers >= 1 group by meeting_date having count(*) >= k order by meeting_date desc limit 24) e), '[]'::jsonb),
     'years', coalesce((
       select jsonb_agg(jsonb_build_object('year', y.yr, 'beers', y.b, 'evenings', y.n, 'people', y.p) order by y.yr)
       from (select extract(year from d)::int yr, sum(b)::int b, count(*)::int n, sum(p)::int p
-            from (select meeting_date d, sum(beers) b, count(*) p from public.beer_counts group by meeting_date having count(*) >= k) q
+            from (select meeting_date d, sum(beers) b, count(*) p from public.beer_counts where beers >= 1 group by meeting_date having count(*) >= k) q
             group by 1) y), '[]'::jsonb)
   );
 end

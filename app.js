@@ -488,7 +488,6 @@
   const TABS = [
     ["start", "Start", "M3 11.5 12 4l9 7.5M5.5 10v9.5h13V10"],
     ["stat", "Statistik", "M5 20V11M12 20V5M19 20v-7"],
-    ["deckel", "Deckel", "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8 12h8"],
     ["konto", "Konto", "M3.5 7h17v12h-17zM3.5 7l2-3h13l2 3M15.5 13h2"],
     ["chronik", "Chronik", "M5 4.5h11a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3zM5 16.5a3 3 0 0 1 3-3h11"],
   ];
@@ -550,7 +549,6 @@
     const pages = {
       start: () => [heroCard(d), whoCard(d), tilesBlock(d, goTab)],
       stat: () => [statsPage(d)],
-      deckel: () => [window.Deckel.render({ location: d.meeting && d.meeting.location ? d.meeting.location.name : "", meetingDate: d.meeting && d.meeting.date === todayBerlin() ? d.meeting.date : null })],
       konto: () => [accountCard(d), openCard(d)],
       chronik: () => [recentCard(d), chairsCard(d), locationsCard(d), absencesCard(d)],
       admin: () => [window.AdminView.render(own)],
@@ -563,6 +561,7 @@
       footer());
     $app.classList.add("tabs");
     $app.replaceChildren(root, tabBar(admin));
+    window.Deckel.mount(() => ({ location: d.meeting && d.meeting.location ? d.meeting.location.name : "", meetingDate: d.meeting && d.meeting.date === todayBerlin() ? d.meeting.date : null }));
   }
 
   // Für die Home-Bildschirm-App (iPhone): eigener Speicher, deshalb Link oder Code hier einfügen.
@@ -575,6 +574,7 @@
 
   function showNoToken() {
     $app.classList.remove("tabs");
+    window.Deckel.hide();
     $app.replaceChildren(h("div", { class: "card center", style: "margin-top:32px" },
       h("p", { class: "big" }, "🍻 Griassgottbeinand"),
       h("p", {}, "Bitte öffne deinen persönlichen Link. Den bekommst du vom Kassier."),

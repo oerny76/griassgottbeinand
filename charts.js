@@ -96,7 +96,7 @@
       if (i % Math.ceil(data.length / 5) === 0 || i === data.length - 1) svg.append(text(cx, H - 4, fmtDate(x.date, { month: "short", year: "2-digit" }), "muted"));
       const hit = s("rect", { class: "hit", x: cx - band / 2, y: 0, width: band, height: H });
       bindTip(hit, fmtDate(x.date, { weekday: "short", day: "numeric", month: "long", year: "numeric" }),
-        [`${x.beers} Bier`, `${x.people} Mitglieder gezählt`, `Ø ${num1(x.beers / x.people)} pro Mitglied`]);
+        [`${x.beers} Bier`, `${x.people} Mitglieder mit Bier`, `Ø ${num1(x.beers / x.people)} pro Mitglied mit Bier`]);
       svg.append(hit);
     });
     return svg;
@@ -105,11 +105,11 @@
   function beerCard(b) {
     const ev = b.evenings;
     const intro = h("p", { class: "muted small", style: "margin:4px 0 0" },
-      `Gezählt werden Helles, Weißbier, Dunkles, Kellerbier und Draftbier, nur von Mitgliedern, die es freiwillig zählen lassen. Abende mit weniger als ${b.min_group} zählenden Mitgliedern werden nicht gezeigt.`);
+      `Gezählt werden Helles, Weißbier, Dunkles, Kellerbier und Draftbier, nur von Mitgliedern, die es freiwillig zählen lassen. Der Durchschnitt zählt nur Mitglieder mit mindestens einem Bier. Abende mit weniger als ${b.min_group} zählenden Mitgliedern werden nicht gezeigt.`);
     if (!ev.length) return chartCard("Bier", "Wie viel am Stammtisch getrunken wurde", [h("p", { style: "margin:8px 0 0" }, "Noch nicht genug Zählungen."), intro], null);
     const total = ev.reduce((a, x) => a + x.beers, 0);
     return chartCard("Bier", `Gezählte Biere pro Stammtisch, insgesamt ${total} an ${ev.length} Abenden`, [beerChart(ev), intro],
-      { headers: ["Jahr", "Bier", "Abende", "Ø pro Mitglied und Abend"], rows: b.years.slice().reverse().map((y) => [y.year, y.beers, y.evenings, num1(y.beers / y.people)]) });
+      { headers: ["Jahr", "Bier", "Abende", "Ø pro Biertrinker und Abend"], rows: b.years.slice().reverse().map((y) => [y.year, y.beers, y.evenings, num1(y.beers / y.people)]) });
   }
 
   // ---------- Kassenstand über die Zeit ----------

@@ -173,3 +173,17 @@ table.tv thead th { color: var(--muted); font-weight: 600; position: sticky; top
 .hero .panel { margin-top: 12px; padding: 14px; border-radius: 16px; background: var(--card); color: var(--ink); }
 .hero .panel .muted { color: var(--muted); }
 .hero .panel a { color: var(--brand); }
+
+/* Bierdeckel: schwebender Knopf unten rechts und Overlay */
+.dk-fab { position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: calc(var(--tabbar-h) + 16px + env(safe-area-inset-bottom)); z-index: 7; width: 56px; height: 56px; min-height: 0; padding: 0; border-radius: 50%; background: var(--accent); border: 0; color: #2a2200; box-shadow: 0 4px 14px rgba(0, 0, 0, .28); }
+.dk-fab[hidden], .dk-back[hidden], .dk-badge[hidden] { display: none; }
+.dk-fab svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.dk-badge { position: absolute; top: -4px; right: -4px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--brand); color: var(--brand-ink); font-size: .75rem; font-weight: 700; line-height: 22px; text-align: center; }
+.dk-back { position: fixed; inset: 0; z-index: 9; background: rgba(0, 0, 0, .45); display: flex; align-items: flex-end; justify-content: center; }
+.dk-sheet { width: 100%; max-width: 520px; max-height: 90vh; max-height: 90dvh; display: flex; flex-direction: column; background: var(--bg); border-radius: var(--radius) var(--radius) 0 0; box-shadow: 0 -6px 24px rgba(0, 0, 0, .25); }
+.dk-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.dk-body { overflow-y: auto; overscroll-behavior: contain; padding: 16px 16px max(24px, env(safe-area-inset-bottom)); }
+.dk-body .card:last-child { margin-bottom: 0; }
+@media (prefers-reduced-motion: no-preference) { .dk-sheet { animation: dk-up .18s ease-out; } @keyframes dk-up { from { transform: translateY(24px); opacity: 0; } } }
+.dk-body .chip { min-height: 40px; padding: 6px 12px; }
+.dk-sticky { position: sticky; bottom: 0; margin: 12px -16px 0; padding: 10px 16px 12px; background: var(--card); border-top: 1px solid var(--line); }

@@ -123,13 +123,14 @@
         h("ul", { class: "chips" }, CHIPS.map(([label, cat]) => h("li", {}, h("button", { type: "button", class: "chip", onclick: () => add(label, cat) }, "+ " + label)))),
         h("div", { class: "inline", style: "margin-top:10px" }, free, h("button", { type: "button", onclick: addFree }, "Hinzufügen")),
         o.items.length ? h("div", { style: "margin-top:12px" }, o.items.map(lineView)) : h("p", { class: "muted", style: "margin:12px 0 0" }, "Noch nichts bestellt."),
-        o.items.length ? h("div", { style: "margin-top:12px" },
-          h("p", { class: "muted small", style: "margin:0" }, "Zwischenstand"),
-          h("p", { class: "total", style: "margin:0" }, money(s.total)),
-          s.units_no_price ? h("p", { class: "muted small", style: "margin:2px 0 0" }, `+ ${s.units_no_price} Stück ohne Preis`) : null) : null,
-        h("div", { class: "inline", style: "margin-top:12px" },
-          h("button", { class: "primary", disabled: !o.items.length, style: "flex:1", onclick: () => { view = "bill"; draw(); } }, "Schlussrechnung"),
-          h("button", { class: "link", onclick: () => { if (!o.items.length || confirm("Deckel verwerfen?")) { state.open = null; commit(); } } }, "Verwerfen")),
+        h("div", { class: "dk-sticky" },
+          o.items.length ? h("div", { style: "margin-bottom:8px" },
+            h("span", { class: "muted small" }, "Zwischenstand "),
+            h("strong", { class: "total", style: "font-size:1.25rem" }, money(s.total)),
+            s.units_no_price ? h("span", { class: "muted small" }, `  + ${s.units_no_price} Stück ohne Preis`) : null) : null,
+          h("div", { class: "inline" },
+            h("button", { class: "primary", disabled: !o.items.length, style: "flex:1", onclick: () => { view = "bill"; draw(); } }, "Schlussrechnung"),
+            h("button", { class: "link", onclick: () => { if (!o.items.length || confirm("Deckel verwerfen?")) { state.open = null; commit(); } } }, "Verwerfen"))),
         note())];
     }
 
@@ -208,10 +209,53 @@
     function draw() {
       const main = state.open && view !== "deck" ? billView() : (view = "deck", deckView());
       box.replaceChildren(...main, ...bookView());
+      if (ctx && ctx.onChange) ctx.onChange();
     }
     draw();
     return box;
   }
 
-  root.Deckel = Object.assign(root.Deckel || {}, { render });
+  // ---------- Schwebender Knopf unten rechts mit Overlay ----------
+  const COASTER = "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8 12h8M12 8v8";
+  let fab = null, back = null, sheetBody = null, closeBtn = null, getCtx = () => ({});
+
+  function openUnits() {
+    const o = load().open;
+    return o ? o.items.reduce((a, i) => a + i.qty, 0) : 0;
+  }
+  function updateBadge() {
+    if (!fab) return;
+    const n = openUnits(), b = fab.querySelector(".dk-badge");
+    b.textContent = String(n); b.hidden = n === 0;
+    fab.setAttribute("aria-label", n ? `Mein Deckel öffnen, ${n} Posten` : "Mein Deckel öffnen");
+  }
+  function openSheet() {
+    sheetBody.replaceChildren(render(Object.assign({}, getCtx(), { onChange: updateBadge })));
+    back.hidden = false; document.body.style.overflow = "hidden";
+    closeBtn.focus();
+  }
+  function closeSheet() {
+    if (!back || back.hidden) return;
+    back.hidden = true; document.body.style.overflow = "";
+    updateBadge(); fab.focus();
+  }
+  function mount(ctxFn) {
+    getCtx = ctxFn;
+    if (fab) { fab.hidden = false; updateBadge(); return; }
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path"); path.setAttribute("d", COASTER); svg.append(path);
+    fab = h("button", { type: "button", class: "dk-fab", "aria-haspopup": "dialog", onclick: openSheet }, svg, h("span", { class: "dk-badge", hidden: "" }));
+    closeBtn = h("button", { type: "button", class: "link", onclick: closeSheet }, "Schließen");
+    sheetBody = h("div", { class: "dk-body" });
+    back = h("div", { class: "dk-back", hidden: "", onclick: (e) => { if (e.target === back) closeSheet(); } },
+      h("div", { class: "dk-sheet", role: "dialog", "aria-modal": "true", "aria-label": "Mein Deckel" },
+        h("div", { class: "dk-head" }, h("strong", {}, "🍺 Mein Deckel"), closeBtn), sheetBody));
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
+    document.body.append(fab, back);
+    updateBadge();
+  }
+  function hide() { if (fab) { closeSheet(); fab.hidden = true; } }
+
+  root.Deckel = Object.assign(root.Deckel || {}, { render, mount, hide });
 })(typeof window !== "undefined" ? window : globalThis);
