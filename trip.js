@@ -79,8 +79,11 @@
     return new Date(e.date + "T12:00:00").toLocaleDateString("de-DE", { weekday: "short" }) + " " + e.time;
   }
 
-  function status(today) {
-    const toStart = dayDiff(today, TRIP.from);
+  // Ernest und Stefan kommen einen Tag später an.
+  const startOf = (name) => (isEs(name) ? TRIP.days[1].date : TRIP.from);
+
+  function status(today, name) {
+    const toStart = dayDiff(today, startOf(name));
     if (toStart > 1) return `in ${toStart} Tagen`;
     if (toStart === 1) return "morgen";
     return "läuft gerade";
@@ -95,14 +98,14 @@
       p.url ? [" · ", h("a", { href: p.url, target: "_blank", rel: "noopener noreferrer" }, "Website")] : null));
   }
 
-  const range = () => "15. bis 18. Oktober 2026";
+  const range = (name) => (isEs(name) ? "16. bis 18. Oktober 2026" : "15. bis 18. Oktober 2026");
 
   function banner(h, today, onOpen, name) {
     // Ab dem Abreisetag zeigt der Banner den nächsten Programmpunkt, vorher den Countdown.
     const now = nowBerlin();
-    const e = today >= TRIP.from ? nextEvent(name, now) : null;
+    const e = today >= startOf(name) ? nextEvent(name, now) : null;
     const l1 = e ? `Als Nächstes: ${e.time} ${e.what}` : TRIP.title;
-    const l2 = e ? `${e.note ? e.note.split(/[.,]/)[0] + " · " : ""}${until(e, now)}` : `${range()} · ${status(today)}`;
+    const l2 = e ? `${e.note ? e.note.split(/[.,]/)[0] + " · " : ""}${until(e, now)}` : `${range(name)} · ${status(today, name)}`;
     return h("button", { type: "button", class: "trip-banner", onclick: onOpen, "aria-label": `${l1}, ${l2}, Ablaufplan öffnen` },
       h("span", { class: "trip-emoji", "aria-hidden": "true" }, "✈️"),
       h("span", { class: "trip-text" },
@@ -111,13 +114,13 @@
       h("span", { class: "trip-go", "aria-hidden": "true" }, "›"));
   }
 
-  function page(h, today, onBack) {
+  function page(h, today, onBack, name) {
     return h("div", {},
       h("button", { type: "button", class: "link", style: "margin:0 0 8px", onclick: onBack }, "‹ Zurück zum Start"),
       h("div", { class: "hero" },
-        h("p", { class: "when" }, status(today)),
+        h("p", { class: "when" }, status(today, name)),
         h("p", { class: "date" }, TRIP.title),
-        h("p", { class: "muted" }, range())),
+        h("p", { class: "muted" }, range(name))),
       TRIP.days.map((d) => h("section", { class: "card" },
         h("h2", { style: "margin:0 0 6px;font-size:1.05rem" }, d.day),
         d.items.map(([time, what, note, ...rest]) => h("div", { class: "trip-row" },

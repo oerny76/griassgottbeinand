@@ -562,7 +562,7 @@
     // Nur der geöffnete Tab wird gebaut (der Statistik-Tab lädt Daten).
     const pages = {
       start: () => [window.Trip.active(todayBerlin()) ? window.Trip.banner(h, todayBerlin(), () => goTab("trip"), d.me.name) : null, heroCard(d), whoCard(d), tilesBlock(d, goTab)],
-      trip: () => [window.Trip.page(h, todayBerlin(), () => goTab("start"))],
+      trip: () => [window.Trip.page(h, todayBerlin(), () => goTab("start"), d.me.name)],
       stat: () => [statsPage(d)],
       konto: () => [accountCard(d), openCard(d)],
       chronik: () => [recentCard(d), absencesCard(d), chairsCard(d), locationsCard(d)],
