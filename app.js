@@ -365,14 +365,19 @@
     if (!o) return null;
     const all = o.locations.slice();
     const listEl = h("div", { style: "margin-top:8px" });
-    let sortBy = "visits";
+    let sortBy = "visits-desc";
     const draw = (filter) => {
       const f = (filter || "").trim().toLowerCase();
       const items = all
         .filter((l) => !f || (l.name + " " + (l.city || "")).toLowerCase().includes(f))
-        .sort((a, b) => sortBy === "rating"
-          ? (b.avg == null) - (a.avg == null) || (b.avg ?? 0) - (a.avg ?? 0) || b.visits - a.visits
-          : b.visits - a.visits || a.name.localeCompare(b.name, "de"));
+        .sort((a, b) => {
+          const dir = sortBy.endsWith("asc") ? 1 : -1;
+          if (sortBy.startsWith("rating")) {
+            // Unbewertete bleiben in beiden Richtungen am Ende
+            return (a.avg == null) - (b.avg == null) || dir * ((a.avg ?? 0) - (b.avg ?? 0)) || b.visits - a.visits || a.name.localeCompare(b.name, "de");
+          }
+          return dir * (a.visits - b.visits) || a.name.localeCompare(b.name, "de");
+        });
       listEl.replaceChildren(...items.map((l) => {
         const web = safeUrl(l.url);
         const head = h("span", { style: "flex:1" }, web ? h("a", { href: web, target: "_blank", rel: "noopener noreferrer" }, l.name) : l.name,
@@ -388,7 +393,8 @@
     };
     const search = h("input", { type: "search", placeholder: "Location oder Ort suchen", autocomplete: "off", "aria-label": "Locations durchsuchen", oninput: (e) => draw(e.target.value) });
     const sort = h("select", { "aria-label": "Sortierung", onchange: (e) => { sortBy = e.target.value; draw(search.value); } },
-      h("option", { value: "visits" }, "Nach Besuchen"), h("option", { value: "rating" }, "Nach Bewertung"));
+      h("option", { value: "visits-desc" }, "Besuche ↓ meiste"), h("option", { value: "visits-asc" }, "Besuche ↑ wenigste"),
+      h("option", { value: "rating-desc" }, "Bewertung ↓ beste"), h("option", { value: "rating-asc" }, "Bewertung ↑ schlechteste"));
     draw("");
     return h("section", { class: "card" },
       h("details", {},
