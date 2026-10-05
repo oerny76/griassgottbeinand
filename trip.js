@@ -37,7 +37,7 @@
       ] },
       { day: "Sonntag 18.10.", items: [
         ["", "Freie Verfügung", ""],
-        ["16:25", "Rückflug", "KM 3306 nach München Terminal 2, Landung 18:55, 10 Personen (Ernest und Stefan sind im selben Flug). Transfer zum Flughafen ist gebucht, die genaue Abholzeit wird noch vereinbart.", P.airport],
+        ["16:25", "Rückflug", "KM 3306 nach München Terminal 2, Landung 18:55, 12 Personen. Transfer zum Flughafen ist gebucht, die genaue Abholzeit wird noch vereinbart.", P.airport],
       ] },
     ],
     tips: "Badehandtuch und Badeschuhe oder Flip-Flops schaden nicht. Das Hotel hat einen Pool, das Meer ist circa 300 Meter entfernt. Jetzt heißt es Daumen drücken, dass das Wetter hält!",
