@@ -211,6 +211,48 @@
       d.guests.length ? h("ul", { class: "chips" }, d.guests.map((g) => h("li", { class: "chip" }, `${stripGast(g.guest)} (bei ${g.host})`))) : h("p", { style: "margin:0" }, "Bisher keine."));
   }
 
+  // Push-Benachrichtigungen ein- und ausschalten (je Gerät). Auf dem iPhone nur, wenn die App auf dem Home-Bildschirm liegt.
+  function pushCard() {
+    const box = h("div", {});
+    const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const fromB64 = (str) => Uint8Array.from(atob(str.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+    const say = (...kids) => box.replaceChildren(...kids);
+    async function draw() {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+        const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+        return say(h("p", { class: "muted small", style: "margin:0" }, ios ? "Auf dem iPhone geht das nur mit der App auf dem Home-Bildschirm: In Safari auf Teilen tippen, \"Zum Home-Bildschirm\" wählen und die App von dort öffnen." : "Dieser Browser unterstützt keine Benachrichtigungen."));
+      }
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub && Notification.permission === "granted") {
+        return say(h("p", { class: "muted small", style: "margin:0 0 10px" }, "Aktiv auf diesem Gerät: Vorsitz, Location und wöchentlich (montags) offene Posten."),
+          h("button", { class: "full", onclick: (e) => off(e.currentTarget, sub) }, "Benachrichtigungen ausschalten"));
+      }
+      if (Notification.permission === "denied") return say(h("p", { class: "muted small", style: "margin:0" }, "Benachrichtigungen sind für diese App blockiert. Bitte in den Geräte- oder Browser-Einstellungen wieder erlauben."));
+      say(h("p", { class: "muted small", style: "margin:0 0 10px" }, "Bekomme eine Nachricht, wenn sich Vorsitz oder Location ändern, und montags eine Erinnerung an offene Posten."),
+        h("button", { class: "primary full", onclick: (e) => on(e.currentTarget) }, "Benachrichtigungen aktivieren"));
+    }
+    async function on(btn) {
+      btn.disabled = true;
+      try {
+        if (await Notification.requestPermission() !== "granted") { toast("Ohne Erlaubnis gibt es keine Benachrichtigungen.", true); return draw(); }
+        const reg = await navigator.serviceWorker.ready;
+        const key = await rpc("app_push_key");
+        const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: fromB64(key) });
+        await rpc("app_push_subscribe", { p_endpoint: sub.endpoint, p_p256dh: b64(sub.getKey("p256dh")), p_auth: b64(sub.getKey("auth")) });
+        toast("Benachrichtigungen sind an.");
+      } catch (e) { toast(e.message || "Das hat nicht geklappt.", true); }
+      draw();
+    }
+    async function off(btn, sub) {
+      btn.disabled = true;
+      try { await rpc("app_push_unsubscribe", { p_endpoint: sub.endpoint }); await sub.unsubscribe(); toast("Benachrichtigungen sind aus."); }
+      catch (e) { toast(e.message || "Das hat nicht geklappt.", true); }
+      draw();
+    }
+    draw().catch(() => say(h("p", { class: "muted small", style: "margin:0" }, "Benachrichtigungen sind hier nicht verfügbar.")));
+    return card("Benachrichtigungen", box);
+  }
   function accountCard(d) {
     const o = d.my_open;
     const pay = safeUrl(o.paypal_url, ["paypal.me", "www.paypal.me"]);
@@ -578,7 +620,7 @@
       start: () => [window.Trip.active(todayBerlin()) ? window.Trip.banner(h, todayBerlin(), () => goTab("trip"), d.me.name) : null, heroCard(d), whoCard(d), tilesBlock(d, goTab)],
       trip: () => [window.Trip.page(h, todayBerlin(), () => goTab("start"), d.me.name)],
       stat: () => [statsPage(d)],
-      konto: () => [accountCard(d), openCard(d)],
+      konto: () => [accountCard(d), openCard(d), pushCard()],
       chronik: () => [recentCard(d), absencesCard(d), chairsCard(d), locationsCard(d)],
       admin: () => [window.AdminView.render(own)],
     };
