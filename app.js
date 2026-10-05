@@ -561,7 +561,7 @@
     const today = new Date(todayBerlin() + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
     // Nur der geöffnete Tab wird gebaut (der Statistik-Tab lädt Daten).
     const pages = {
-      start: () => [window.Trip.active(todayBerlin()) ? window.Trip.banner(h, todayBerlin(), () => goTab("trip")) : null, heroCard(d), whoCard(d), tilesBlock(d, goTab)],
+      start: () => [window.Trip.active(todayBerlin()) ? window.Trip.banner(h, todayBerlin(), () => goTab("trip"), d.me.name) : null, heroCard(d), whoCard(d), tilesBlock(d, goTab)],
       trip: () => [window.Trip.page(h, todayBerlin(), () => goTab("start"))],
       stat: () => [statsPage(d)],
       konto: () => [accountCard(d), openCard(d)],

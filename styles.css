@@ -197,6 +197,8 @@ table.tv thead th { color: var(--muted); font-weight: 600; position: sticky; top
 .trip-banner .trip-emoji { font-size: 1.8rem; line-height: 1; }
 .trip-banner .trip-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .trip-banner .trip-text strong { font-size: 1.05rem; }
+.trip-banner .trip-text { min-width: 0; }
+.trip-banner .trip-text strong, .trip-banner .trip-text span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .trip-banner .trip-text span { font-size: .85rem; }
 .trip-banner .trip-go { font-size: 1.8rem; line-height: 1; }
 .trip-row { display: flex; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
