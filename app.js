@@ -550,7 +550,7 @@
     const pages = {
       start: () => [heroCard(d), whoCard(d), tilesBlock(d, goTab)],
       stat: () => [statsPage(d)],
-      deckel: () => [window.Deckel.render({ location: d.meeting && d.meeting.location ? d.meeting.location.name : "" })],
+      deckel: () => [window.Deckel.render({ location: d.meeting && d.meeting.location ? d.meeting.location.name : "", meetingDate: d.meeting && d.meeting.date === todayBerlin() ? d.meeting.date : null })],
       konto: () => [accountCard(d), openCard(d)],
       chronik: () => [recentCard(d), chairsCard(d), locationsCard(d), absencesCard(d)],
       admin: () => [window.AdminView.render(own)],

@@ -8,7 +8,7 @@ Ohne Build-Schritt: reines HTML, CSS und JavaScript. Daten liegen in Supabase (P
 | Datei | Zweck |
 |---|---|
 | `index.html`, `styles.css`, `common.js`, `app.js` | Mitglieder-App  |
-| `deckel.js` | Virtueller Bierdeckel (Reiter "Deckel"): Bestellungen und Schlussrechnung (laufender Deckel lokal im Browser), Deckelbuch in der Datenbank (`db/deckel.sql`) |
+| `deckel.js` | Virtueller Bierdeckel (Reiter "Deckel"): Bestellungen, Schlussrechnung, Deckelbuch, alles lokal im Browser; am Stammtisch auf Wunsch nur die Anzahl Bier in die Datenbank (`db/deckel.sql`) |
 | `admin.js`, `paypal.js` | Admin-Tab in der App: Zahlungen, Buchungen, Offen, Letzte |
 | `config.js` | Öffentliche Verbindungsdaten (URL, öffentlicher Schlüssel, PayPal-Name) |
 | `charts.js` | Statistik-Seite mit den Diagrammen |

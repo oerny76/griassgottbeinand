@@ -53,4 +53,12 @@ Nur aus gespeicherten Deckeln mit Freigabe: Bier gesamt, pro Abend, pro Jahr, An
 - Start: Phase 1.
 
 ## Stand
-Phase 1 (`deckel.js`, Reiter "Deckel") und Phase 2 sind gebaut. Der laufende Deckel liegt weiter lokal im Browser (Empfang im Wirtshaus). Abgerechnete Deckel landen beim Speichern im Deckelbuch in der Datenbank (`db/deckel.sql`: `deckel_tabs`, `deckel_items`, Funktionen `app_deckel_save`, `app_deckel_history`, `app_deckel_delete`). Nur das Mitglied selbst kann sie lesen. Speichern ist wiederholbar (Client-ID), alte lokale Einträge werden beim ersten Öffnen einmalig übernommen. Offen: private Kennzahlen im Deckelbuch, Phase 3.
+Deckel und Deckelbuch bleiben **immer lokal** im Browser (`deckel.js`, Reiter "Deckel"), mit Hinweis in der App. Sie können dort gelöscht werden.
+
+In die Datenbank geht **nur die Anzahl Bier** eines Stammtischabends, je Mitglied und Abend (`beer_counts`, `db/deckel.sql`, Funktionen `app_beer_save`, `app_beer_delete`):
+- nur wenn der Deckel am Stammtischtag erfasst wurde und das Mitglied beim Speichern zustimmt (Haken, vorbelegt),
+- gezählt werden Helles, Weißbier, Dunkles, Kellerbier, Draftbier. Nicht gezählt: Radler, Alkoholfreies, Spezi, Essen, Preise,
+- wird ein gezählter Eintrag im Deckelbuch gelöscht, wird die Zahl auch aus der Datenbank entfernt,
+- Zugriff nur über die Funktionen mit persönlichem Code. Einzelwerte pro Mitglied liegen in der Tabelle (per SQL für den Betreiber sichtbar), in der App erscheinen später nur Gruppensummen.
+
+Offen: Gruppenauswertung in der Statistik (Phase 3).

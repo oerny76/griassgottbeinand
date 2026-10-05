@@ -1,5 +1,5 @@
-// Virtueller Bierdeckel: der laufende Deckel liegt lokal im Browser (localStorage, Empfang im Wirtshaus),
-// das Deckelbuch (abgerechnete Deckel) in der Datenbank (db/deckel.sql), nur für das Mitglied selbst lesbar.
+// Virtueller Bierdeckel: Deckel und Deckelbuch bleiben lokal im Browser (localStorage), nichts davon geht in die Datenbank.
+// Nur die Anzahl Bier eines Stammtischabends wird auf Wunsch je Mitglied gespeichert (db/deckel.sql, app_beer_save).
 // Reine Rechenfunktionen oben, Oberfläche unten (window.Deckel.render).
 (function (root) {
   "use strict";
@@ -41,33 +41,42 @@
   if (typeof document === "undefined" || !root.App) return;
   const { h, card, euro, dateShort, toast, rpc } = root.App;
   const KEY = "stammtisch_deckel_v1";
+  // "beer" zählt für die Bier-Statistik (Radler, Alkoholfreies, Spezi und Essen nicht).
   const CHIPS = [
-    ["Helles", "beer"], ["Weißbier", "beer"], ["Dunkles", "beer"], ["Radler", "beer"],
+    ["Helles", "beer"], ["Weißbier", "beer"], ["Dunkles", "beer"], ["Kellerbier", "beer"], ["Draftbier", "beer"], ["Radler", "other"],
     ["Helles alkoholfrei", "nonalc"], ["Weißbier alkoholfrei", "nonalc"], ["Dunkles alkoholfrei", "nonalc"], ["Radler alkoholfrei", "nonalc"],
     ["Spezi", "soft"], ["Wasser", "soft"], ["Apfelschorle", "soft"], ["Essen", "food"],
   ];
 
   const empty = () => ({ open: null, book: [], prices: {} });
-  function load() {
-    try { const v = JSON.parse(localStorage.getItem(KEY)); return v && typeof v === "object" ? Object.assign(empty(), v) : empty(); } catch { return empty(); }
-  }
   const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
+  function load() {
+    try {
+      const v = JSON.parse(localStorage.getItem(KEY));
+      const s = v && typeof v === "object" ? Object.assign(empty(), v) : empty();
+      for (const b of s.book) if (!b.id) b.id = uid();
+      return s;
+    } catch { return empty(); }
+  }
   function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { toast("Speichern auf diesem Gerät nicht möglich.", true); } }
 
   const today = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
   const priceKey = (loc, label) => `${loc || ""}|${label}`;
   const qtyText = (i) => `${i.qty}× ${i.label}`;
   const money = (n) => euro.format(n);
+  const LOCAL_NOTE = "Lokal gespeichert: Deckel und Deckelbuch liegen nur in diesem Browser auf diesem Gerät. Sie werden nirgends hochgeladen und verschwinden, wenn du sie löschst oder die Browserdaten löschst.";
 
   function render(ctx) {
     const loc = (ctx && ctx.location) || "";
+    const meetingDate = (ctx && ctx.meetingDate) || null; // Datum des Stammtischs, wenn heute einer ist
     const state = load();
     let view = "deck"; // deck | bill | asked
-    let book = null; // Deckelbuch aus der Datenbank, null = lädt noch
-    let bookError = null;
+    let share = true; // Biermenge am Stammtisch zählen
     let saving = false;
     const box = h("div", {});
     const commit = () => { save(state); draw(); };
+    // Biere dieses Abends aus allen lokalen Deckeln, die gezählt wurden
+    const sharedBeers = (date, exceptId) => state.book.filter((b) => b.date === date && b.shared && b.id !== exceptId).reduce((a, b) => a + (b.beers || 0), 0);
 
     function lineView(item, idx) {
       const price = h("input", {
@@ -89,31 +98,21 @@
           price));
     }
 
-    // Deckel aus früheren Versionen (nur lokal gespeichert) einmalig in die Datenbank übernehmen.
-    async function migrateLocal() {
-      for (const b of state.book.slice()) {
-        if (!b.cid) { b.cid = uid(); save(state); }
-        await rpc("app_deckel_save", { p_date: b.date, p_location: b.location || "", p_items: b.items, p_client_id: b.cid });
-        state.book = state.book.filter((x) => x !== b); save(state);
-      }
-    }
-    function loadBook() {
-      bookError = null;
-      return migrateLocal().then(() => rpc("app_deckel_history")).then((b) => { book = b; draw(); }, (e) => { bookError = e.message; draw(); });
-    }
-
     function add(label, cat) {
       const remembered = state.prices[priceKey(loc, label)];
       root.Deckel.addItem(state.open.items, label, cat, remembered == null ? null : remembered);
       commit();
     }
 
+    const note = () => h("p", { class: "muted small", style: "margin:10px 0 0" }, LOCAL_NOTE);
+
     function deckView() {
       const o = state.open;
       if (!o) {
         return [card("Mein Deckel",
-          h("p", { class: "muted", style: "margin:0 0 10px" }, "Schreib auf, was du bestellst, und lass dir am Ende die Schlussrechnung geben. Der laufende Deckel bleibt auf diesem Gerät, das Deckelbuch ist nur für dich sichtbar."),
-          h("button", { class: "primary full", onclick: () => { state.open = { started: today(), location: loc, items: [], cid: uid() }; commit(); } }, "Neuen Deckel starten"))];
+          h("p", { class: "muted", style: "margin:0 0 10px" }, "Schreib auf, was du bestellst, und lass dir am Ende die Schlussrechnung geben."),
+          h("button", { class: "primary full", onclick: () => { state.open = { started: today(), location: loc, items: [] }; commit(); } }, "Neuen Deckel starten"),
+          note())];
       }
       const s = root.Deckel.summary(o.items);
       const free = h("input", { type: "text", placeholder: "Etwas anderes, z. B. Salat", autocomplete: "off", "aria-label": "Eigene Bestellung" });
@@ -130,7 +129,8 @@
           s.units_no_price ? h("p", { class: "muted small", style: "margin:2px 0 0" }, `+ ${s.units_no_price} Stück ohne Preis`) : null) : null,
         h("div", { class: "inline", style: "margin-top:12px" },
           h("button", { class: "primary", disabled: !o.items.length, style: "flex:1", onclick: () => { view = "bill"; draw(); } }, "Schlussrechnung"),
-          h("button", { class: "link", onclick: () => { if (!o.items.length || confirm("Deckel verwerfen?")) { state.open = null; commit(); } } }, "Verwerfen")))];
+          h("button", { class: "link", onclick: () => { if (!o.items.length || confirm("Deckel verwerfen?")) { state.open = null; commit(); } } }, "Verwerfen")),
+        note())];
     }
 
     function billLines(items) {
@@ -139,8 +139,15 @@
         h("strong", {}, i.price == null ? "ohne Preis" : money(i.qty * i.price))));
     }
 
+    function finish(keep, counted) {
+      const o = state.open, s = root.Deckel.summary(o.items);
+      if (keep) state.book.unshift({ id: uid(), date: o.started, location: o.location, items: o.items, total: s.total, no_price: s.units_no_price, beers: s.beers, shared: counted });
+      state.open = null; view = "deck"; save(state); draw();
+    }
+
     function billView() {
       const o = state.open, s = root.Deckel.summary(o.items);
+      const atMeeting = !!meetingDate && o.started === meetingDate && s.beers > 0;
       const body = [
         h("p", { class: "muted small", style: "margin:0" }, "Zu zahlen ungefähr"),
         h("p", { class: "total", style: "margin:0 0 10px" }, money(s.total)),
@@ -154,36 +161,48 @@
             h("button", { style: "flex:1", onclick: () => { view = "deck"; draw(); } }, "Nein, weiter bestellen")));
       } else {
         body.push(h("p", { style: "margin:14px 0 6px" }, h("strong", {}, "In mein Deckelbuch speichern?")),
-          h("p", { class: "muted small", style: "margin:0 0 8px" }, "Das siehst nur du."),
-          h("div", { class: "inline" },
-            h("button", { class: "primary", style: "flex:1", disabled: saving, onclick: async () => {
+          h("p", { class: "muted small", style: "margin:0 0 8px" }, "Es bleibt nur auf diesem Gerät."));
+        if (atMeeting) {
+          const cb = h("input", { type: "checkbox", id: "dk-share", checked: share ? "" : null, onchange: (e) => { share = e.target.checked; } });
+          body.push(h("label", { for: "dk-share", style: "display:flex;gap:8px;align-items:flex-start;margin:0 0 10px" }, cb,
+            h("span", { class: "small" }, `Heute ist Stammtisch: ${s.beers} Bier für die Bier-Statistik zählen. Gespeichert wird nur diese Zahl mit deinem Namen, keine Preise und nichts anderes. Bei „Nein, verwerfen“ wird nichts gezählt.`)));
+        }
+        body.push(h("div", { class: "inline" },
+          h("button", { class: "primary", style: "flex:1", disabled: saving, onclick: async () => {
+            const count = atMeeting && share;
+            if (count) {
               saving = true; draw();
-              try {
-                if (!o.cid) { o.cid = uid(); save(state); }
-                await rpc("app_deckel_save", { p_date: o.started, p_location: o.location || "", p_items: o.items, p_client_id: o.cid });
-                state.open = null; view = "deck"; save(state); toast("Im Deckelbuch gespeichert.");
-                saving = false; await loadBook();
-              } catch (e) { saving = false; toast(e.message, true); draw(); }
-            } }, "Ja, speichern"),
-            h("button", { style: "flex:1", onclick: () => { state.open = null; view = "deck"; commit(); } }, "Nein, verwerfen")));
+              try { await rpc("app_beer_save", { p_date: o.started, p_beers: sharedBeers(o.started) + s.beers }); }
+              catch (e) { saving = false; toast(e.message, true); draw(); return; }
+              saving = false; toast(`${s.beers} Bier gezählt.`);
+            }
+            finish(true, count);
+          } }, "Ja, speichern"),
+          h("button", { style: "flex:1", disabled: saving, onclick: () => finish(false, false) }, "Nein, verwerfen")));
       }
       return [card("Schlussrechnung", ...body)];
     }
 
     function bookView() {
-      if (bookError) return [card("Deckelbuch", h("p", { style: "margin:0 0 8px" }, bookError), h("button", { onclick: () => { book = null; draw(); loadBook(); } }, "Nochmal versuchen"))];
-      if (book == null) return [card("Deckelbuch", h("p", { class: "muted", style: "margin:0" }, "Lade ..."))];
-      if (!book.length) return [];
-      const beers = book.reduce((a, b) => a + (b.beers || 0), 0);
+      const list = state.book;
+      if (!list.length) return [];
+      const beers = list.reduce((a, b) => a + (b.beers || 0), 0);
       return [card("Deckelbuch",
-        h("p", { class: "muted small", style: "margin:0 0 6px" }, `${book.length} Abende, ${beers} Bier. Nur für dich sichtbar.`),
-        book.map((b) => h("details", {},
+        h("p", { class: "muted small", style: "margin:0 0 6px" }, `${list.length} Abende, ${beers} Bier.`),
+        list.map((b) => h("details", {},
           h("summary", {}, `${dateShort(b.date)}${b.location ? " · " + b.location : ""} · ${money(b.total)}${b.no_price ? " +" : ""}`),
           h("div", { style: "margin-top:6px" }, billLines(b.items)),
+          b.shared ? h("p", { class: "muted small", style: "margin:6px 0 0" }, `${b.beers} Bier wurden in der Bier-Statistik gezählt.`) : null,
           h("button", { class: "link", onclick: async () => {
-            if (!confirm("Diesen Eintrag löschen?")) return;
-            try { await rpc("app_deckel_delete", { p_id: b.id }); book = book.filter((x) => x.id !== b.id); draw(); } catch (e) { toast(e.message, true); }
-          } }, "Löschen"))))];
+            if (!confirm(b.shared ? "Eintrag löschen? Die gezählten Biere dieses Abends werden dann auch aus der Bier-Statistik entfernt." : "Diesen Eintrag löschen?")) return;
+            if (b.shared) {
+              const rest = sharedBeers(b.date, b.id);
+              try { await (rest > 0 ? rpc("app_beer_save", { p_date: b.date, p_beers: rest }) : rpc("app_beer_delete", { p_date: b.date })); }
+              catch (e) { toast(e.message, true); return; }
+            }
+            state.book = state.book.filter((x) => x.id !== b.id); commit();
+          } }, "Löschen"))),
+        note())];
     }
 
     function draw() {
@@ -191,7 +210,6 @@
       box.replaceChildren(...main, ...bookView());
     }
     draw();
-    loadBook();
     return box;
   }
 
