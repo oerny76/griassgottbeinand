@@ -516,7 +516,7 @@
   let last = null; // zuletzt geladene Daten, damit ein Tab-Wechsel nicht neu lädt
 
   function goTab(id) {
-    tab = id; session.set(TAB_KEY, id);
+    tab = id; if (id !== "trip") session.set(TAB_KEY, id);
     if (last) render(last.own);
     window.scrollTo(0, 0);
   }
@@ -556,11 +556,13 @@
     last = { own };
     const admin = !!own.me.is_admin;
     if (tab === "admin" && !admin) tab = "start";
+    if (tab === "trip" && !window.Trip.active(todayBerlin())) tab = "start";
     const d = own;
     const today = new Date(todayBerlin() + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
     // Nur der geöffnete Tab wird gebaut (der Statistik-Tab lädt Daten).
     const pages = {
-      start: () => [heroCard(d), whoCard(d), tilesBlock(d, goTab)],
+      start: () => [window.Trip.active(todayBerlin()) ? window.Trip.banner(h, todayBerlin(), () => goTab("trip")) : null, heroCard(d), whoCard(d), tilesBlock(d, goTab)],
+      trip: () => [window.Trip.page(h, todayBerlin(), () => goTab("start"))],
       stat: () => [statsPage(d)],
       konto: () => [accountCard(d), openCard(d)],
       chronik: () => [recentCard(d), absencesCard(d), chairsCard(d), locationsCard(d)],
@@ -569,6 +571,7 @@
     const root = h("div", {},
       tab === "start"
         ? [h("p", { class: "hello" }, today), h("h1", {}, `Servus, ${d.me.name}!`)]
+        : tab === "trip" ? null
         : h("h1", {}, tab === "admin" ? "Admin" : TABS.find(([id]) => id === tab)[1]),
       pages[tab](),
       footer());
