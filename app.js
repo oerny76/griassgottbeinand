@@ -225,7 +225,7 @@
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
       if (sub && Notification.permission === "granted") {
-        return say(h("p", { class: "muted small", style: "margin:0 0 10px" }, "Aktiv auf diesem Gerät: Vorsitz, Location, Abmeldungen, Gäste und montags offene Posten."),
+        return say(h("p", { class: "muted small", style: "margin:0 0 10px" }, "Aktiv auf diesem Gerät: Vorsitz, Location, Abmeldungen, Gäste (auch deren Rücknahme) und montags offene Posten."),
           h("button", { class: "full", onclick: (e) => off(e.currentTarget, sub) }, "Benachrichtigungen ausschalten"));
       }
       if (Notification.permission === "denied") return say(h("p", { class: "muted small", style: "margin:0" }, "Benachrichtigungen sind für diese App blockiert. Bitte in den Geräte- oder Browser-Einstellungen wieder erlauben."));

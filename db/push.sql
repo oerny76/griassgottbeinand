@@ -118,21 +118,33 @@ select cron.schedule('push_weekly_open', '0 17 * * 1', 'select public._push_week
 grant select on public.push_config to service_role;
 grant select, delete on public.push_subscriptions to service_role;
 
--- Abmeldung oder Gast angemeldet (nur über App oder Admin, nicht beim Import, nur für kommende Termine).
+-- Abmeldung oder Gast angemeldet, und deren Rücknahme (nur über App oder Admin, nicht beim Import, nur für kommende Termine).
 create or replace function public._push_entry_added()
 returns trigger language plpgsql security definer set search_path to 'public' as $function$
-declare nm text; d text;
+declare nm text; d text; g text; undone boolean := (tg_op = 'UPDATE');
 begin
-  if new.source not in ('app', 'admin') or new.cancelled_at is not null or new.entry_date < public._today() then return new; end if;
+  if new.source not in ('app', 'admin') or new.entry_date < public._today() then return new; end if;
+  if undone then
+    if old.cancelled_at is not null or new.cancelled_at is null then return new; end if;
+  elsif new.cancelled_at is not null then return new;
+  end if;
   select name into nm from public.members where id = new.member_id;
   d := to_char(new.entry_date, 'DD.MM.YYYY');
+  g := coalesce(nullif(regexp_replace(new.subcategory, '^Gast\s+', ''), ''), 'einen Gast');
   if new.category in ('Abwesenheit (1x)', 'Abwesenheit unentschuldigt') then
-    perform public._push_send(jsonb_build_array(jsonb_build_object('title', 'Abmeldung', 'body', nm || ' meldet sich für den Stammtisch am ' || d || ' ab')));
+    perform public._push_send(jsonb_build_array(jsonb_build_object(
+      'title', case when undone then 'Abmeldung zurückgenommen' else 'Abmeldung' end,
+      'body', case when undone then nm || ' ist am ' || d || ' doch dabei' else nm || ' meldet sich für den Stammtisch am ' || d || ' ab' end)));
   elsif new.category in ('Gastbeitrag', 'Gast unangemeldet') then
-    perform public._push_send(jsonb_build_array(jsonb_build_object('title', 'Gast angemeldet',
-      'body', nm || ' bringt ' || coalesce(nullif(regexp_replace(new.subcategory, '^Gast\s+', ''), ''), 'einen Gast') || ' zum Stammtisch am ' || d || ' mit')));
+    perform public._push_send(jsonb_build_array(jsonb_build_object(
+      'title', case when undone then 'Gast abgemeldet' else 'Gast angemeldet' end,
+      'body', case when undone then nm || ' bringt ' || g || ' am ' || d || ' doch nicht mit' else nm || ' bringt ' || g || ' zum Stammtisch am ' || d || ' mit' end)));
   end if;
   return new;
 end $function$;
 drop trigger if exists push_entry_added on public.entries;
-create trigger push_entry_added after insert on public.entries for each row execute function public._push_entry_added();
+create trigger push_entry_added after insert or update of cancelled_at on public.entries for each row execute function public._push_entry_added();
+
+-- Die Edge Function arbeitet als service_role.
+grant select on public.push_config to service_role;
+grant select, delete on public.push_subscriptions to service_role;
