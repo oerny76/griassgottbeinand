@@ -43,12 +43,14 @@
     const nextLine = tgt.scope === "next" && tgt.date
       ? h("p", {}, "Nächster Stammtisch: ", h("strong", {}, dateShort(tgt.date)), tgt.chair ? [", Vorsitz ", h("strong", {}, tgt.chair === d.me.name ? "ich" : tgt.chair)] : null) : null;
     return h("section", { class: "hero" },
+      h("div", { class: "headcount", "aria-label": `${total} Teilnehmer${d.guests.length ? `, davon ${d.guests.length} ${d.guests.length === 1 ? "Gast" : "Gäste"}` : ""}` },
+        h("strong", {}, String(total)), h("span", {}, "Teilnehmer"),
+        d.guests.length ? h("small", {}, `inkl. ${d.guests.length} ${d.guests.length === 1 ? "Gast" : "Gäste"}`) : null),
       h("div", { class: "badges" },
         h("span", { class: "when" }, whenText(inDays(m.date))),
         d.my_absent ? h("span", { class: "state" }, "Du bist entschuldigt") : null),
       h("p", { class: "date" }, day.toLocaleDateString("de-DE", { weekday: "long" }) + ",",
         h("small", {}, day.toLocaleDateString("de-DE", sameYear ? { day: "numeric", month: "long" } : { day: "numeric", month: "long", year: "numeric" }))),
-      h("p", {}, "Teilnehmer: ", h("strong", {}, String(total)), d.guests.length ? h("span", { class: "muted" }, ` (inkl. ${d.guests.length} ${d.guests.length === 1 ? "Gast" : "Gäste"})`) : null),
       h("p", {}, "Vorsitz: ", h("strong", {}, m.chair ? (m.chair === d.me.name ? "ich" : m.chair) : "noch offen")),
       loc
         ? [h("p", {}, h("strong", {}, loc.name), addr && h("span", { class: "muted" }, " · " + addr)),
