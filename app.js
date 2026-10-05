@@ -225,11 +225,11 @@
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
       if (sub && Notification.permission === "granted") {
-        return say(h("p", { class: "muted small", style: "margin:0 0 10px" }, "Aktiv auf diesem Gerät: Vorsitz, Location und wöchentlich (montags) offene Posten."),
+        return say(h("p", { class: "muted small", style: "margin:0 0 10px" }, "Aktiv auf diesem Gerät: Vorsitz, Location, Abmeldungen, Gäste und montags offene Posten."),
           h("button", { class: "full", onclick: (e) => off(e.currentTarget, sub) }, "Benachrichtigungen ausschalten"));
       }
       if (Notification.permission === "denied") return say(h("p", { class: "muted small", style: "margin:0" }, "Benachrichtigungen sind für diese App blockiert. Bitte in den Geräte- oder Browser-Einstellungen wieder erlauben."));
-      say(h("p", { class: "muted small", style: "margin:0 0 10px" }, "Bekomme eine Nachricht, wenn sich Vorsitz oder Location ändern, und montags eine Erinnerung an offene Posten."),
+      say(h("p", { class: "muted small", style: "margin:0 0 10px" }, "Bekomme eine Nachricht bei Änderungen an Vorsitz oder Location, bei Abmeldungen und Gästen sowie montags eine Erinnerung an offene Posten."),
         h("button", { class: "primary full", onclick: (e) => on(e.currentTarget) }, "Benachrichtigungen aktivieren"));
     }
     async function on(btn) {
