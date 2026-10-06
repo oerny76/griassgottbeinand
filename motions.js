@@ -50,7 +50,7 @@
       results.replaceChildren(
         h("h2", {}, "Offen"),
         ...(open.length ? open.map((m) => motionCard(m, () => setView(m.id))) : [h("p", { class: "muted" }, "Keine offenen Anträge.")]),
-        closed.length ? h("details", { class: "motion-archive" }, h("summary", {}, `Archiv (${closed.length})`), ...closed.map((m) => motionCard(m, () => setView(m.id)))) : null);
+        ...(closed.length ? [h("details", { class: "motion-archive" }, h("summary", {}, `Archiv (${closed.length})`), ...closed.map((m) => motionCard(m, () => setView(m.id))))] : []));
     };
     show(list);
     input.addEventListener("input", () => {
