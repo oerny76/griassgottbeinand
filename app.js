@@ -54,7 +54,7 @@
         h("small", {}, day.toLocaleDateString("de-DE", sameYear ? { day: "numeric", month: "long" } : { day: "numeric", month: "long", year: "numeric" }))),
       h("p", { class: "wx-pad" }, "Vorsitz: ", h("strong", {}, m.chair ? (m.chair === d.me.name ? "ich" : m.chair) : "noch offen")),
       loc
-        ? [h("p", { class: "wx-pad" }, h("strong", {}, loc.name), addr && h("span", { class: "muted" }, " · " + addr)),
+        ? [h("p", { class: "wx-pad" }, web ? h("a", { class: "locname", href: web, title: "Website der Location öffnen", target: "_blank", rel: "noopener noreferrer" }, h("strong", {}, loc.name)) : h("strong", {}, loc.name), addr && h("span", { class: "muted" }, " · " + addr)),
             ratingChip(d, loc.name, m.date <= todayBerlin()),
             h("div", { class: "locLinks" },
               routes.map(([label, href]) => h("a", { class: "btn hbtn", href, title: `Route zur Location in ${label} starten`, target: "_blank", rel: "noopener noreferrer" }, "📍 " + label)),

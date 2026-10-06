@@ -332,3 +332,4 @@ button.opt-pick.on { border-color: var(--brand); }
 .opt-multi input { width: 22px; min-height: 22px; margin-top: 2px; flex: 0 0 auto; }
 .opt-preview { margin: 0; padding-left: 20px; }
 .opt-mark { display: inline-block; width: 1.4em; text-align: center; }
+.hero a.locname { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
