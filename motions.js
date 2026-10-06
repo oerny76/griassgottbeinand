@@ -11,6 +11,8 @@
   const CHOICE = { yes: "Zustimmung", no: "Ablehnung", abstain: "Enthaltung" };
   const RESULT = { accepted: "Angenommen", rejected: "Abgelehnt", tie: "Unentschieden, nicht angenommen" };
   const isChoice = (m) => m.kind === "choice";
+  // replaceChildren schreibt null als Text "null": leere Einträge vorher entfernen.
+  const put = (el, ...kids) => el.replaceChildren(...kids.flat().filter((k) => k != null && k !== false));
   const kindLabel = (m) => (m.multi ? "Mehrfachauswahl" : "Auswahl");
 
   // Ja/Nein während der Laufzeit: Steht das Ergebnis rechnerisch schon fest? Enthaltungen zählen nicht, Ausstehende können noch alle in eine Richtung stimmen.
@@ -321,7 +323,7 @@
         h("input", { type: "checkbox", checked: draft.multi, onchange: (e) => setMulti(e.target.checked) }),
         h("span", {}, h("strong", {}, "Mehrfachauswahl"), h("span", { class: "muted small", style: "display:block" }, "Mitglieder dürfen mehrere Optionen wählen, zum Beispiel alle Termine, die passen."))));
 
-    const form = () => box.replaceChildren(
+    const form = () => put(box, 
       h("div", { class: "seg", role: "group", "aria-label": "Art des Antrags" },
         [["yesno", "Ja oder Nein"], ["choice", "Auswahl"]].map(([k, label]) => h("button", { type: "button", class: draft.kind === k ? "on" : "", "aria-pressed": String(draft.kind === k), onclick: () => setKind(k) }, label))),
       h("label", { class: "small muted" }, "Titel"), title,
@@ -341,7 +343,7 @@
 
     const sure = () => {
       const c = cleaned();
-      box.replaceChildren(
+      put(box, 
         h("p", { style: "margin:0" }, h("strong", {}, title.value.trim())),
         h("p", { style: "margin:0;white-space:pre-wrap" }, body.value.trim()),
         draft.kind === "choice" ? h("ul", { class: "opt-preview" }, c.options.map((o, i) => h("li", {}, (c.picks.includes(i + 1) ? "✓ " : "") + o))) : null,
