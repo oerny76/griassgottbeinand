@@ -492,7 +492,7 @@
         h("p", { class: "num" }, euro.format(Number(t.paypal) + Number(t.outstanding))),
         h("p", { class: "label" }, `inkl. ${euro.format(t.outstanding)} offen`)),
       mine > 0 ? h("button", { type: "button", class: "tile tap wide tile-vote", onclick: () => goTab("abstimmung") },
-        h("p", { class: "label" }, mine === 1 ? "1 offene Abstimmung" : `${mine} offene Abstimmungen`),
+        h("p", { class: "label" }, mine === 1 ? "1 offener Antrag" : `${mine} offene Anträge`),
         h("p", { class: "num text" }, mine === 1 ? "Bitte gib deine Stimme ab" : "Bitte gib deine Stimmen ab"),
         h("p", { class: "label" }, "Jetzt abstimmen ›")) : null,
       b ? h("div", { class: "tile" },
