@@ -569,7 +569,7 @@
   const TABS = [
     ["start", "Start", "M3 11.5 12 4l9 7.5M5.5 10v9.5h13V10"],
     ["stat", "Statistik", "M5 20V11M12 20V5M19 20v-7"],
-    ["abstimmung", "Abstimmung", "M4 5h16v14H4zM8 12l3 3 5-6"],
+    ["abstimmung", "Anträge", "M4 5h16v14H4zM8 12l3 3 5-6"],
     ["konto", "Konto", "M3.5 7h17v12h-17zM3.5 7l2-3h13l2 3M15.5 13h2"],
     ["chronik", "Chronik", "M5 4.5h11a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3zM5 16.5a3 3 0 0 1 3-3h11"],
   ];
