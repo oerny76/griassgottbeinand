@@ -42,7 +42,7 @@ begin
   update public.motions set closed_at = now(), result = res where id = p_id;
   label := case res when 'accepted' then 'Angenommen' when 'rejected' then 'Abgelehnt' else 'Unentschieden, nicht angenommen' end;
   perform public._push_send(jsonb_build_array(jsonb_build_object(
-    'title', 'Abstimmung beendet',
+    'title', 'Antrag abgeschlossen',
     'body', label || ': ' || m.title || ' (' || y || ' Ja, ' || n || ' Nein, ' || a || ' Enthaltung' || case when a = 1 then '' else 'en' end || ')')));
 end $function$;
 revoke all on function public._motion_close(uuid) from public, anon, authenticated;
@@ -57,7 +57,7 @@ begin
   end loop;
   for r in select id, title, ends_at from public.motions where closed_at is null and not reminded and ends_at - now() <= interval '24 hours' loop
     update public.motions set reminded = true where id = r.id;
-    select coalesce(jsonb_agg(jsonb_build_object('member_id', v.member_id, 'title', 'Abstimmung endet bald',
+    select coalesce(jsonb_agg(jsonb_build_object('member_id', v.member_id, 'title', 'Antrag endet bald',
         'body', 'Noch nicht abgestimmt: ' || r.title)), '[]'::jsonb) into msgs
     from public.motion_votes v join public.members mb on mb.id = v.member_id
     where v.motion_id = r.id and v.choice is null and mb.kind = 'member';
