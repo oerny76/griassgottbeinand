@@ -557,6 +557,7 @@
   const TABS = [
     ["start", "Start", "M3 11.5 12 4l9 7.5M5.5 10v9.5h13V10"],
     ["stat", "Statistik", "M5 20V11M12 20V5M19 20v-7"],
+    ["abstimmung", "Abstimmung", "M4 5h16v14H4zM8 12l3 3 5-6"],
     ["konto", "Konto", "M3.5 7h17v12h-17zM3.5 7l2-3h13l2 3M15.5 13h2"],
     ["chronik", "Chronik", "M5 4.5h11a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3zM5 16.5a3 3 0 0 1 3-3h11"],
   ];
@@ -581,7 +582,8 @@
 
   function tabBar(admin) {
     return h("nav", { class: "tabbar", "aria-label": "Bereiche" }, h("div", { class: "tabbar-in" },
-      TABS.map(([id, label, path]) => h("button", { type: "button", "aria-current": id === tab ? "page" : null, onclick: () => goTab(id) }, icon(path), label)),
+      TABS.map(([id, label, path]) => h("button", { type: "button", "aria-current": id === tab ? "page" : null, onclick: () => goTab(id) }, icon(path), label,
+        id === "abstimmung" && last && last.own.motion_pending > 0 ? h("span", { class: "tab-badge", "aria-label": `${last.own.motion_pending} offen` }, String(last.own.motion_pending)) : null)),
       admin ? h("button", { type: "button", "aria-current": tab === "admin" ? "page" : null, onclick: () => goTab("admin") }, icon(ADMIN_ICON), "Admin") : null));
   }
 
@@ -620,6 +622,7 @@
       start: () => [window.Trip.active(todayBerlin()) ? window.Trip.banner(h, todayBerlin(), () => goTab("trip"), d.me.name) : null, heroCard(d), whoCard(d), tilesBlock(d, goTab)],
       trip: () => [window.Trip.page(h, todayBerlin(), () => goTab("start"), d.me.name)],
       stat: () => [statsPage(d)],
+      abstimmung: () => [window.Motions.render(d.me)],
       konto: () => [accountCard(d), openCard(d), pushCard()],
       chronik: () => [recentCard(d), absencesCard(d), chairsCard(d), locationsCard(d)],
       admin: () => [window.AdminView.render(own)],
@@ -660,8 +663,9 @@
     if (loading) return;
     loading = true;
     try {
-      const [own, overview, ratings] = await Promise.all([rpc("app_dashboard"), rpc("app_overview").catch(() => null), rpc("app_my_ratings").catch(() => [])]);
+      const [own, overview, ratings, pending] = await Promise.all([rpc("app_dashboard"), rpc("app_overview").catch(() => null), rpc("app_my_ratings").catch(() => []), rpc("app_motion_pending").catch(() => 0)]);
       own.overview = overview;
+      own.motion_pending = pending;
       own.my_ratings = ratings;
       render(own);
       if (manual) { statsCache = null; toast("Aktualisiert."); }

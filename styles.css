@@ -36,7 +36,7 @@ button.link { min-height: 0; padding: 4px 8px; border: 0; background: transparen
 button.full, .btn.full { width: 100%; }
 button:disabled { opacity: .55; cursor: not-allowed; }
 button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-input, select { font: inherit; width: 100%; min-height: 48px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+input, select, textarea { font: inherit; width: 100%; min-height: 48px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
 label { display: block; font-size: .875rem; color: var(--muted); margin: 0 0 4px; }
 .inline { display: flex; gap: 8px; }
 .inline > input { flex: 1; }
@@ -207,3 +207,17 @@ table.tv thead th { color: var(--muted); font-weight: 600; position: sticky; top
 .trip-row.off { opacity: .45; }
 .trip-row.off .trip-time { color: var(--muted); }
 .stack[hidden], p[hidden] { display: none; }
+
+/* Abstimmungen */
+textarea { width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); resize: vertical; }
+textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.tabbar button { position: relative; padding-left: 2px; padding-right: 2px; }
+.tab-badge { position: absolute; top: 6px; left: calc(50% + 6px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--warn); color: #fff; font-size: .7rem; line-height: 18px; text-align: center; }
+.motion-bar { display: flex; gap: 8px; margin: 0 0 14px; }
+.motion-bar input { flex: 1 1 auto; min-width: 0; }
+.motion-bar button { flex: 0 0 auto; white-space: nowrap; }
+button.motion { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; width: 100%; text-align: left; margin: 0 0 10px; padding: 14px 16px; border-radius: var(--radius); font-weight: 400; box-shadow: var(--shadow); }
+button.motion strong { font-weight: 700; }
+.motion-archive { margin-top: 14px; }
+.motion-archive summary { cursor: pointer; font-weight: 700; color: var(--muted); padding: 8px 0 12px; }
+.motion-vote { display: flex; flex-direction: column; gap: 8px; }
