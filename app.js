@@ -592,10 +592,20 @@
 
   const ADMIN_ICON = "M12 3l7 3v5.5c0 4.5-3 8-7 9.5-4-1.5-7-5-7-9.5V6zM9 12l2.2 2.2L15 10";
 
+  // Störer am Reiter: offene Anträge (alle) und offene Posten (eigene plus die der Mitglieder, für die ich zahle).
+  function badge(id) {
+    const o = last && last.own;
+    if (!o) return null;
+    const n = id === "abstimmung" ? (o.motions ? o.motions.open : 0)
+      : id === "konto" ? o.my_open.items.length + (o.covered_open || []).reduce((sum, c) => sum + c.items.length, 0) : 0;
+    const what = id === "konto" ? "offene Posten" : "offene Anträge";
+    return n > 0 ? h("span", { class: "tab-badge", "aria-label": `${n} ${what}` }, String(n)) : null;
+  }
+
   function tabBar(admin) {
     return h("nav", { class: "tabbar", "aria-label": "Bereiche" }, h("div", { class: "tabbar-in" },
       TABS.map(([id, label, path]) => h("button", { type: "button", "aria-current": id === tab ? "page" : null, onclick: () => goTab(id) }, icon(path), label,
-        id === "abstimmung" && last && last.own.motions.open > 0 ? h("span", { class: "tab-badge", "aria-label": `${last.own.motions.open} offene Anträge` }, String(last.own.motions.open)) : null)),
+        badge(id))),
       admin ? h("button", { type: "button", "aria-current": tab === "admin" ? "page" : null, onclick: () => goTab("admin") }, icon(ADMIN_ICON), "Admin") : null));
   }
 
