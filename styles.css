@@ -285,3 +285,10 @@ button.motion > div { width: 100%; }
 .hero .wx-row span { display: flex; flex-direction: column; }
 .hero .wx-row strong { font-size: 1.15rem; }
 .hero .wx-src { font-size: .72rem; opacity: .8; }
+
+/* Unsere Bewertung in der Hauptkarte */
+.hero .ratechip { display: inline-block; text-align: left; margin: 8px 0 0; padding: 4px 12px; min-height: 36px; border-radius: 999px; border: 0; background: rgba(255, 255, 255, .2); color: #fff; font-size: .9rem; font-weight: 400; }
+.hero .ratechip.static { min-height: 0; padding: 4px 12px; }
+.hero .ratechip[aria-expanded="true"] { background: rgba(255, 255, 255, .32); }
+.hero .rate-star { color: var(--accent); }
+.hero .ratechip-go { opacity: .85; }

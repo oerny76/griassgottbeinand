@@ -55,6 +55,7 @@
       h("p", { class: "wx-pad" }, "Vorsitz: ", h("strong", {}, m.chair ? (m.chair === d.me.name ? "ich" : m.chair) : "noch offen")),
       loc
         ? [h("p", { class: "wx-pad" }, h("strong", {}, loc.name), addr && h("span", { class: "muted" }, " · " + addr)),
+            ratingChip(d, loc.name, m.date <= todayBerlin()),
             h("div", { class: "locLinks" },
               routes.map(([label, href]) => h("a", { class: "btn hbtn", href, title: `Route zur Location in ${label} starten`, target: "_blank", rel: "noopener noreferrer" }, "📍 " + label)),
               web && h("a", { class: "btn hbtn", href: web, title: "Website der Location öffnen", target: "_blank", rel: "noopener noreferrer" }, "🌐 Website"))]
@@ -65,6 +66,20 @@
       ...actions);
     if (wx) wx.attach(hero);
     return hero;
+  }
+
+  // Unsere Bewertung der Location (aus der Übersicht), nur wenn es schon eine gibt. Antippen öffnet das Bewertungsformular
+  // direkt darunter, sobald der Stammtisch begonnen hat (wie der Knopf "Location bewerten"). Vorher ist es nur eine Anzeige.
+  function ratingChip(d, name, canRate) {
+    const l = d.overview && d.overview.locations && d.overview.locations.find((x) => x.name === name);
+    if (!l || l.avg == null) return null;
+    const mine = hasRated(d, name);
+    const info = [h("span", { class: "rate-star", "aria-hidden": "true" }, "★"), h("strong", {}, fmt1(l.avg)), ` · ${l.n} Bewertung${l.n === 1 ? "" : "en"}`];
+    if (!canRate) return h("p", { class: "ratechip static", title: "Unsere Bewertung dieser Location" }, h("span", {}, ...info));
+    return h("button", { type: "button", class: "ratechip", "aria-expanded": String(heroPanel === "rate"), title: "Unsere Bewertung. Antippen, um selbst zu bewerten",
+      "aria-label": `Unsere Bewertung: ${fmt1(l.avg)} von 5 bei ${l.n} Bewertung${l.n === 1 ? "" : "en"}. ${mine ? "Deine Bewertung ändern" : "Selbst bewerten"}`,
+      onclick: () => { heroPanel = heroPanel === "rate" ? null : "rate"; render(last.own); const p = document.querySelector(".hero .panel"); if (p) p.scrollIntoView({ block: "nearest", behavior: "smooth" }); } },
+      h("span", {}, ...info, h("span", { class: "ratechip-go" }, mine ? " · ändern ›" : " · bewerten ›")));
   }
 
   // Wetter am Abend: kleine Kachel unter der Teilnehmerzahl, Antippen klappt die Details auf (weather.js, Open-Meteo).
