@@ -221,3 +221,5 @@ button.motion strong { font-weight: 700; }
 .motion-archive { margin-top: 14px; }
 .motion-archive summary { cursor: pointer; font-weight: 700; color: var(--muted); padding: 8px 0 12px; }
 .motion-vote { display: flex; flex-direction: column; gap: 8px; }
+.tile-vote { border-color: var(--warn); border-width: 2px; }
+.tile-vote .num { color: var(--warn); }

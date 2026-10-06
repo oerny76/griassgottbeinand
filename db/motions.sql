@@ -96,14 +96,16 @@ begin
           limit 300) m), '[]'::jsonb);
 end $function$;
 
--- Anzahl offener Anträge, bei denen ich noch abstimmen muss (für die Zahl am Reiter).
-create or replace function public.app_motion_pending(p_token text)
-returns int language plpgsql security definer set search_path to 'public' as $function$
+-- Zahlen fürs Dashboard und den Reiter: open = alle offenen Anträge, mine = offene, bei denen ich noch abstimmen muss.
+create or replace function public.app_motion_counts(p_token text)
+returns jsonb language plpgsql security definer set search_path to 'public' as $function$
 declare me public.members := public._auth_member(p_token);
 begin
   perform public._motion_close_expired();
-  return (select count(*) from public.motion_votes v join public.motions m on m.id = v.motion_id
-          where v.member_id = me.id and v.choice is null and m.closed_at is null);
+  return jsonb_build_object(
+    'open', (select count(*) from public.motions where closed_at is null),
+    'mine', (select count(*) from public.motion_votes v join public.motions m on m.id = v.motion_id
+             where v.member_id = me.id and v.choice is null and m.closed_at is null));
 end $function$;
 
 create or replace function public.app_motion_get(p_token text, p_id uuid)
@@ -165,7 +167,7 @@ begin
   return jsonb_build_object('ok', true);
 end $function$;
 
-revoke all on function public.app_motion_list(text, text), public.app_motion_pending(text), public.app_motion_get(text, uuid),
+revoke all on function public.app_motion_list(text, text), public.app_motion_counts(text), public.app_motion_get(text, uuid),
   public.app_motion_create(text, text, text), public.app_motion_vote(text, uuid, text), public.app_motion_delete(text, uuid) from public;
-grant execute on function public.app_motion_list(text, text), public.app_motion_pending(text), public.app_motion_get(text, uuid),
+grant execute on function public.app_motion_list(text, text), public.app_motion_counts(text), public.app_motion_get(text, uuid),
   public.app_motion_create(text, text, text), public.app_motion_vote(text, uuid, text), public.app_motion_delete(text, uuid) to anon, authenticated;

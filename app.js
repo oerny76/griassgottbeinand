@@ -485,17 +485,29 @@
           h("button", { class: "link", onclick: () => goTab("konto") }, "Posten ansehen"))
       : h("div", { class: "tile" }, h("p", { class: "label" }, "Dein Konto"), h("p", { class: "num text zero" }, "Alles bezahlt ✓"));
     // Immer volle Zeilen: Die kleinen Kacheln füllen das Raster, eine einzelne Kachel wird breit. Die Abwesenheiten-Kachel ist immer breit.
+    const mine = d.motions ? d.motions.mine : 0;
     const small = [
       h("div", { class: "tile" },
         h("p", { class: "label" }, "Kassenstand"),
         h("p", { class: "num" }, euro.format(Number(t.paypal) + Number(t.outstanding))),
         h("p", { class: "label" }, `inkl. ${euro.format(t.outstanding)} offen`)),
+      mine > 0 ? h("button", { type: "button", class: "tile tap wide tile-vote", onclick: () => goTab("abstimmung") },
+        h("p", { class: "label" }, mine === 1 ? "1 offene Abstimmung" : `${mine} offene Abstimmungen`),
+        h("p", { class: "num text" }, mine === 1 ? "Bitte gib deine Stimme ab" : "Bitte gib deine Stimmen ab"),
+        h("p", { class: "label" }, "Jetzt abstimmen ›")) : null,
       b ? h("div", { class: "tile" },
         h("p", { class: "label" }, "Nächster Geburtstag"),
         h("p", { class: "num text" }, b.name),
         h("p", { class: "label" }, `${dateDay(b.date)} (${b.turns})`)) : null,
     ].filter(Boolean);
-    if ((small.length + (wide ? 0 : 1)) % 2 === 1) small[small.length - 1].classList.add("wide");
+    // Keine Lücken im Raster: Bleibt vor einer breiten Kachel (oder am Ende) eine einzelne kleine übrig, wird sie breit.
+    let lone = wide ? null : konto;
+    for (const el of small) {
+      if (el.classList.contains("wide")) { if (lone) lone.classList.add("wide"); lone = null; }
+      else if (lone) lone = null;
+      else lone = el;
+    }
+    if (lone) lone.classList.add("wide");
     return h("div", { class: "tiles" }, konto, ...small, absencesTile(a, absSum));
   }
 
@@ -583,7 +595,7 @@
   function tabBar(admin) {
     return h("nav", { class: "tabbar", "aria-label": "Bereiche" }, h("div", { class: "tabbar-in" },
       TABS.map(([id, label, path]) => h("button", { type: "button", "aria-current": id === tab ? "page" : null, onclick: () => goTab(id) }, icon(path), label,
-        id === "abstimmung" && last && last.own.motion_pending > 0 ? h("span", { class: "tab-badge", "aria-label": `${last.own.motion_pending} offen` }, String(last.own.motion_pending)) : null)),
+        id === "abstimmung" && last && last.own.motions.open > 0 ? h("span", { class: "tab-badge", "aria-label": `${last.own.motions.open} offene Anträge` }, String(last.own.motions.open)) : null)),
       admin ? h("button", { type: "button", "aria-current": tab === "admin" ? "page" : null, onclick: () => goTab("admin") }, icon(ADMIN_ICON), "Admin") : null));
   }
 
@@ -663,9 +675,9 @@
     if (loading) return;
     loading = true;
     try {
-      const [own, overview, ratings, pending] = await Promise.all([rpc("app_dashboard"), rpc("app_overview").catch(() => null), rpc("app_my_ratings").catch(() => []), rpc("app_motion_pending").catch(() => 0)]);
+      const [own, overview, ratings, motions] = await Promise.all([rpc("app_dashboard"), rpc("app_overview").catch(() => null), rpc("app_my_ratings").catch(() => []), rpc("app_motion_counts").catch(() => ({ open: 0, mine: 0 }))]);
       own.overview = overview;
-      own.motion_pending = pending;
+      own.motions = motions;
       own.my_ratings = ratings;
       render(own);
       if (manual) { statsCache = null; toast("Aktualisiert."); }
