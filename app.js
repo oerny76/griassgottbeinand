@@ -88,8 +88,11 @@
   function weatherBox(m) {
     const loc = m.location;
     if (!loc || loc.lat == null || loc.lon == null || !window.Weather) return null;
+    // TEMP Testansicht: Mit "&wetter=1" im Link zeigt die Kachel das Wetter von morgen, auch wenn der Termin weiter weg ist. Nur für den, der den Link so öffnet.
+    const demo = /[?&]wetter=1(&|$)/.test(location.search);
+    const day = demo ? new Date(Date.now() + 864e5).toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" }) : m.date;
     const left = window.Weather.dayDiff(todayBerlin(), m.date);
-    if (left < 0 || left > window.Weather.MAX_DAYS) return null;
+    if (!demo && (left < 0 || left > window.Weather.MAX_DAYS)) return null;
     const btn = h("button", { type: "button", class: "wx", hidden: true, "aria-expanded": String(wxOpen), onclick: () => { wxOpen = !wxOpen; btn.setAttribute("aria-expanded", String(wxOpen)); detail.hidden = !wxOpen; } });
     const detail = h("div", { class: "wx-detail", hidden: true });
     let hero = null;
@@ -101,11 +104,11 @@
       detail.replaceChildren(
         h("div", { class: "wx-row" }, ev.at.map((x) => h("span", {}, h("strong", {}, `${x.temp}°`), `${x.hr} Uhr`))),
         h("p", {}, `Regenrisiko bis 23 Uhr: ${ev.rainMax} %`, ev.sunset ? ` · Sonnenuntergang ${ev.sunset}` : ""),
-        h("p", { class: "wx-src" }, `Stand ${stand} Uhr · Wetterdaten von `, h("a", { href: "https://open-meteo.com/", target: "_blank", rel: "noopener noreferrer" }, "Open-Meteo.com")));
+        h("p", { class: "wx-src" }, `${demo ? "Testansicht, Wetter für morgen. " : ""}Stand ${stand} Uhr · Wetterdaten von `, h("a", { href: "https://open-meteo.com/", target: "_blank", rel: "noopener noreferrer" }, "Open-Meteo.com")));
       btn.hidden = false; detail.hidden = !wxOpen;
       if (hero) hero.classList.add("has-wx");
     };
-    window.Weather.load(loc.lat, loc.lon, m.date, update);
+    window.Weather.load(loc.lat, loc.lon, day, update);
     return { btn, detail, attach: (el) => { hero = el; if (!btn.hidden) el.classList.add("has-wx"); } };
   }
 
