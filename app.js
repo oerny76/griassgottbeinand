@@ -42,25 +42,56 @@
     const tgt = chairTarget(d);
     const nextLine = tgt.scope === "next" && tgt.date
       ? h("p", {}, "Nächster Stammtisch: ", h("strong", {}, dateShort(tgt.date)), tgt.chair ? [", Vorsitz ", h("strong", {}, tgt.chair === d.me.name ? "ich" : tgt.chair)] : null) : null;
-    return h("section", { class: "hero" },
+    const wx = weatherBox(m);
+    const hero = h("section", { class: "hero" },
       h("div", { class: "headcount", "aria-label": `${total} Teilnehmer${d.guests.length ? `, davon ${d.guests.length} ${d.guests.length === 1 ? "Gast" : "Gäste"}` : ""}` },
         h("strong", {}, String(total)), h("span", {}, "Teilnehmer"),
         d.guests.length ? h("small", {}, `inkl. ${d.guests.length} ${d.guests.length === 1 ? "Gast" : "Gäste"}`) : null),
       h("div", { class: "badges" },
         h("span", { class: "when" }, whenText(inDays(m.date))),
         d.my_absent ? h("span", { class: "state" }, "Du bist entschuldigt") : null),
-      h("p", { class: "date" }, day.toLocaleDateString("de-DE", { weekday: "long" }) + ",",
+      h("p", { class: "date wx-pad" }, day.toLocaleDateString("de-DE", { weekday: "long" }) + ",",
         h("small", {}, day.toLocaleDateString("de-DE", sameYear ? { day: "numeric", month: "long" } : { day: "numeric", month: "long", year: "numeric" }))),
-      h("p", {}, "Vorsitz: ", h("strong", {}, m.chair ? (m.chair === d.me.name ? "ich" : m.chair) : "noch offen")),
+      h("p", { class: "wx-pad" }, "Vorsitz: ", h("strong", {}, m.chair ? (m.chair === d.me.name ? "ich" : m.chair) : "noch offen")),
       loc
-        ? [h("p", {}, h("strong", {}, loc.name), addr && h("span", { class: "muted" }, " · " + addr)),
+        ? [h("p", { class: "wx-pad" }, h("strong", {}, loc.name), addr && h("span", { class: "muted" }, " · " + addr)),
             h("div", { class: "locLinks" },
               routes.map(([label, href]) => h("a", { class: "btn hbtn", href, title: `Route zur Location in ${label} starten`, target: "_blank", rel: "noopener noreferrer" }, "📍 " + label)),
               web && h("a", { class: "btn hbtn", href: web, title: "Website der Location öffnen", target: "_blank", rel: "noopener noreferrer" }, "🌐 Website"))]
         : h("p", { class: "muted" }, "Location noch offen"),
       h("p", { class: "muted small" }, locked ? "Die Anmeldefrist ist abgelaufen. Bitte beim Admin melden." : m.deadline_passed ? "Die Anmeldefrist ist abgelaufen." : "Abmelden oder Gäste anmelden bis 19 Uhr am Stammtischtag."),
       nextLine,
+      wx && wx.btn, wx && wx.detail,
       ...actions);
+    if (wx) wx.attach(hero);
+    return hero;
+  }
+
+  // Wetter am Abend: kleine Kachel unter der Teilnehmerzahl, Antippen klappt die Details auf (weather.js, Open-Meteo).
+  // Nur für den nächsten Termin, höchstens 5 Tage vorher, und nur wenn die Location Koordinaten hat. Fehler bleiben still.
+  let wxOpen = false; // bleibt beim Neuzeichnen offen
+  function weatherBox(m) {
+    const loc = m.location;
+    if (!loc || loc.lat == null || loc.lon == null || !window.Weather) return null;
+    const left = window.Weather.dayDiff(todayBerlin(), m.date);
+    if (left < 0 || left > window.Weather.MAX_DAYS) return null;
+    const btn = h("button", { type: "button", class: "wx", hidden: true, "aria-expanded": String(wxOpen), onclick: () => { wxOpen = !wxOpen; btn.setAttribute("aria-expanded", String(wxOpen)); detail.hidden = !wxOpen; } });
+    const detail = h("div", { class: "wx-detail", hidden: true });
+    let hero = null;
+    const update = (ev, at) => {
+      if (!ev) return;
+      const stand = new Date(at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+      btn.replaceChildren(h("span", { class: "wx-ico", "aria-hidden": "true" }, window.Weather.ICON[ev.kind]), h("strong", {}, `${ev.temp}°`), h("small", {}, ev.text));
+      btn.setAttribute("aria-label", `Wetter am Stammtischabend: ${ev.temp} Grad, ${ev.text}. Details ${wxOpen ? "ausblenden" : "anzeigen"}`);
+      detail.replaceChildren(
+        h("div", { class: "wx-row" }, ev.at.map((x) => h("span", {}, h("strong", {}, `${x.temp}°`), `${x.hr} Uhr`))),
+        h("p", {}, `Regenrisiko bis 23 Uhr: ${ev.rainMax} %`, ev.sunset ? ` · Sonnenuntergang ${ev.sunset}` : ""),
+        h("p", { class: "wx-src" }, `Stand ${stand} Uhr · Wetterdaten von `, h("a", { href: "https://open-meteo.com/", target: "_blank", rel: "noopener noreferrer" }, "Open-Meteo.com")));
+      btn.hidden = false; detail.hidden = !wxOpen;
+      if (hero) hero.classList.add("has-wx");
+    };
+    window.Weather.load(loc.lat, loc.lon, m.date, update);
+    return { btn, detail, attach: (el) => { hero = el; if (!btn.hidden) el.classList.add("has-wx"); } };
   }
 
   // Wofür "Vorsitz übertragen" und "Location eintragen" gelten, bestimmt die Datenbank (me.chair_scope):

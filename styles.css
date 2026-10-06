@@ -269,3 +269,19 @@ button.vchip.n { background: color-mix(in srgb, var(--warn) 16%, var(--card)); c
 button.vchip.a { background: var(--card); color: var(--muted); border-color: var(--line); }
 button.vchip.p { background: transparent; color: var(--muted); border: 1px dashed var(--muted); }
 button.motion > div { width: 100%; }
+
+/* Wetter in der Hauptkarte */
+.hero.has-wx .wx-pad { padding-right: 100px; }
+.hero .wx { position: absolute; top: 108px; right: 14px; width: 84px; min-height: 0; padding: 8px 4px; border-radius: 16px; border: 0; background: rgba(255, 255, 255, .2); color: #fff; display: flex; flex-direction: column; align-items: center; line-height: 1.15; margin: 0; }
+.hero .wx[hidden] { display: none; }
+.hero .wx[aria-expanded="true"] { background: rgba(255, 255, 255, .32); }
+.hero .wx-ico { font-size: 1.4rem; }
+.hero .wx strong { font-size: 1.15rem; font-weight: 800; }
+.hero .wx small { font-size: .72rem; font-weight: 600; }
+.hero .wx-detail { margin-top: 12px; padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, .14); }
+.hero .wx-detail[hidden] { display: none; }
+.hero .wx-detail > * + * { margin-top: 6px; }
+.hero .wx-row { display: flex; justify-content: space-around; text-align: center; font-size: .8rem; }
+.hero .wx-row span { display: flex; flex-direction: column; }
+.hero .wx-row strong { font-size: 1.15rem; }
+.hero .wx-src { font-size: .72rem; opacity: .8; }
