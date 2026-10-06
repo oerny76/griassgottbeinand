@@ -140,6 +140,7 @@
       }, 300);
     });
     return h("div", {},
+      h("p", { class: "muted small", style: "margin:-6px 0 12px" }, "Stelle einen Antrag zur Zustimmung oder Ablehnung, oder zur Abstimmung mit bis zu sechs Optionen."),
       h("div", { class: "motion-bar" }, input, h("button", { type: "button", class: "primary", onclick: () => setView("new") }, "+ Antrag")),
       results);
   }
