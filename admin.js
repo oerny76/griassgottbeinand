@@ -46,7 +46,7 @@
     ta.value = P.raw;
     let timer;
     ta.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => { P = Object.assign(freshPay(), { raw: ta.value }); analyze(result, m); }, 300); });
-    body.append(card("Zahlung aus PayPal-Mail", field("Mailtext", ta, "raw"),
+    body.append(card("Zahlung aus PayPal-Mail (Eingang oder Ausgang)", field("Mailtext", ta, "raw"),
       h("p", { class: "muted small", style: "margin:8px 0 0" }, "Es wird nur Betrag, Datum, Code, Absender und Mitteilung gelesen. Fehlt etwas, wird nichts gebucht.")), result);
     if (P.raw) analyze(result, m);
   }
@@ -77,21 +77,21 @@
     const info = h("div", {},
       h("div", { class: "row" }, h("span", {}, "Betrag"), h("strong", {}, eur(p.amount))),
       h("div", { class: "row" }, h("span", {}, "Datum"), h("strong", {}, A().dateShort(p.tx_date))),
-      h("div", { class: "row" }, h("span", {}, "Absender"), h("strong", {}, p.from_name || "unbekannt")),
+      h("div", { class: "row" }, h("span", {}, p.out ? "Empfänger" : "Absender"), h("strong", {}, p.from_name || "unbekannt")),
       h("div", { class: "row" }, h("span", {}, "Mitteilung"), h("span", {}, p.message || "–")),
       h("div", { class: "row" }, h("span", {}, "Code"), h("span", { class: "small" }, p.tx_code)));
     const aliasBox = h("div", { id: "aliasBox" });
     const allocBox = h("div", { id: "allocBox" });
-    result.replaceChildren(card("Zahlung",
+    result.replaceChildren(card(p.out ? "Zahlungsausgang" : "Zahlung",
       P.dup ? h("p", { class: "notice" }, "Diese Zahlung ist schon gebucht (Transaktionscode bekannt). Es wird nichts doppelt gebucht.") : null,
       info,
-      h("div", { style: "margin-top:12px" }, field("Wem gehört die Zahlung?", memberSel, "payMember")), aliasBox), allocBox);
+      h("div", { style: "margin-top:12px" }, field(p.out ? "An wen ging die Zahlung?" : "Wem gehört die Zahlung?", memberSel, "payMember")), aliasBox), allocBox);
     if (!P.dup) { if (P.member) await loadItems(); drawAlloc(); }
   }
 
   async function loadItems() {
     if (!P.member) { P.rows = []; P.suggestion = null; return; }
-    const items = await A().rpc("app_admin_open_items", { p_member: P.member });
+    const items = await A().rpc("app_admin_open_items", { p_member: P.member, p_out: !!P.parsed.out });
     P.rows = items.map((i) => ({ id: i.id, date: i.date, category: i.category, sub: i.sub, open: Number(i.open), checked: false, amt: Number(i.open) }));
     const s = L.suggest(P.rows.map((r) => ({ id: r.id, category: r.category, open: r.open })), P.parsed.amount);
     P.suggestion = s;
@@ -111,7 +111,7 @@
     if (P.dup) { box.replaceChildren(); return; }
     const p = P.parsed;
     aliasBox.replaceChildren();
-    if (P.member && p.from_name && p.from_name.toLowerCase() !== P.member.toLowerCase()) {
+    if (!p.out && P.member && p.from_name && p.from_name.toLowerCase() !== P.member.toLowerCase()) {
       const cb = h("input", { type: "checkbox", id: "aliasCb", checked: P.alias, style: "width:auto;min-height:0", onchange: (e) => { P.alias = e.target.checked; } });
       aliasBox.append(h("label", { for: "aliasCb", style: "display:flex;gap:8px;align-items:center;margin-top:10px;color:var(--ink)" }, cb, `„${p.from_name}“ künftig ${P.member} zuordnen`));
     }
@@ -119,7 +119,7 @@
 
     const s = P.suggestion;
     const hint = [];
-    if (!P.rows.length) hint.push(h("p", { class: "notice" }, `${P.member} hat keine offenen Posten. Du kannst die Zahlung unten als neue Buchung erfassen (z. B. Vorauszahlung).`));
+    if (!P.rows.length) hint.push(h("p", { class: "notice" }, p.out ? `${P.member} hat keine offenen Ausgaben. Erfasse die Zahlung unten als neue Ausgabe.` : `${P.member} hat keine offenen Posten. Du kannst die Zahlung unten als neue Buchung erfassen (z. B. Vorauszahlung).`));
     else if (s && s.kind === "all") hint.push(h("p", { class: "muted small", style: "margin:0 0 8px" }, "Der Betrag deckt alle offenen Posten."));
     else if (s && s.kind === "exact") hint.push(h("p", { class: "muted small", style: "margin:0 0 8px" }, "Eindeutig zugeordnet. Bitte kurz prüfen."));
     else if (s && s.kind === "ambiguous") {
@@ -140,17 +140,17 @@
     });
 
     const extraRows = P.extra.map((x, idx) => {
-      const cat = h("select", { "aria-label": "Kategorie", onchange: (e) => { x.category = e.target.value; } }, opts(meta.categories.map((c) => c.name), x.category));
+      const cat = h("select", { "aria-label": "Kategorie", onchange: (e) => { x.category = e.target.value; } }, opts(meta.categories.filter((c) => !P.parsed.out || c.expense).map((c) => c.name), x.category));
       const sub = h("input", { type: "text", maxlength: "80", placeholder: "Zusatz (optional)", value: x.sub, "aria-label": "Zusatz", oninput: (e) => { x.sub = e.target.value; } });
       const amt = h("input", { type: "number", step: "0.01", min: "0.01", value: String(x.amount), "aria-label": "Betrag", style: "flex:0 0 88px;min-width:0", oninput: (e) => { x.amount = num(e.target); updateSummary(); } });
       const date = h("input", { type: "date", value: x.date, style: "min-width:0", "aria-label": "Datum der Buchung", onchange: (e) => { x.date = e.target.value; } });
       return h("div", { class: "stack", style: "padding:10px 0;border-top:1px solid var(--line)" },
-        h("div", { class: "muted small" }, "Neue Buchung (wird sofort als bezahlt gebucht)"), cat, sub,
+        h("div", { class: "muted small" }, P.parsed.out ? "Neue Ausgabe (wird sofort als ausgezahlt gebucht)" : "Neue Buchung (wird sofort als bezahlt gebucht)"), cat, sub,
         h("div", { class: "inline" }, date, amt, h("button", { class: "link", onclick: () => { P.extra.splice(idx, 1); drawAlloc(); } }, "Entfernen")));
     });
 
     const summary = h("p", { id: "sum", style: "margin:12px 0 0;font-weight:700" });
-    const bookBtn = h("button", { id: "bookBtn", class: "primary full", style: "margin-top:12px", onclick: book }, "Zahlung buchen");
+    const bookBtn = h("button", { id: "bookBtn", class: "primary full", style: "margin-top:12px", onclick: book }, p.out ? "Ausgang buchen" : "Zahlung buchen");
     const tools = h("div", { class: "inline", style: "margin-top:10px;flex-wrap:wrap" },
       P.rows.length ? h("button", { onclick: () => { const f = L.fifo(P.rows, p.amount); P.rows.forEach((r) => { const pk = f.picks.find((x) => x.id === r.id); r.checked = !!pk; r.amt = pk ? pk.amount : r.open; }); P.extra = []; if (f.rest > 0) addExtra(f.rest); drawAlloc(); } }, "Älteste zuerst füllen") : null,
       h("button", { onclick: () => { addExtra(Math.max(0, remainder())); drawAlloc(); } }, "Rest neu buchen"));
@@ -159,7 +159,7 @@
   }
 
   function addExtra(amount) {
-    P.extra.push({ category: "Abwesenheit (1x)", sub: "", amount: Math.round(amount * 100) / 100 || 0, date: nextMeetingDate || P.parsed.tx_date });
+    P.extra.push({ category: P.parsed.out ? "Sonstiges" : "Abwesenheit (1x)", sub: P.parsed.out ? (P.parsed.message || "").slice(0, 80) : "", amount: Math.round(amount * 100) / 100 || 0, date: nextMeetingDate || P.parsed.tx_date });
   }
   const allocatedCents = () =>
     P.rows.filter((r) => r.checked).reduce((s, r) => s + (r.amt > 0 ? L.cents(r.amt) : 0), 0) + P.extra.reduce((s, x) => s + (x.amount > 0 ? L.cents(x.amount) : 0), 0);
@@ -181,6 +181,12 @@
       ...P.rows.filter((r) => r.checked).map((r) => ({ entry_id: r.id, amount: r.amt })),
       ...P.extra.map((x) => ({ category: x.category, sub: x.sub, amount: x.amount, date: x.date })),
     ];
+    if (p.out) {
+      await A().act(e.currentTarget, () => A().rpc("app_admin_book_payout", {
+        p_tx_code: p.tx_code, p_tx_date: p.tx_date, p_message: p.message || "", p_amount: p.amount, p_member: P.member, p_allocs: allocs,
+      }), (r) => { P = freshPay(); return `Ausgang gebucht: ${eur(-r.amount)} an ${r.member}.`; });
+      return;
+    }
     await A().act(e.currentTarget, () => A().rpc("app_admin_book_payment", {
       p_tx_code: p.tx_code, p_tx_date: p.tx_date, p_from: p.from_name || "", p_message: p.message || "", p_amount: p.amount,
       p_member: P.member, p_allocs: allocs, p_alias: P.alias,
@@ -211,7 +217,6 @@
     cat.addEventListener("change", () => {
       const c = ft();
       amt.placeholder = c && c.amount != null ? `Standard ${eur(c.amount)}` : "Betrag";
-      if (c) setSign(!!c.expense);
       subLabel.textContent = c && c.needs_sub ? "Zusatz (Pflicht: Zweck oder Gastname)" : "Zusatz (optional)";
       bdayWrap.style.display = cat.value === "Geburtstag vergessen" ? "" : "none";
     });

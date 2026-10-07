@@ -7,7 +7,7 @@
   // Liest den eingefügten Mailtext. Fehlende Felder bleiben leer, es wird nie etwas geraten.
   function parsePayPal(text) {
     const t = String(text || "");
-    const out = { tx_code: null, tx_date: null, amount: null, from_name: null, message: "" };
+    const out = { tx_code: null, tx_date: null, amount: null, from_name: null, message: "", out: false };
     const code = t.match(/Transaktionscode\s*([A-Z0-9]{12,25})/i);
     if (code) out.tx_code = code[1].toUpperCase();
     const d = t.match(/Transaktionsdatum\s*(\d{1,2})\.\s*([A-Za-zäöüÄÖÜ]+)\s*(\d{4})/);
@@ -16,6 +16,14 @@
     if (b) out.amount = Math.round(parseFloat(b[1].replace(/\./g, "").replace(",", ".")) * 100) / 100;
     const m = t.match(/Mitteilung von\s+(.+?)(?:\t+|[ ]{2,}|\n|$)([^\n]*)/);
     if (m) { out.from_name = m[1].trim(); out.message = (m[2] || "").trim(); }
+    // Zahlungsausgang ("Geld gesendet"): Betrag positiv, from_name = Empfänger
+    const g = t.match(/Geld gesendet\s*(-?[\d.]+,\d{2})/);
+    if (g && !b) {
+      out.out = true;
+      out.amount = Math.abs(Math.round(parseFloat(g[1].replace(/\./g, "").replace(",", ".")) * 100) / 100);
+      const o = t.match(/Mitteilung an\s+(.+?)(?:\t+|[ ]{2,}|\n|$)([^\n]*)/);
+      if (o) { out.from_name = o[1].trim(); out.message = (o[2] || "").trim(); }
+    }
     return out;
   }
 
