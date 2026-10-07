@@ -195,7 +195,13 @@
     const member = h("select", { id: "bm" }, h("option", { value: "" }, "Bitte wählen"), h("option", { value: "*" }, "Alle Mitglieder"), opts(m.members));
     const cat = h("select", { id: "bc" }, h("option", { value: "" }, "Bitte wählen"), opts(m.categories.map((c) => c.name)));
     const sub = h("input", { id: "bs", type: "text", maxlength: "80", autocomplete: "off" });
-    const amt = h("input", { id: "ba", type: "number", step: "0.01", inputmode: "decimal" });
+    const amt = h("input", { id: "ba", type: "number", step: "0.01", min: "0", inputmode: "decimal" });
+    let expense = false;
+    const bIn = h("button", { type: "button", onclick: () => setSign(false) }, "+ Einnahme");
+    const bOut = h("button", { type: "button", onclick: () => setSign(true) }, "− Ausgabe");
+    const setSign = (x) => { expense = x; bIn.setAttribute("aria-pressed", String(!x)); bOut.setAttribute("aria-pressed", String(x)); };
+    setSign(false);
+    const sign = h("div", { class: "seg", style: "margin-bottom:6px" }, bIn, bOut);
     const date = h("input", { id: "bd", type: "date", value: today });
     const bday = h("select", { id: "bb" }, opts(m.members, "", "Wer hatte Geburtstag?"));
     const subLabel = h("label", { for: "bs" }, "Zusatz");
@@ -204,7 +210,8 @@
     const ft = () => m.categories.find((c) => c.name === cat.value);
     cat.addEventListener("change", () => {
       const c = ft();
-      amt.placeholder = c && c.amount != null ? `Standard ${eur(c.amount)}` : (c && c.expense ? "Betrag, Ausgabe mit Minus" : "Betrag");
+      amt.placeholder = c && c.amount != null ? `Standard ${eur(c.amount)}` : "Betrag";
+      if (c) setSign(!!c.expense);
       subLabel.textContent = c && c.needs_sub ? "Zusatz (Pflicht: Zweck oder Gastname)" : "Zusatz (optional)";
       bdayWrap.style.display = cat.value === "Geburtstag vergessen" ? "" : "none";
     });
@@ -212,7 +219,7 @@
       class: "primary full",
       onclick: (e) => {
         if (!member.value || !cat.value) { toast("Bitte Mitglied und Kategorie wählen.", true); return; }
-        const c = ft(), a = num(amt);
+        const c = ft(), a = Math.abs(num(amt)) * (expense ? -1 : 1);
         if (c.amount == null && Number.isNaN(a)) { toast("Bitte einen Betrag eingeben.", true); return; }
         if (member.value === "*" && !confirm(`„${cat.value}“ für alle ${m.members.length} Mitglieder buchen?`)) return;
         A().act(e.currentTarget, () => A().rpc("app_admin_add_entry", {
@@ -222,7 +229,7 @@
     }, "Buchung anlegen");
     body.append(card("Manuell buchen",
       h("div", { class: "stack" }, field("Mitglied", member, "bm"), field("Kategorie", cat, "bc"), bdayWrap,
-        h("div", {}, subLabel, sub), h("div", {}, amtLabel, amt), field("Datum", date, "bd"), btn,
+        h("div", {}, subLabel, sub), h("div", {}, amtLabel, sign, amt), field("Datum", date, "bd"), btn,
         h("p", { class: "muted small", style: "margin:0" }, "Neue Buchungen sind offen. Sie werden erst über „Zahlung“ als bezahlt verbucht."))));
   }
 
