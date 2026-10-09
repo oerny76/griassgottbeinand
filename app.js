@@ -578,13 +578,14 @@
         h("p", { class: "num" }, fmt1(t.yearAvg), h("span", { class: "unit" }, " pro Abend")),
         h("p", { class: "label" }, `Durchschnitt ${t.year}, bisher ${t.yearEvenings} ${t.yearEvenings === 1 ? "Abend" : "Abende"}`)];
       if (t.same.length) {
-        const head = { mehr: "Mehr als im Vorjahr", weniger: "Weniger als im Vorjahr", "ähnlich": "Ähnlich wie im Vorjahr" }[t.direction];
+        const head = { mehr: "Mehr als in den Vorjahren", weniger: "Weniger als in den Vorjahren", "ähnlich": "Ähnlich wie in den Vorjahren" }[t.direction];
         parts.push(h("div", { class: "sep trend" },
           t.direction ? h("span", { class: "bubble", "aria-hidden": "true" }, arrow(t.direction)) : null,
           h("div", {},
             h("p", {}, h("strong", {}, head || "Vorjahre")),
             h("p", { class: "label" }, `Zum gleichen Zeitpunkt, nach ${t.same[0].meetings} Abenden:`),
             ...t.same.map((r) => h("p", { class: "label" }, `${r.year}: Ø\u00a0${fmt1(r.avg)} pro Abend`)),
+            t.same.length > 1 ? h("p", { class: "label" }, `Vorjahre zusammen: Ø\u00a0${fmt1(t.prevAvg)} pro Abend`) : null,
             t.direction === "ähnlich" ? h("p", { class: "label" }, "Kleine Unterschiede sind Zufall.") : null)));
       }
       body.replaceChildren(...parts);

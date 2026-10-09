@@ -1,4 +1,4 @@
-// Reine Logik ohne Oberfläche: Durchschnitt der Abwesenheiten im laufenden Jahr und Tendenz gegenüber dem Vorjahr.
+// Reine Logik ohne Oberfläche: Durchschnitt der Abwesenheiten im laufenden Jahr und Tendenz gegenüber den Vorjahren.
 // Datengrundlage ist die Antwort von app_stats (Gruppenwerte, keine Einzelpersonen).
 (function (root) {
   "use strict";
@@ -19,13 +19,16 @@
       .map((r) => ({ year: Number(r.year), meetings: Number(r.meetings), avg: Number(r.absences) / Number(r.meetings) }))
       .sort((a, b) => b.year - a.year);
 
-    // Tendenz: laufendes Jahr gegen das Vorjahr zum gleichen Zeitpunkt
+    // Tendenz: laufendes Jahr gegen alle gezeigten Vorjahre zusammen (nach Abenden gewichtet), nicht nur gegen das letzte.
+    // Sonst geht ein Anstieg über mehrere Jahre (2,2, dann 3,6, dann 4,0) im Vergleich zum Vorjahr allein unter.
+    const evenings = same.reduce((x, r) => x + r.meetings, 0);
+    const prevAvg = evenings ? same.reduce((x, r) => x + r.avg * r.meetings, 0) / evenings : null;
     let direction = null;
-    if (yearAvg != null && same.length && same[0].year === year - 1) {
-      const diff = yearAvg - same[0].avg;
+    if (yearAvg != null && prevAvg != null) {
+      const diff = yearAvg - prevAvg;
       direction = Math.abs(diff) < FLAT ? "ähnlich" : diff > 0 ? "mehr" : "weniger";
     }
-    return { same, year, yearAvg, yearEvenings: cur ? Number(cur.meetings) : 0, direction };
+    return { same, prevAvg, year, yearAvg, yearEvenings: cur ? Number(cur.meetings) : 0, direction };
   }
 
   const api = { absenceTrend };
