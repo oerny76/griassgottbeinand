@@ -229,9 +229,19 @@
     const people = data.rows.map((r) => ({ name: r.name, cells: [...r.absent].map((c) => c === "1") }))
       .map((p) => Object.assign(p, { count: p.cells.filter(Boolean).length }))
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "de"));
-    const pl = 70, pr = 30, top = 18, ch = 22, cell = (W - pl - pr) / n;
+    const pl = 70, pr = 30, top = 32, ch = 22, cell = (W - pl - pr) / n;
     const svg = s("svg", { class: "ch", viewBox: `0 0 ${W} ${top + people.length * ch + 4}`, width: "100%", role: "group", "aria-label": "Wer fehlte bei den letzten Stammtischen" });
-    data.dates.forEach((d, i) => svg.append(text(pl + cell * i + cell / 2, 11, fmtDate(d, { month: "short" }).replace(".", ""), "muted small9")));
+    // Jahre: jedes zweite Jahr bekommt einen getönten Streifen, dazu die Jahreszahl über den Monaten
+    const years = data.dates.map((d) => String(d).slice(0, 4));
+    let start = 0, yi = 0;
+    for (let i = 1; i <= n; i++) {
+      if (i < n && years[i] === years[start]) continue;
+      const x0 = pl + cell * start, w = cell * (i - start);
+      if (yi % 2 === 0) svg.append(s("rect", { x: x0, y: 0, width: w, height: top + people.length * ch + 4, rx: 6, style: fill("--grid"), opacity: 0.55 }));
+      svg.append(text(x0 + 4, 11, years[start], "ink strong small9", "start"));
+      start = i; yi++;
+    }
+    data.dates.forEach((d, i) => svg.append(text(pl + cell * i + cell / 2, 26, fmtDate(d, { month: "short" }).replace(".", ""), "muted small9")));
     people.forEach((p, r) => {
       const y = top + r * ch;
       svg.append(text(pl - 8, y + ch / 2 + 4, p.name, "ink name", "end"), text(W - 2, y + ch / 2 + 4, `${p.count}×`, "muted strong", "end"));
