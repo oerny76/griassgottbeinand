@@ -566,7 +566,7 @@
     return svg;
   }
 
-  // Abwesenheiten: Durchschnitt pro Abend im laufenden Jahr und Tendenz der letzten 12 Monate (aus der Statistik).
+  // Abwesenheiten: Durchschnitt pro Abend im laufenden Jahr und Vergleich mit den Vorjahren zum gleichen Zeitpunkt (aus der Statistik).
   // Bis die Statistik da ist steht "…", fällt sie aus, bleibt die Summe aller Mitglieder.
   function absencesTile(a, absSum) {
     const body = h("div", {}, h("p", { class: "num" }, "…"));
@@ -578,20 +578,13 @@
         h("p", { class: "num" }, fmt1(t.yearAvg), h("span", { class: "unit" }, " pro Abend")),
         h("p", { class: "label" }, `Durchschnitt ${t.year}, bisher ${t.yearEvenings} ${t.yearEvenings === 1 ? "Abend" : "Abende"}`)];
       if (t.same.length) {
-        parts.push(h("div", { class: "sep" },
-          h("p", {}, h("strong", {}, `Zum gleichen Zeitpunkt, nach ${t.same[0].meetings} Abenden`)),
-          ...t.same.map((r) => h("p", { class: "label" }, `${r.year}: Ø\u00a0${fmt1(r.avg)} pro Abend`))));
-      }
-      if (t.series.length >= 3) {
-        const nums = t.prev == null
-          ? `Letzte 12 Monate Ø\u00a0${fmt1(t.last)} pro Abend`
-          : `Letzte 12 Monate Ø\u00a0${fmt1(t.last)}, davor Ø\u00a0${fmt1(t.prev)}`;
-        const head = { mehr: "Mehr als davor", weniger: "Weniger als davor", "ähnlich": "Ähnlich wie davor" }[t.direction];
+        const head = { mehr: "Mehr als im Vorjahr", weniger: "Weniger als im Vorjahr", "ähnlich": "Ähnlich wie im Vorjahr" }[t.direction];
         parts.push(h("div", { class: "sep trend" },
           t.direction ? h("span", { class: "bubble", "aria-hidden": "true" }, arrow(t.direction)) : null,
           h("div", {},
-            head ? h("p", {}, h("strong", {}, head)) : null,
-            h("p", { class: "label" }, nums),
+            h("p", {}, h("strong", {}, head || "Vorjahre")),
+            h("p", { class: "label" }, `Zum gleichen Zeitpunkt, nach ${t.same[0].meetings} Abenden:`),
+            ...t.same.map((r) => h("p", { class: "label" }, `${r.year}: Ø\u00a0${fmt1(r.avg)} pro Abend`)),
             t.direction === "ähnlich" ? h("p", { class: "label" }, "Kleine Unterschiede sind Zufall.") : null)));
       }
       body.replaceChildren(...parts);
