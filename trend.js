@@ -31,7 +31,12 @@ const FLAT = 1;
     const prev = prevSeries.length >= MIN_PREV ? mean(prevSeries) : null;
     let direction = null;
     if (last != null && prev != null) direction = Math.abs(last - prev) < FLAT ? "ähnlich" : last > prev ? "mehr" : "weniger";
-    return { year, yearAvg, yearEvenings: cur ? Number(cur.meetings) : 0, series, last, prev, direction };
+    // Vorjahre nach genauso vielen Abenden wie das laufende Jahr (Feld absences_same_point), jüngstes Jahr zuerst
+    const same = (stats.absences_same_point || [])
+      .filter((r) => Number(r.year) < year && Number(r.meetings) > 0)
+      .map((r) => ({ year: Number(r.year), meetings: Number(r.meetings), avg: Number(r.absences) / Number(r.meetings) }))
+      .sort((a, b) => b.year - a.year);
+    return { same, year, yearAvg, yearEvenings: cur ? Number(cur.meetings) : 0, series, last, prev, direction };
   }
 
   const api = { absenceTrend, monthsBack };

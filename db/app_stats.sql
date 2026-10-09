@@ -71,6 +71,25 @@ begin
                (select count(*) from public.meetings mt
                  where extract(year from mt.meeting_date) = y.y and mt.meeting_date < today and coalesce(mt.note, '') not ilike 'AUSFALL%') as meetings
         from generate_series(2015, extract(year from today)::int) y(y)
+      ) r), '[]'::jsonb),
+    -- Vorjahresvergleich: Abwesenheiten der letzten drei Jahre jeweils nach genauso vielen Abenden, wie das laufende Jahr bisher hat.
+    -- Bis zum Datum des n-ten Abends des jeweiligen Jahres (hat ein Jahr weniger Abende, zählen alle).
+    'absences_same_point', coalesce((
+      select jsonb_agg(to_jsonb(r) order by r.year)
+      from (
+        select y.y as year, c.n as meetings,
+               (select count(*) from public.entries e
+                 where e.cancelled_at is null and e.category in ('Abwesenheit (1x)', 'Abwesenheit unentschuldigt')
+                   and extract(year from e.entry_date) = y.y and e.entry_date <= c.cutoff) as absences
+        from generate_series(extract(year from today)::int - 2, extract(year from today)::int) y(y)
+        cross join lateral (
+          select count(*) n, max(q.meeting_date) cutoff
+          from (select mt.meeting_date, row_number() over (order by mt.meeting_date) rn
+                from public.meetings mt
+                where extract(year from mt.meeting_date) = y.y and mt.meeting_date < today and coalesce(mt.note, '') not ilike 'AUSFALL%') q
+          where q.rn <= (select count(*) from public.meetings m2
+                         where extract(year from m2.meeting_date) = extract(year from today) and m2.meeting_date < today and coalesce(m2.note, '') not ilike 'AUSFALL%')
+        ) c
       ) r), '[]'::jsonb)
   );
 end

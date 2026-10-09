@@ -577,6 +577,11 @@
       const parts = [
         h("p", { class: "num" }, fmt1(t.yearAvg), h("span", { class: "unit" }, " pro Abend")),
         h("p", { class: "label" }, `Durchschnitt ${t.year}, bisher ${t.yearEvenings} ${t.yearEvenings === 1 ? "Abend" : "Abende"}`)];
+      if (t.same.length) {
+        parts.push(h("div", { class: "sep" },
+          h("p", {}, h("strong", {}, `Zum gleichen Zeitpunkt, nach ${t.same[0].meetings} Abenden`)),
+          ...t.same.map((r) => h("p", { class: "label" }, `${r.year}: Ø\u00a0${fmt1(r.avg)} pro Abend`))));
+      }
       if (t.series.length >= 3) {
         const nums = t.prev == null
           ? `Letzte 12 Monate Ø\u00a0${fmt1(t.last)} pro Abend`
