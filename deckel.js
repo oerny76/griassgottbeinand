@@ -66,6 +66,21 @@
   const money = (n) => euro.format(n);
   const LOCAL_NOTE = "Lokal gespeichert: Bierdeggl und Bierdeggl-Buch liegen nur in diesem Browser auf diesem Gerät. Sie werden nirgends hochgeladen und verschwinden, wenn du sie löschst oder die Browserdaten löschst.";
 
+  // Strichliste wie vom Kellner: Vierer mit Querstrich, höchstens 4 Bündel, danach nur Zahl
+  function tally(n) {
+    if (n < 1 || n > 20) return null;
+    let g = "", x = 3;
+    for (let left = n; left > 0; left -= 5) {
+      const k = Math.min(left, 5), v = Math.min(k, 4);
+      for (let i = 0; i < v; i++) g += `<path d="M${x + i * 6} 3v16"/>`;
+      if (k === 5) g += `<path d="M${x - 2} 16L${x + 20} 6"/>`;
+      x += v * 6 + 6;
+    }
+    const el = h("span", { class: "dk-tally", "aria-hidden": "true" });
+    el.innerHTML = `<svg viewBox="0 0 ${x} 22" height="18" width="${Math.round(x * 18 / 22)}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">${g}</svg>`;
+    return el;
+  }
+
   function render(ctx) {
     const loc = (ctx && ctx.location) || "";
     const meetingDate = (ctx && ctx.meetingDate) || null; // Datum des Stammtischs, wenn heute einer ist
@@ -91,7 +106,7 @@
       });
       const change = (d) => { item.qty += d; if (item.qty <= 0) state.open.items.splice(idx, 1); commit(); };
       return h("div", { class: "row" },
-        h("span", {}, h("strong", {}, qtyText(item)), item.price != null ? h("span", { class: "muted" }, ` · ${money(item.qty * item.price)}`) : null),
+        h("span", {}, h("strong", {}, qtyText(item)), tally(item.qty), item.price != null ? h("span", { class: "muted" }, ` · ${money(item.qty * item.price)}`) : null),
         h("span", { class: "inline", style: "flex:0 0 auto;align-items:center" },
           h("button", { type: "button", class: "link", "aria-label": `${item.label} weniger`, onclick: () => change(-1) }, "−"),
           h("button", { type: "button", class: "link", "aria-label": `${item.label} mehr`, onclick: () => change(1) }, "+"),
@@ -216,7 +231,8 @@
   }
 
   // ---------- Schwebender Knopf unten rechts mit Overlay ----------
-  const COASTER = "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8 12h8M12 8v8";
+  const COASTER_FAB = '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="29" class="dk-filz"/><circle cx="32" cy="32" r="24" class="dk-ring"/><path class="dk-str" d="M21 22v20M27 22v20M33 22v20M39 22v20M17 39l28-14"/></svg><span class="dk-plus" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></svg></span>';
+  const COASTER_HEAD = '<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="47" class="dk-filz"/><circle cx="50" cy="50" r="40" fill="none" stroke="#0065bd" stroke-width="7"/><circle cx="50" cy="50" r="40" fill="none" stroke="#fff" stroke-width="7" stroke-dasharray="7.85 7.85"/><circle cx="50" cy="50" r="32" class="dk-in"/><text x="50" y="47" text-anchor="middle" font-size="11" font-weight="600">Mein</text><text x="50" y="61" text-anchor="middle" font-size="12" font-weight="600">Bierdeggl</text></svg>';
   let fab = null, back = null, sheetBody = null, closeBtn = null, getCtx = () => ({});
 
   function openUnits() {
@@ -242,15 +258,14 @@
   function mount(ctxFn) {
     getCtx = ctxFn;
     if (fab) { fab.hidden = false; updateBadge(); return; }
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true");
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path"); path.setAttribute("d", COASTER); svg.append(path);
-    fab = h("button", { type: "button", class: "dk-fab", "aria-haspopup": "dialog", onclick: openSheet }, svg, h("span", { class: "dk-badge", hidden: "" }));
+    const ico = h("span", { class: "dk-ico" }); ico.innerHTML = COASTER_FAB;
+    fab = h("button", { type: "button", class: "dk-fab", "aria-haspopup": "dialog", onclick: openSheet }, ico, h("span", { class: "dk-badge", hidden: "" }));
     closeBtn = h("button", { type: "button", class: "link", onclick: closeSheet }, "Schließen");
     sheetBody = h("div", { class: "dk-body" });
+    const medal = h("span", { class: "dk-medal" }); medal.innerHTML = COASTER_HEAD;
     back = h("div", { class: "dk-back", hidden: "", onclick: (e) => { if (e.target === back) closeSheet(); } },
       h("div", { class: "dk-sheet", role: "dialog", "aria-modal": "true", "aria-label": "Mein Bierdeggl" },
-        h("div", { class: "dk-head" }, h("strong", {}, "🍺 Mein Bierdeggl"), closeBtn), sheetBody));
+        h("div", { class: "dk-head" }, medal, closeBtn), sheetBody));
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
     document.body.append(fab, back);
     updateBadge();
