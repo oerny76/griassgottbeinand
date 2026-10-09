@@ -57,8 +57,15 @@
   }
 
   // ---------- Anwesenheit pro Abend ----------
+  // Abende der letzten n Monate (die Statistik liefert höchstens die letzten 24 Abende)
+  function lastMonths(d, n) {
+    const [y, m, day] = String(d.asof).split("-").map(Number);
+    const from = new Date(Date.UTC(y, m - 1 - n, day)).toISOString().slice(0, 10);
+    return d.attendance.filter((x) => x.date > from);
+  }
+
   function attendance(d, n) {
-    const data = d.attendance.slice(-n);
+    const data = lastMonths(d, n);
     const H = 190, pl = 26, pr = 4, pt = 16, pb = 20, iw = W - pl - pr, band = iw / data.length, bw = Math.min(14, band * 0.62);
     const ymax = Math.max(d.members, ...data.map((x) => x.present + x.guests));
     const sy = (v) => pt + (H - pt - pb) * (1 - v / ymax);
@@ -289,7 +296,7 @@
 
   // d: Antwort von app_stats, chairs: Rangliste für den Vorsitz (oder null, wenn die Übersicht fehlt)
   function statsPage(d, chairs) {
-    const last12 = d.attendance.slice(-12).map((x) => x.present);
+    const last12 = lastMonths(d, 12).map((x) => x.present);
     const thisYear = Number(String(d.asof).slice(0, 4));
     const cur = d.income.find((r) => r.year === thisYear);
     const curTotal = cur ? CATS.reduce((a, [k]) => a + Number(cur[k]), 0) : 0;
@@ -301,12 +308,12 @@
     const seg = h("div", { class: "seg", role: "group", "aria-label": "Zeitraum" }, [12, 24].map((v) => h("button", {
       type: "button", "aria-pressed": String(v === n),
       onclick: (e) => { n = v; seg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === e.currentTarget))); draw(); hideTip(); },
-    }, `${v} Abende`)));
+    }, `${v} Monate`)));
     draw();
 
     return h("div", {},
       h("div", { class: "kpis" },
-        last12.length ? kpi("Ø Anwesende", num1(mean(last12)), `von ${d.members}, letzte ${last12.length} Abende`) : null,
+        last12.length ? kpi("Ø Anwesende", num1(mean(last12)), `von ${d.members}, letzte 12 Monate, ${last12.length} Abende`) : null,
         lastCash ? kpi("PayPal-Saldo", money(lastCash.balance), "ohne offene Beträge") : null,
         cur ? kpi(`Einnahmen ${thisYear}`, money(curTotal), "bis heute") : null),
       chartCard("Wer war dabei?", "Anwesende Mitglieder pro Stammtisch", [legend([["Mitglieder", "--s1"], ["Gäste", "--s2"]]), attBox,
