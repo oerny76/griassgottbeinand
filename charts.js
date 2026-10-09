@@ -295,7 +295,7 @@
     const curTotal = cur ? CATS.reduce((a, [k]) => a + Number(cur[k]), 0) : 0;
     const lastCash = d.cash[d.cash.length - 1];
 
-    let n = 24;
+    let n = 12;
     const attBox = h("div", {});
     const draw = () => attBox.replaceChildren(attendance(d, n));
     const seg = h("div", { class: "seg", role: "group", "aria-label": "Zeitraum" }, [12, 24].map((v) => h("button", {
