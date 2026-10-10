@@ -13,6 +13,7 @@
 
   let whoOpen = false; // Teilnehmer-Fenster in der Hauptkarte (bleibt beim Neuzeichnen offen)
   let moreOpen = false; // Akkordeon "Weitere Stammtische"
+  const upWho = new Set(); // Termine (Datum), bei denen die Abgemeldeten aufgeklappt sind
   let heroPanel = null; // "chair" oder "loc": welches Fenster in der Hauptkarte offen ist (bleibt beim Neuzeichnen offen)
 
   // Hauptkarte: der nächste Termin auf einen Blick, mit den Aktionen direkt darin (nicht beim Ansehen eines anderen Mitglieds).
@@ -283,13 +284,19 @@
           u.my_absent ? "Doch teilnehmen" : "Ich komme nicht");
         return h("div", { class: "mt" },
           h("div", { class: "d" }, label),
-          h("div", { class: "count", role: "group", "aria-label": `${u.count} Teilnehmer` }, h("strong", {}, String(u.count)), h("span", {}, "dabei")),
+          h("button", { type: "button", class: "count", "aria-expanded": String(upWho.has(u.date)),
+            "aria-label": `${u.count} Teilnehmer. Wer sich abgemeldet hat: ${upWho.has(u.date) ? "ausblenden" : "anzeigen"}`,
+            onclick: () => { if (upWho.has(u.date)) upWho.delete(u.date); else upWho.add(u.date); render(last.own); } },
+            h("strong", {}, String(u.count)), h("span", {}, "dabei")),
           h("div", { class: "meta" },
             h("span", {}, whenText(inDays(u.date))),
             u.date !== u.regular ? h("span", { class: "tag moved", title: `Regulär: ${dateLong(u.regular)}` }, "verschoben") : null,
             h("span", {}, u.chair ? `Vorsitz ${mine ? "ich" : u.chair}` : "Vorsitz offen"),
             gn ? h("span", {}, `inkl. ${gn} ${gn === 1 ? "Gast" : "Gäste"}`) : null,
             abs ? h("span", {}, `${abs} abgemeldet`) : null),
+          upWho.has(u.date) ? h("div", { class: "who2 panel", role: "region", "aria-label": "Abgemeldet" },
+            h("h3", {}, "Abgemeldet"),
+            abs ? h("ul", { class: "chips" }, u.absent.map((n) => h("li", { class: "chip" }, n))) : h("p", {}, "Bisher niemand.")) : null,
           u.date !== u.regular ? h("p", { class: "muted small who2" }, `Regulär wäre ${new Date(u.regular + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}.`) : null,
           h("div", { class: "act" },
             u.my_absent ? h("span", { class: "tag out" }, "Du bist abgemeldet") : null,

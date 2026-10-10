@@ -386,3 +386,9 @@ details.more > summary small { font-weight: 500; color: var(--muted); margin-lef
 .adm-m .btnrow button { flex: 1 1 0; }
 .chk { display: flex; gap: 10px; align-items: flex-start; font-size: .875rem; color: var(--ink); margin: 10px 0 0; }
 .chk input { width: 22px; min-height: 22px; height: 22px; flex: 0 0 22px; accent-color: var(--brand); margin: 1px 0 0; }
+
+.mt button.count { min-height: 0; border: 0; font-weight: 400; color: var(--ink); cursor: pointer; }
+.mt button.count::after { content: "▾"; display: block; font-size: .7rem; color: var(--muted); transition: transform .15s; }
+.mt button.count[aria-expanded="true"]::after { transform: rotate(180deg); }
+.mt .who2.panel h3 { margin: 0 0 6px; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+.mt .who2.panel p { margin: 0; }
