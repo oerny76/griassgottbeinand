@@ -93,6 +93,9 @@
     [/naechsten/gi, "nächsten"],
     [/nur noch vom neuen Vorsitzenden geaendert/i, "Der Vorsitz kann nur noch vom neuen Vorsitzenden geändert werden."],
     [/Der Vorsitz muss zuerst uebertragen werden/i, "Wer den Vorsitz hat, kann sich erst abmelden, wenn der Vorsitz übertragen ist."],
+    [/Fuer diesen Termin ist keine Abmeldung moeglich/i, "Für diesen Termin geht keine Abmeldung (mehr)."],
+    [/Dieser Termin laeuft schon oder ist vorbei/i, "Dieser Termin läuft schon oder ist vorbei."],
+    [/An diesem Tag gibt es schon einen Stammtisch/i, "An diesem Tag gibt es schon einen Stammtisch."],
     [/Frist abgelaufen/i, "Die Frist ist abgelaufen (19 Uhr am Stammtischtag). Bitte beim Admin melden."],
   ];
   function friendly(msg) {

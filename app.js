@@ -11,6 +11,8 @@
   const inDays = (iso) => Math.round((noonMs(iso) - noonMs(todayBerlin())) / 86400000);
   const whenText = (n) => n < 0 ? "vorbei" : n === 0 ? "heute" : n === 1 ? "morgen" : `in ${n} Tagen`;
 
+  let whoOpen = false; // Teilnehmer-Fenster in der Hauptkarte (bleibt beim Neuzeichnen offen)
+  let moreOpen = false; // Akkordeon "Weitere Stammtische"
   let heroPanel = null; // "chair" oder "loc": welches Fenster in der Hauptkarte offen ist (bleibt beim Neuzeichnen offen)
 
   // Hauptkarte: der nächste Termin auf einen Blick, mit den Aktionen direkt darin (nicht beim Ansehen eines anderen Mitglieds).
@@ -44,9 +46,12 @@
       ? h("p", {}, "Nächster Stammtisch: ", h("strong", {}, dateShort(tgt.date)), tgt.chair ? [", Vorsitz ", h("strong", {}, tgt.chair === d.me.name ? "ich" : tgt.chair)] : null) : null;
     const wx = weatherBox(m);
     const hero = h("section", { class: "hero" },
-      h("div", { class: "headcount", "aria-label": `${total} Teilnehmer${d.guests.length ? `, davon ${d.guests.length} ${d.guests.length === 1 ? "Gast" : "Gäste"}` : ""}` },
+      h("button", { type: "button", class: "headcount", "aria-expanded": String(whoOpen), title: "Wer fehlt, wer kommt dazu",
+        "aria-label": `${total} Teilnehmer${d.guests.length ? `, davon ${d.guests.length} ${d.guests.length === 1 ? "Gast" : "Gäste"}` : ""}. Wer fehlt, wer kommt dazu: ${whoOpen ? "ausblenden" : "anzeigen"}`,
+        onclick: () => { whoOpen = !whoOpen; render(last.own); } },
         h("strong", {}, String(total)), h("span", {}, "Teilnehmer"),
-        d.guests.length ? h("small", {}, `inkl. ${d.guests.length} ${d.guests.length === 1 ? "Gast" : "Gäste"}`) : null),
+        d.guests.length ? h("small", {}, `inkl. ${d.guests.length} ${d.guests.length === 1 ? "Gast" : "Gäste"}`) : null,
+        h("span", { class: "chev", "aria-hidden": "true" }, "▾")),
       h("div", { class: "badges" },
         h("span", { class: "when" }, whenText(inDays(m.date))),
         d.my_absent ? h("span", { class: "state" }, "Du bist entschuldigt") : null),
@@ -63,7 +68,8 @@
       h("p", { class: "muted small" }, locked ? "Die Anmeldefrist ist abgelaufen. Bitte beim Admin melden." : m.deadline_passed ? "Die Anmeldefrist ist abgelaufen." : "Abmelden oder Gäste anmelden bis 19 Uhr am Stammtischtag."),
       nextLine,
       wx && wx.btn, wx && wx.detail,
-      ...actions);
+      ...actions,
+      whoOpen ? whoPanel(d) : null);
     if (wx) wx.attach(hero);
     return hero;
   }
@@ -248,13 +254,49 @@
     return h("div", {}, ...children);
   }
 
-  function whoCard(d) {
-    if (!d.meeting) return null;
-    return card("Wer fehlt, wer kommt dazu",
-      h("p", { class: "small muted", style: "margin:0 0 6px" }, "Entschuldigt"),
-      d.absent.length ? h("ul", { class: "chips" }, d.absent.map((n) => h("li", { class: "chip" }, n))) : h("p", { style: "margin:0" }, "Bisher niemand."),
-      h("p", { class: "small muted", style: "margin:12px 0 6px" }, "Gäste"),
-      d.guests.length ? h("ul", { class: "chips" }, d.guests.map((g) => h("li", { class: "chip" }, `${stripGast(g.guest)} (bei ${g.host})`))) : h("p", { style: "margin:0" }, "Bisher keine."));
+  // Entschuldigte und Gäste: klappt in der Hauptkarte auf, wenn man auf die Teilnehmerzahl tippt.
+  function whoPanel(d) {
+    return h("div", { class: "panel who", role: "region", "aria-label": "Wer fehlt, wer kommt dazu" },
+      h("h3", {}, "Entschuldigt"),
+      d.absent.length ? h("ul", { class: "chips" }, d.absent.map((n) => h("li", { class: "chip" }, n))) : h("p", {}, "Bisher niemand."),
+      h("h3", {}, "Gäste"),
+      d.guests.length ? h("ul", { class: "chips" }, d.guests.map((g) => h("li", { class: "chip" }, `${stripGast(g.guest)} (bei ${g.host})`))) : h("p", {}, "Bisher keine."));
+  }
+
+  // Die nächsten beiden Termine nach dem in der Hauptkarte, zugeklappt (wird selten gebraucht): Teilnehmer und Abmelden im Voraus.
+  function moreCard(d) {
+    const list = (d.upcoming || []).filter((u) => d.meeting && u.date > d.meeting.date);
+    if (!d.meeting || !list.length) return null;
+    const det = h("details", { class: "more", open: moreOpen, ontoggle: () => { moreOpen = det.open; } },
+      h("summary", {}, h("span", {}, "Weitere Stammtische", h("small", {}, list.length === 1 ? "der nächste danach" : `die nächsten ${list.length} danach`))),
+      list.map((u) => {
+        const day = new Date(u.date + "T12:00:00");
+        const thisYear = day.getFullYear() === new Date(todayBerlin() + "T12:00:00").getFullYear();
+        const mine = u.chair === d.me.name;
+        const gn = u.guests.length;
+        const abs = u.absent.length;
+        const label = day.toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "long", ...(thisYear ? {} : { year: "numeric" }) });
+        const act1 = h("button", { type: "button", disabled: u.deadline_passed && !d.me.is_admin,
+          "aria-label": `${u.my_absent ? "Doch teilnehmen am" : "Abmelden für"} ${label}`,
+          onclick: (e) => act(e.currentTarget, () => rpc(u.my_absent ? "app_cancel_absence" : "app_add_absence", { p_date: u.date }),
+            (r) => u.my_absent ? `Abmeldung für ${dateShort(u.date)} zurückgezogen.` : `Abwesenheit für ${dateShort(u.date)} eingetragen (${euro.format(r.amount)}).`) },
+          u.my_absent ? "Doch teilnehmen" : "Ich komme nicht");
+        return h("div", { class: "mt" },
+          h("div", { class: "d" }, label),
+          h("div", { class: "count", role: "group", "aria-label": `${u.count} Teilnehmer` }, h("strong", {}, String(u.count)), h("span", {}, "dabei")),
+          h("div", { class: "meta" },
+            h("span", {}, whenText(inDays(u.date))),
+            u.date !== u.regular ? h("span", { class: "tag moved", title: `Regulär: ${dateLong(u.regular)}` }, "verschoben") : null,
+            h("span", {}, u.chair ? `Vorsitz ${mine ? "ich" : u.chair}` : "Vorsitz offen"),
+            gn ? h("span", {}, `inkl. ${gn} ${gn === 1 ? "Gast" : "Gäste"}`) : null,
+            abs ? h("span", {}, `${abs} abgemeldet`) : null),
+          u.date !== u.regular ? h("p", { class: "muted small who2" }, `Regulär wäre ${new Date(u.regular + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}.`) : null,
+          h("div", { class: "act" },
+            u.my_absent ? h("span", { class: "tag out" }, "Du bist abgemeldet") : null,
+            mine && !u.my_absent ? h("span", { class: "muted small" }, "Du hast den Vorsitz. Zum Abmelden zuerst übertragen.") : act1));
+      }),
+      h("p", { class: "muted small", style: "margin:4px 0 12px" }, "Abmelden geht bis 19 Uhr am jeweiligen Stammtischtag. Gebucht wird mit dem Datum des Termins."));
+    return det;
   }
 
   // Push-Benachrichtigungen ein- und ausschalten (je Gerät). Auf dem iPhone nur, wenn die App auf dem Home-Bildschirm liegt.
@@ -361,7 +403,7 @@
       if (!chosen) { toast("Bitte ein Mitglied wählen.", true); return; }
       const wer = tgt.chair === d.me.name ? "mir" : tgt.chair;
       if (changing && !confirm(`Vorsitz für ${STAMM[tgt.scope]} am ${dateShort(tgt.date)} von ${wer} an ${chosen} übergeben?`)) return;
-      act(e.currentTarget, () => rpc("app_set_next_chair", { p_chair: chosen, p_date: changing ? null : (date.value || null) }),
+      act(e.currentTarget, () => rpc("app_set_next_chair", { p_chair: chosen, p_date: changing || d.me.has_upcoming ? null : (date.value || null) }),
         (r) => `${r.chair} hat den Vorsitz für ${STAMM[tgt.scope]} am ${dateShort(r.date)}.`);
     });
     return h("div", { class: "stack" },
@@ -369,7 +411,7 @@
         ? "Vorschlag: Das Mitglied, das am längsten keinen Vorsitz hatte, steht oben."
         : "Die Reihenfolge ist gerade nicht verfügbar. Bitte ein Mitglied wählen."),
       list,
-      changing ? null : h("div", {}, h("label", { for: "nextDate" }, "Datum (leer lassen: erster Freitag im Folgemonat)"), date),
+      changing || d.me.has_upcoming ? null : h("div", {}, h("label", { for: "nextDate" }, "Datum (leer lassen: erster Freitag im Folgemonat)"), date),
       btn);
   }
 
@@ -686,7 +728,7 @@
     const today = new Date(todayBerlin() + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
     // Nur der geöffnete Tab wird gebaut (der Statistik-Tab lädt Daten).
     const pages = {
-      start: () => [window.Trip.active(todayBerlin()) ? window.Trip.banner(h, todayBerlin(), () => goTab("trip"), d.me.name) : null, heroCard(d), whoCard(d), tilesBlock(d, goTab)],
+      start: () => [window.Trip.active(todayBerlin()) ? window.Trip.banner(h, todayBerlin(), () => goTab("trip"), d.me.name) : null, heroCard(d), moreCard(d), tilesBlock(d, goTab)],
       trip: () => [window.Trip.page(h, todayBerlin(), () => goTab("start"), d.me.name)],
       stat: () => [statsPage(d)],
       abstimmung: () => [window.Motions.render(d.me)],

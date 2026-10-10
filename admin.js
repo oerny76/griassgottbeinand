@@ -3,7 +3,7 @@
   "use strict";
   const L = window.StammtischLogic;
   const A = () => window.App;
-  const TABS = [["pay", "Zahlung"], ["book", "Buchen"], ["open", "Offen"], ["recent", "Letzte"]];
+  const TABS = [["pay", "Zahlung"], ["book", "Buchen"], ["open", "Offen"], ["recent", "Letzte"], ["dates", "Termine"]];
   let tab = "pay";
   let meta = null;
   let nextMeetingDate = null;
@@ -28,7 +28,7 @@
         onclick: () => { tab = id; render($box, d); },
       }, label)));
     $box.replaceChildren(h("div", {}, h("p", { class: "muted small", style: "margin:0 0 12px" }, "Nur du kannst hier buchen und verwalten."), nav, body));
-    ({ pay: payTab, book: bookTab, open: openTab, recent: recentTab })[tab](body).catch((e) => A().toast(e.message, true));
+    ({ pay: payTab, book: bookTab, open: openTab, recent: recentTab, dates: datesTab })[tab](body).catch((e) => A().toast(e.message, true));
   }
 
   // Wird von der App aufgerufen. d: Dashboard des Admins.
@@ -265,6 +265,66 @@
         h("div", { class: "row" }, h("span", {}, "In Buchungen als bezahlt"), h("strong", {}, eur(ov.paid_sum))),
         h("div", { class: "row" }, h("span", {}, "Differenz"), h("strong", { style: diff !== 0 ? "color:var(--warn)" : "color:var(--ok)" }, diff !== 0 ? "⚠ " + eur(diff) : "0,00 € ✓")),
         diff !== 0 ? h("p", { class: "muted small", style: "margin:8px 0 0" }, "Es gibt PayPal-Geld ohne passende Buchung (oder umgekehrt). Das war schon im alten Sheet so (Warnung „!!!“).") : null));
+  }
+
+  // ---------- Termine: Regel ist der erste Freitag im Monat, Abweichungen hinterlegt der Admin ----------
+  let editMonth = null; // Monat, dessen Verschieben-Fenster offen ist (bleibt beim Neuzeichnen offen)
+  let notifyMove = true;
+  const berlinToday = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
+  const dayLong = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const dayShort = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "long" });
+  const monthName = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+
+  async function datesTab(body) {
+    const { h, card } = A();
+    const list = await A().rpc("app_admin_meetings");
+    const draw = () => body.replaceChildren(card("Stammtisch-Termine",
+      h("p", { class: "muted small", style: "margin:0 0 6px" }, "Regel: immer der erste Freitag im Monat. Abweichungen hinterlegst du hier."),
+      list.map((r) => {
+        const open = editMonth === r.month;
+        return h("div", { class: "adm-m" },
+          h("div", { class: "top" },
+            h("div", {},
+              h("div", { class: "mon" }, monthName(r.date)),
+              h("div", { class: "dt" }, dayShort(r.date), " ", r.moved ? h("span", { class: "tag moved" }, "verschoben") : h("span", { class: "tag" }, "regulär")),
+              r.moved ? h("div", { class: "muted small" }, `Regulär: ${dayShort(r.regular)}`) : null,
+              h("div", { class: "muted small" }, `${r.count} Teilnehmer · ${r.absent} abgemeldet`)),
+            r.locked ? null : h("button", { type: "button", "aria-expanded": String(open), onclick: () => { editMonth = open ? null : r.month; draw(); } }, open ? "Schließen" : "Verschieben")),
+          open ? movePanel(r) : null);
+      })));
+    draw();
+  }
+
+  function movePanel(r) {
+    const { h } = A();
+    const today = berlinToday();
+    const input = h("input", { id: "md", type: "date", value: r.date });
+    const msgs = h("div", {});
+    const save = h("button", { type: "button", class: "primary full" }, "Termin speichern");
+    const reset = h("button", { type: "button", class: "full", disabled: !r.moved }, "Auf regulär zurücksetzen");
+    const say = (cls, t) => h("p", { class: "msg " + cls }, t);
+    const check = () => {
+      const v = input.value, out = []; let block = false;
+      if (!v) { block = true; out.push(say("bad", "Bitte ein Datum wählen.")); }
+      else {
+        if (v < today) { block = true; out.push(say("bad", "Das Datum liegt in der Vergangenheit.")); }
+        if (v.slice(0, 7) !== r.month) { block = true; out.push(say("bad", `Der Termin muss im ${new Date(r.regular + "T12:00:00").toLocaleDateString("de-DE", { month: "long" })} bleiben. Für einen anderen Monat bitte dort verschieben.`)); }
+        if (!block && new Date(v + "T12:00:00").getDay() !== 5) out.push(say("", `Achtung: ${new Date(v + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long" })}, kein Freitag. Das ist erlaubt.`));
+        if (!block && v === r.date) { block = true; out.push(say("muted", "Das ist schon der aktuelle Termin.")); }
+        if (!block && v === r.regular) out.push(say("good", "Das ist der reguläre Termin (erster Freitag). Die Abweichung entfällt."));
+        if (!block && r.absent) out.push(say("muted", `${r.absent} schon eingetragene Abmeldung${r.absent === 1 ? "" : "en"} wandern auf das neue Datum mit.`));
+      }
+      msgs.replaceChildren(...out); save.disabled = block;
+    };
+    input.addEventListener("input", check);
+    save.addEventListener("click", (e) => { editMonth = null; A().act(e.currentTarget, () => A().rpc("app_admin_set_meeting_date", { p_month: r.month, p_date: input.value, p_notify: notifyMove }), (x) => `Termin gespeichert: ${dayShort(x.date)}.`); });
+    reset.addEventListener("click", (e) => { editMonth = null; A().act(e.currentTarget, () => A().rpc("app_admin_set_meeting_date", { p_month: r.month, p_date: null, p_notify: notifyMove }), (x) => `Zurückgesetzt auf ${dayShort(x.date)}.`); });
+    const chk = h("label", { class: "chk" }, h("input", { type: "checkbox", checked: notifyMove, onchange: (e) => { notifyMove = e.target.checked; } }), "Mitglieder per Push über die Änderung informieren");
+    setTimeout(check, 0);
+    return h("div", { class: "edit" },
+      h("label", { for: "md" }, `Neues Datum für ${monthName(r.regular)}`), input,
+      h("p", { class: "muted small", style: "margin:6px 0 0" }, `Regulär: ${dayLong(r.regular)}`), msgs, chk,
+      h("div", { class: "btnrow" }, reset, save));
   }
 
   // ---------- Letzte Buchungen ----------

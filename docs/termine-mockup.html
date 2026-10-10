@@ -1,3 +1,10 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup: Termine verwalten und vorab abmelden</title>
+<style>/* Kopie der App-Styles (styles.css), damit der Mockup allein lauffähig ist */
 /* Farben und Formen für die Mitglieder-App. Hell und Dunkel folgen dem Gerät. */
 :root {
   --bg: #f6efe2; --card: #ffffff; --ink: #1d2a25; --muted: #5f6b65; --line: #e6dfd0;
@@ -345,44 +352,263 @@ button.opt-pick.on { border-color: var(--brand); }
 .opt-mark { display: inline-block; width: 1.4em; text-align: center; }
 .hero a.locname { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 
-/* ---------- Teilnehmerzahl als Knopf, Teilnehmer-Fenster in der Hauptkarte ---------- */
-.hero > button.headcount { min-height: 0; border: 0; font-weight: 400; cursor: pointer; }
-.hero > button.headcount .chev { display: block; margin-top: 2px; font-size: .8rem; font-weight: 800; transition: transform .15s; }
-.hero > button.headcount[aria-expanded="true"] .chev { transform: rotate(180deg); }
-.hero > button.headcount:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
-.hero .who h3 { margin: 0 0 6px; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
-.hero .who h3 ~ h3 { margin-top: 12px; }
-.hero .who p { margin: 0; }
+</style>
+<style>
+  /* Nur Rahmen für den Mockup. Alles andere kommt aus der echten styles.css. */
+  body { background: #d9d6cf; }
+  .selector { position: sticky; top: 0; z-index: 50; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; padding: 10px 8px; background: #2a2a28; }
+  .selector button { min-height: 0; font-size: .85rem; padding: 7px 12px; border-radius: 999px; border: 1px solid #55554f; background: transparent; color: #e8e6df; }
+  .selector button[aria-pressed="true"] { background: #f4c542; color: #2a2200; border-color: #f4c542; }
+  .note { max-width: 520px; margin: 14px auto 0; padding: 0 16px; font-size: .85rem; color: #4a4741; }
+  .phone { max-width: 420px; margin: 14px auto 40px; border-radius: 28px; overflow: hidden; background: var(--bg); box-shadow: 0 12px 40px rgba(0,0,0,.25); padding: 16px 16px 0; min-height: 700px; position: relative; }
+  .phone .tabbar-mock { position: sticky; bottom: 0; margin: 16px -16px 0; display: flex; justify-content: space-around; padding: 10px 6px 14px; background: var(--card); border-top: 1px solid var(--line); }
+  .phone .tabbar-mock span { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .7rem; color: var(--muted); font-weight: 600; cursor: pointer; }
+  .phone .tabbar-mock span.on { color: var(--brand); }
+  .phone .tabbar-mock i { font-style: normal; font-size: 1.2rem; }
 
-/* ---------- Weitere Stammtische (Akkordeon) und Terminverwaltung ---------- */
-details.more { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 16px; margin: 0 0 12px; box-shadow: var(--shadow); }
-details.more > summary { display: flex; justify-content: space-between; align-items: center; min-height: 48px; cursor: pointer; font-weight: 700; list-style: none; }
-details.more > summary::-webkit-details-marker { display: none; }
-details.more > summary::after { content: "▾"; color: var(--muted); transition: transform .15s; }
-details.more[open] > summary::after { transform: rotate(180deg); }
-details.more > summary small { font-weight: 500; color: var(--muted); margin-left: 6px; }
-.mt { padding: 12px 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; }
-.mt .d { font-weight: 800; font-size: 1.05rem; letter-spacing: -.01em; }
-.mt .meta { grid-column: 1; color: var(--muted); font-size: .8125rem; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
-.mt .count { grid-row: 1 / span 2; grid-column: 2; text-align: center; min-width: 64px; padding: 6px 10px; border-radius: 14px; background: var(--wash); line-height: 1.1; }
-.mt .count strong { display: block; font-size: 1.6rem; font-weight: 800; }
-.mt .count span { font-size: .7rem; font-weight: 700; color: var(--muted); }
-.mt .who2 { grid-column: 1 / -1; margin: 0; }
-.mt .act { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; margin-top: 6px; }
-.mt .act button { min-height: 40px; padding: 6px 14px; font-size: .9rem; }
-.tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .75rem; font-weight: 700; background: var(--wash); color: var(--ink); }
-.tag.moved { background: color-mix(in srgb, var(--accent) 35%, transparent); }
-.tag.out { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); }
-.adm-m .top { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; }
-.adm-m .top button { min-height: 38px; padding: 4px 12px; font-size: .875rem; }
-.adm-m .mon { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
-.adm-m .dt { font-weight: 800; }
-.adm-m + .adm-m { border-top: 1px solid var(--line); }
-.adm-m .edit { margin: 0 0 12px; padding: 12px; border-radius: 14px; background: var(--bg); border: 1px solid var(--line); }
-.adm-m .edit .msg { margin: 6px 0 0; font-size: .875rem; }
-.adm-m .edit .msg.bad { color: var(--warn); font-weight: 600; }
-.adm-m .edit .msg.good { color: var(--ok); font-weight: 600; }
-.adm-m .btnrow { display: flex; gap: 8px; margin-top: 12px; }
-.adm-m .btnrow button { flex: 1 1 0; }
-.chk { display: flex; gap: 10px; align-items: flex-start; font-size: .875rem; color: var(--ink); margin: 10px 0 0; }
-.chk input { width: 22px; min-height: 22px; height: 22px; flex: 0 0 22px; accent-color: var(--brand); margin: 1px 0 0; }
+  /* Teilnehmerzahl als Knopf, klappt die Details nach unten auf */
+  .hero > button.headcount { cursor: pointer; border: 0; font: inherit; min-height: 0; font-weight: 400; }
+  .hero > button.headcount .chev { font-size: .8rem; font-weight: 800; margin-top: 2px; transition: transform .15s; }
+  .hero > button.headcount[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .hero > button.headcount:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  .hero .who h3 { margin: 0 0 6px; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .hero .who h3 + * { margin-bottom: 12px; }
+  .hero .who h3 ~ :last-child { margin-bottom: 0; }
+  details.more { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 16px; margin: 0 0 12px; box-shadow: var(--shadow); }
+  details.more > summary { display: flex; justify-content: space-between; align-items: center; min-height: 48px; cursor: pointer; font-weight: 700; list-style: none; }
+  details.more > summary::-webkit-details-marker { display: none; }
+  details.more > summary::after { content: "▾"; color: var(--muted); transition: transform .15s; }
+  details.more[open] > summary::after { transform: rotate(180deg); }
+  details.more > summary small { font-weight: 500; color: var(--muted); margin-left: 6px; }
+  .mt .who2 { grid-column: 1 / -1; margin: 0; }
+
+  /* Hauptkarte (verkürzt, wie in der App) */
+  .hero .actions { margin-top: 14px; }
+
+  /* Liste der kommenden Stammtische */
+  .mt { padding: 12px 0; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; }
+  .mt:last-child { border-bottom: 0; padding-bottom: 2px; }
+  .mt .d { font-weight: 800; font-size: 1.05rem; letter-spacing: -.01em; }
+  .mt .d small { font-weight: 600; color: var(--muted); font-size: .8125rem; margin-left: 4px; }
+  .mt .meta { grid-column: 1; color: var(--muted); font-size: .8125rem; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+  .count { grid-row: 1 / span 2; grid-column: 2; text-align: center; min-width: 64px; padding: 6px 10px; border-radius: 14px; background: var(--wash); line-height: 1.1; }
+  .count strong { display: block; font-size: 1.6rem; font-weight: 800; }
+  .count span { font-size: .7rem; font-weight: 700; color: var(--muted); }
+  .mt .act { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+  .mt .act button { min-height: 40px; padding: 6px 14px; font-size: .9rem; }
+  .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .75rem; font-weight: 700; background: var(--wash); color: var(--ink); }
+  .tag.moved { background: color-mix(in srgb, var(--accent) 35%, transparent); color: var(--ink); }
+  .tag.out { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); }
+  .tag.next { background: var(--brand); color: var(--brand-ink); }
+
+  /* Admin: Termine */
+  .adm { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .adm:last-child { border-bottom: 0; }
+  .adm .top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .adm .top button { min-height: 38px; padding: 4px 12px; font-size: .875rem; }
+  .adm .m { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+  .adm .dt { font-weight: 800; }
+  .adm .panel { margin-top: 10px; padding: 12px; border-radius: 14px; background: var(--bg); border: 1px solid var(--line); }
+  .warn-t { color: var(--warn); font-weight: 600; }
+  .ok-t { color: var(--ok); font-weight: 600; }
+  .seg { display: flex; gap: 8px; margin: 0 0 12px; }
+  .seg button { flex: 1 1 0; min-width: 0; padding: 10px 2px; font-size: .82rem; }
+  .btnrow { display: flex; gap: 8px; margin-top: 12px; }
+  .btnrow button { flex: 1 1 0; }
+  .chk { display: flex; gap: 10px; align-items: flex-start; font-size: .875rem; color: var(--ink); margin: 10px 0 0; }
+  .chk input { width: 22px; min-height: 22px; height: 22px; flex: 0 0 22px; accent-color: var(--brand); margin: 1px 0 0; }
+  .legend-box { max-width: 520px; margin: 0 auto 30px; padding: 0 16px; font-size: .85rem; color: #4a4741; }
+  .legend-box li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="selector" role="tablist" aria-label="Ansicht">
+  <button data-go="start" aria-pressed="true">1 · Startseite</button>
+  <button data-go="admin" aria-pressed="false">2 · Admin: Termine</button>
+  <button data-go="move" aria-pressed="false">3 · Verschieben</button>
+</div>
+<p class="note">Klickbarer Mockup mit Beispieldaten (heute: Sa, 10.10.2026). Abmelden, Verschieben und Zurücksetzen funktionieren hier nur zum Ausprobieren, nichts wird gespeichert. Hell/Dunkel folgt dem Gerät.</p>
+<div class="phone" id="phone"></div>
+<ul class="legend-box" id="legend"></ul>
+
+<script>
+"use strict";
+/* ---------- Beispieldaten ---------- */
+const TODAY = "2026-10-10";
+const MEMBERS = 13;
+const ME = "Mitglied G";
+// Abweichungen vom "ersten Freitag": Monat -> abweichendes Datum (das hinterlegt der Admin)
+const overrides = { "2027-01": "2027-01-08" };
+// Vorab abgemeldete Mitglieder je Termin (nach Datum), Gäste je Termin, Vorsitz je Termin
+const absent = { "2026-11-06": ["Mitglied A", "Mitglied D"], "2026-12-04": ["Mitglied K"], "2027-01-08": [], "2027-02-05": [], "2027-03-05": [], "2027-04-02": [] };
+const guests = { "2026-11-06": 1 };
+const guestList = { "2026-11-06": [["Gast von Mitglied C", "Mitglied C"]] };
+const chair = { "2026-11-06": "Mitglied B", "2026-12-04": "Mitglied E" };
+
+/* ---------- Datumshilfen ---------- */
+const pad = (n) => String(n).padStart(2, "0");
+const iso = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
+const dt = (s) => new Date(s + "T12:00:00");
+const fmt = (s, o) => dt(s).toLocaleDateString("de-DE", o);
+const long = (s) => fmt(s, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+const short = (s) => fmt(s, { weekday: "short", day: "numeric", month: "long" });
+function firstFriday(y, m) { for (let d = 1; d <= 7; d++) if (new Date(y, m - 1, d, 12).getDay() === 5) return iso(y, m, d); }
+function meetingFor(y, m) { const key = `${y}-${pad(m)}`, reg = firstFriday(y, m), real = overrides[key] || reg; return { key, reg, date: real, moved: real !== reg }; }
+function upcoming(n) {
+  const out = []; let y = 2026, m = 10;
+  while (out.length < n) { const mt = meetingFor(y, m); if (mt.date >= TODAY) out.push(mt); if (++m > 12) { m = 1; y++; } }
+  return out;
+}
+const days = (s) => Math.round((dt(s) - dt(TODAY)) / 86400000);
+const when = (n) => n === 0 ? "heute" : n === 1 ? "morgen" : `in ${n} Tagen`;
+const count = (date) => Math.max(MEMBERS - (absent[date] || []).length, 0) + (guests[date] || 0);
+const isAbsent = (date) => (absent[date] || []).includes(ME);
+
+/* ---------- Mini-Helfer ---------- */
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) { if (v == null || v === false) continue; if (k === "class") e.className = v; else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v === true ? "" : v); }
+  for (const x of kids.flat()) if (x != null && x !== false) e.append(x.nodeType ? x : document.createTextNode(String(x)));
+  return e;
+}
+function toast(msg, err) { const t = document.getElementById("toast") || document.body.appendChild(h("div", { id: "toast", role: "status" })); t.textContent = msg; t.className = "show" + (err ? " err" : ""); clearTimeout(toast.t); toast.t = setTimeout(() => (t.className = ""), 2600); }
+
+/* ---------- Zustand ---------- */
+let whoOpen = false, moreOpen = false;
+let view = "start", editKey = "2027-01", editDate = "2027-01-08", notify = true;
+const legends = {
+  start: ["Der nächste Stammtisch steht nur noch in der <b>Hauptkarte</b>. Tipp auf die <b>Teilnehmerzahl</b> klappt darunter „Entschuldigt“ und „Gäste“ auf (ersetzt die bisherige Karte „Wer fehlt, wer kommt dazu“).", "Darunter ein zugeklappter Akkordeon-Block <b>Weitere Stammtische</b> mit den nächsten beiden Terminen, je mit Teilnehmerzahl, Vorsitz und eigenem Abmelden-Knopf. Probier „Ich komme nicht“ beim 8. Januar.", "Abgemeldet wird mit dem Datum des jeweiligen Termins, wie heute. Verschobene Termine sind gekennzeichnet.", "Wer bei einem Termin den Vorsitz hat, überträgt ihn zuerst (bestehende Regel)."],
+  oldstart: ["Neu: Karte <b>Kommende Stammtische</b> unter der Hauptkarte mit den nächsten drei Terminen.", "Jede Zeile zeigt das Datum, den Vorsitz (falls schon bekannt) und die <b>Teilnehmerzahl</b> (Mitglieder minus Abmeldungen plus Gäste).", "Abmelden geht ab sofort für jeden der drei Termine. Gebucht wird mit dem Termin-Datum, genau wie heute. Probier „Ich komme nicht“ beim 8. Januar.", "Verschobene Termine sind gekennzeichnet („verschoben“), damit niemand den 1. Januar im Kopf hat.", "Wer bei einem Termin den Vorsitz hat, überträgt ihn zuerst (bestehende Regel), dort fehlt dann der Abmelden-Knopf."],
+  admin: ["Neu im Admin-Bereich: Reiter <b>Termine</b>. Die Liste zeigt die nächsten Monate mit dem Datum, das gerade gilt.", "Ohne Eintrag gilt der erste Freitag. Eine Abweichung ist als „verschoben“ markiert und zeigt den regulären Termin an.", "<b>Verschieben</b> öffnet darunter das Datumsfeld. Mit „Auf regulär zurücksetzen“ ist die Abweichung wieder weg."],
+  move: ["Das Formular prüft: Datum liegt in der Zukunft, liegt im selben Monat, ist ein Freitag (sonst Hinweis, kein Verbot) und kollidiert nicht mit einem anderen Termin.", "Schon eingetragene Abmeldungen bleiben beim Verschieben bestehen und wandern mit, die Buchung erhält das neue Datum.", "Optional: Mitglieder per Push informieren (gibt es in der App bereits)."],
+};
+
+/* ---------- Bausteine ---------- */
+function heroCard() {
+  const m = upcoming(1)[0], mine = isAbsent(m.date), n = count(m.date);
+  return h("section", { class: "hero" },
+    h("button", { type: "button", class: "headcount", "aria-expanded": String(whoOpen), "aria-label": `${n} Teilnehmer. Wer fehlt, wer kommt dazu: ${whoOpen ? "ausblenden" : "anzeigen"}`, onclick: () => { whoOpen = !whoOpen; render(); } },
+      h("strong", {}, n), h("span", {}, "Teilnehmer"), guests[m.date] ? h("small", {}, `inkl. ${guests[m.date]} Gast`) : null, h("span", { class: "chev", "aria-hidden": "true" }, "▾")),
+    h("div", { class: "badges" }, h("span", { class: "when" }, when(days(m.date))), mine ? h("span", { class: "state" }, "Du bist entschuldigt") : null),
+    h("p", { class: "date", style: "padding-right:100px" }, fmt(m.date, { weekday: "long" }) + ",", h("small", {}, fmt(m.date, { day: "numeric", month: "long" }))),
+    h("p", {}, "Vorsitz: ", h("strong", {}, chair[m.date] || "noch offen")),
+    h("p", { class: "muted small" }, "Location noch offen"),
+    h("div", { class: "actions" }, h("button", { type: "button", class: "hbtn main", onclick: () => toggleAbsent(m.date) }, mine ? "Doch teilnehmen" : "Ich komme nicht")),
+    whoOpen ? whoPanel(m.date) : null);
+}
+
+function whoPanel(date) {
+  const a = absent[date] || [], g = guestList[date] || [];
+  return h("div", { class: "panel who", role: "region", "aria-label": "Wer fehlt, wer kommt dazu" },
+    h("h3", {}, "Entschuldigt"), a.length ? h("ul", { class: "chips" }, a.map((n) => h("li", { class: "chip" }, n))) : h("p", { style: "margin:0" }, "Bisher niemand."),
+    h("h3", {}, "Gäste"), g.length ? h("ul", { class: "chips" }, g.map(([n, host]) => h("li", { class: "chip" }, `${n} (bei ${host})`))) : h("p", { style: "margin:0" }, "Bisher keine."));
+}
+
+function toggleAbsent(date) {
+  const l = absent[date] || (absent[date] = []), i = l.indexOf(ME);
+  if (i >= 0) { l.splice(i, 1); toast(`Abmeldung für ${short(date)} zurückgezogen.`); }
+  else { l.push(ME); toast(`Abwesenheit für ${short(date)} eingetragen.`); }
+  render();
+}
+
+function upcomingCard() {
+  const list = upcoming(3).slice(1); // der nächste Stammtisch steht in der Hauptkarte
+  const det = h("details", { class: "more", open: moreOpen, ontoggle: () => { moreOpen = det.open; } },
+    h("summary", {}, h("span", {}, "Weitere Stammtische", h("small", {}, "die nächsten beiden"))),
+    list.map((m) => {
+      const mine = isAbsent(m.date), g = guests[m.date] || 0, ch = chair[m.date], isChair = ch === ME;
+      return h("div", { class: "mt" },
+        h("div", { class: "d" }, fmt(m.date, { weekday: "short", day: "numeric", month: "long" }), h("small", {}, m.date.slice(0, 4) !== TODAY.slice(0, 4) ? " " + m.date.slice(0, 4) : "")),
+        h("div", { class: "count", role: "group", "aria-label": `${count(m.date)} Teilnehmer` }, h("strong", {}, count(m.date)), h("span", {}, "dabei")),
+        h("div", { class: "meta" },
+          h("span", {}, when(days(m.date))),
+          m.moved ? h("span", { class: "tag moved", title: `Regulär: ${long(m.reg)}` }, "verschoben") : null,
+          h("span", {}, ch ? `Vorsitz ${ch === ME ? "ich" : ch}` : "Vorsitz offen"),
+          g ? h("span", {}, `inkl. ${g} Gast`) : null,
+          (absent[m.date] || []).length ? h("span", {}, `${(absent[m.date] || []).length} abgemeldet`) : null),
+        m.moved ? h("p", { class: "muted small who2" }, `Regulär wäre ${short(m.reg)}.`) : null,
+        h("div", { class: "act" },
+          mine ? h("span", { class: "tag out" }, "Du bist abgemeldet") : null,
+          isChair && !mine ? h("span", { class: "muted small" }, "Du hast den Vorsitz. Zum Abmelden zuerst übertragen.")
+            : h("button", { type: "button", "aria-label": `${mine ? "Doch teilnehmen am" : "Abmelden für"} ${short(m.date)}`, onclick: () => toggleAbsent(m.date) }, mine ? "Doch teilnehmen" : "Ich komme nicht")));
+    }),
+    h("p", { class: "muted small", style: "margin:4px 0 12px" }, "Abmelden geht bis 19 Uhr am jeweiligen Stammtischtag. Gebucht wird mit dem Datum des Termins."));
+  return det;
+}
+
+function adminView() {
+  const rows = []; let y = 2026, m = 11;
+  for (let i = 0; i < 6; i++) { rows.push(meetingFor(y, m)); if (++m > 12) { m = 1; y++; } }
+  const seg = h("div", { class: "seg", role: "tablist" }, ["Zahlung", "Buchen", "Offen", "Letzte", "Termine"].map((l) => h("button", { class: l === "Termine" ? "primary" : "", role: "tab", "aria-selected": String(l === "Termine"), onclick: () => l !== "Termine" && toast("(im Mockup nicht belegt)") }, l)));
+  return h("div", {}, h("h1", {}, "Admin"), h("p", { class: "muted small", style: "margin:0 0 12px" }, "Nur du kannst hier buchen und verwalten."), seg,
+    h("section", { class: "card" }, h("h2", {}, "Stammtisch-Termine"),
+      h("p", { class: "muted small", style: "margin:0 0 6px" }, "Regel: immer der erste Freitag im Monat. Abweichungen hinterlegst du hier."),
+      rows.map((r) => {
+        const open = view === "move" && editKey === r.key;
+        return h("div", { class: "adm" },
+          h("div", { class: "top" },
+            h("div", {}, h("div", { class: "m" }, fmt(r.date, { month: "long", year: "numeric" })),
+              h("div", { class: "dt" }, short(r.date), " ", r.moved ? h("span", { class: "tag moved" }, "verschoben") : h("span", { class: "tag" }, "regulär")),
+              r.moved ? h("div", { class: "muted small" }, `Regulär: ${short(r.reg)}`) : null,
+              h("div", { class: "muted small" }, `${count(r.date)} Teilnehmer · ${(absent[r.date] || []).length} abgemeldet`)),
+            h("button", { type: "button", "aria-expanded": String(open), onclick: () => { if (open) { view = "admin"; } else { view = "move"; editKey = r.key; editDate = r.date; } render(); } }, open ? "Schließen" : "Verschieben")),
+          open ? movePanel(r) : null);
+      })));
+}
+
+function movePanel(r) {
+  const [yy, mm] = r.key.split("-").map(Number);
+  const out = h("div", { class: "stack", style: "margin-top:10px" });
+  const input = h("input", { id: "nd", type: "date", value: editDate });
+  const save = h("button", { type: "button", class: "primary full" }, "Termin speichern");
+  const reset = h("button", { type: "button", class: "full", disabled: !r.moved }, "Auf regulär zurücksetzen");
+  const check = () => {
+    const v = input.value, msgs = []; let block = false;
+    if (!v) { block = true; msgs.push(["warn-t", "Bitte ein Datum wählen."]); }
+    else {
+      if (v < TODAY) { block = true; msgs.push(["warn-t", "Das Datum liegt in der Vergangenheit."]); }
+      if (v.slice(0, 7) !== r.key) { block = true; msgs.push(["warn-t", `Der Termin muss im ${fmt(r.reg, { month: "long" })} bleiben. Für einen anderen Monat bitte dort verschieben.`]); }
+      if (!block && dt(v).getDay() !== 5) msgs.push(["warn-t", `Achtung: ${fmt(v, { weekday: "long" })}, kein Freitag. Das ist erlaubt.`]);
+      if (!block && v === r.date) { block = true; msgs.push(["muted small", "Das ist schon der aktuelle Termin."]); }
+      if (!block && v === r.reg) msgs.push(["ok-t", "Das ist der reguläre Termin (erster Freitag). Die Abweichung entfällt."]);
+      if (!block && (absent[r.date] || []).length) msgs.push(["muted small", `${absent[r.date].length} schon eingetragene Abmeldung(en) wandern auf das neue Datum mit.`]);
+    }
+    out.replaceChildren(...msgs.map(([c, t]) => h("p", { class: c.includes("small") ? c : c + " small", style: "margin:0" }, t)));
+    save.disabled = block; editDate = v;
+  };
+  input.addEventListener("input", check);
+  save.addEventListener("click", () => {
+    if (editDate === r.reg) delete overrides[r.key]; else overrides[r.key] = editDate;
+    if (absent[r.date] && absent[r.date] !== absent[editDate]) { absent[editDate] = absent[r.date]; if (editDate !== r.date) delete absent[r.date]; }
+    toast(`Termin gespeichert: ${short(editDate)}.${notify ? " Mitglieder werden benachrichtigt." : ""}`);
+    view = "admin"; render();
+  });
+  reset.addEventListener("click", () => { delete overrides[r.key]; const old = r.date; if (absent[old]) { absent[r.reg] = absent[old]; delete absent[old]; } toast(`Zurückgesetzt auf ${short(r.reg)}.`); view = "admin"; render(); });
+  const chk = h("label", { class: "chk" }, h("input", { type: "checkbox", checked: notify, onchange: (e) => (notify = e.target.checked) }), "Mitglieder per Push über die Änderung informieren");
+  setTimeout(check, 0);
+  return h("div", { class: "panel" },
+    h("label", { for: "nd" }, `Neues Datum für ${fmt(r.reg, { month: "long", year: "numeric" })}`), input,
+    h("p", { class: "muted small", style: "margin:6px 0 0" }, `Regulär: ${long(r.reg)}`), out, chk,
+    h("div", { class: "btnrow" }, reset, save));
+}
+
+/* ---------- Seiten ---------- */
+function tabbar(active) {
+  const t = [["start", "🏠", "Start"], ["x", "📊", "Statistik"], ["y", "💶", "Konto"], ["admin", "🔒", "Admin"]];
+  return h("nav", { class: "tabbar-mock", "aria-label": "Bereiche" }, t.map(([id, i, l]) => h("span", { class: (id === active || (id === "admin" && view === "move" && active === "admin")) ? "on" : "", onclick: () => { if (id === "start" || id === "admin") go(id); } }, h("i", {}, i), l)));
+}
+function render() {
+  const ph = document.getElementById("phone");
+  const isAdmin = view === "admin" || view === "move";
+  ph.replaceChildren(
+    isAdmin ? adminView() : h("div", {}, h("p", { class: "hello" }, "Samstag, 10. Oktober"), h("h1", {}, "Servus, " + ME), heroCard(), upcomingCard()),
+    tabbar(isAdmin ? "admin" : "start"));
+  document.querySelectorAll(".selector button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.go === view)));
+  document.getElementById("legend").replaceChildren(...legends[view].map((t) => { const li = document.createElement("li"); li.innerHTML = t; return li; }));
+}
+function go(v) { view = v; if (v === "move") { editKey = "2027-01"; editDate = meetingFor(2027, 1).date; } render(); }
+document.querySelectorAll(".selector button").forEach((b) => b.addEventListener("click", () => go(b.dataset.go)));
+render();
+</script>
+</body>
+</html>
