@@ -287,7 +287,7 @@
           h("button", { type: "button", class: "count", "aria-expanded": String(upWho.has(u.date)),
             "aria-label": `${u.count} Teilnehmer. Wer sich abgemeldet hat: ${upWho.has(u.date) ? "ausblenden" : "anzeigen"}`,
             onclick: () => { if (upWho.has(u.date)) upWho.delete(u.date); else upWho.add(u.date); render(last.own); } },
-            h("strong", {}, String(u.count)), h("span", {}, "dabei")),
+            h("strong", {}, String(u.count))),
           h("div", { class: "meta" },
             h("span", {}, whenText(inDays(u.date))),
             u.date !== u.regular ? h("span", { class: "tag moved", title: `Regulär: ${dateLong(u.regular)}` }, "verschoben") : null,
