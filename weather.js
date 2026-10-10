@@ -47,6 +47,28 @@
     };
   }
 
+  // Der Tag in 3-Stunden-Schritten ab start ("HH:MM"), höchstens vier Werte; ohne start ab 0 Uhr. firstLabel ersetzt die Beschriftung des ersten Werts.
+  function day3h(data, day, start, firstLabel) {
+    const h = data && data.hourly;
+    if (!h || !Array.isArray(h.time)) return null;
+    const first = start ? Number(start.slice(0, 2)) : 0;
+    const slots = [];
+    h.time.forEach((t, i) => {
+      const hr = Number(t.slice(11, 13));
+      if (t.slice(0, 10) !== day || hr < first || (hr - first) % 3 || h.temperature_2m[i] == null) return;
+      slots.push({ hr, label: slots.length === 0 ? firstLabel || start || `${hr}` : `${hr}`, temp: Math.round(h.temperature_2m[i]), rain: h.precipitation_probability[i] || 0, kind: kind(h.weather_code[i]) });
+    });
+    if (!slots.length) return null;
+    slots.splice(4);
+    const worst = slots.reduce((a, b) => (SEVERITY[b.kind] > SEVERITY[a.kind] ? b : a));
+    const sunset = data.daily && data.daily.time ? (data.daily.sunset || [])[data.daily.time.indexOf(day)] : null;
+    return {
+      slots, kind: worst.kind === "clear" ? slots[0].kind : worst.kind, temp: slots[0].temp, text: LABEL[worst.kind],
+      min: Math.min(...slots.map((x) => x.temp)), max: Math.max(...slots.map((x) => x.temp)), rainMax: Math.max(...slots.map((x) => x.rain)),
+      sunset: sunset ? sunset.slice(11, 16) : null,
+    };
+  }
+
   // Kurztext in höchstens zwei, drei Wörtern.
   function text(first, worst, wet) {
     if (worst.kind === "storm") return "Gewitter";
@@ -59,7 +81,7 @@
 
   const dayDiff = (a, b) => Math.round((Date.parse(b + "T12:00:00Z") - Date.parse(a + "T12:00:00Z")) / 86400000);
 
-  const api = { kind, evening, text, dayDiff, ICON, LABEL, MAX_DAYS };
+  const api = { kind, evening, day3h, text, dayDiff, ICON, LABEL, MAX_DAYS };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.Weather = Object.assign(root.Weather || {}, api);
 })(typeof window !== "undefined" ? window : globalThis);
@@ -68,31 +90,32 @@
   "use strict";
   if (typeof document === "undefined" || !root.Weather) return;
   const W = root.Weather;
-  const TTL = 60 * 60 * 1000, KEY = "stammtisch_wetter_v1";
+  const TTL = 60 * 60 * 1000, KEY = "stammtisch_wetter_v2";
 
   const read = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
   const write = (v) => { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch { /* egal */ } };
 
   async function fetchData(lat, lon, day) {
     const url = "https://api.open-meteo.com/v1/forecast?latitude=" + lat.toFixed(3) + "&longitude=" + lon.toFixed(3)
-      + "&hourly=temperature_2m,precipitation_probability,weather_code&daily=sunset&timezone=Europe%2FBerlin&start_date=" + day + "&end_date=" + day;
+      + "&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m&daily=sunset&timezone=Europe%2FBerlin&start_date=" + day + "&end_date=" + day;
     const res = await fetch(url);
     if (!res.ok) throw new Error("Wetter nicht erreichbar");
     return res.json();
   }
 
   // onUpdate(ergebnis, stand) wird mit dem Zwischenspeicher sofort und nach einem Abruf erneut aufgerufen. Fehler bleiben still.
-  function load(lat, lon, day, onUpdate) {
+  function load(lat, lon, day, onUpdate, pick) {
+    pick = pick || W.evening;
     const key = `${lat.toFixed(3)},${lon.toFixed(3)},${day}`;
     const cache = read(), hit = cache[key];
-    if (hit) onUpdate(W.evening(hit.data, day), hit.at);
+    if (hit) onUpdate(pick(hit.data, day), hit.at);
     if (hit && Date.now() - hit.at < TTL) return;
     fetchData(lat, lon, day).then((data) => {
       const now = Date.now(), next = read();
       for (const k of Object.keys(next)) if (now - next[k].at > 24 * TTL) delete next[k];
       next[key] = { at: now, data };
       write(next);
-      onUpdate(W.evening(data, day), now);
+      onUpdate(pick(data, day), now);
     }).catch(() => {});
   }
 

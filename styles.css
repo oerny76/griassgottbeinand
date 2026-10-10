@@ -297,6 +297,31 @@ button.motion > div { width: 100%; }
 .hero .wx-row strong { font-size: 1.15rem; }
 .hero .wx-src { font-size: .72rem; opacity: .8; }
 
+/* Wetter beim Ausflug: kleine Kachel im Banner */
+.trip-wrap { display: flow-root; position: relative; margin: 0 0 12px; border-radius: 20px; background: var(--accent); color: #2a2200; }
+.trip-top { position: relative; }
+.trip-wrap .trip-banner { margin: 0; background: transparent; min-height: 100px; }
+.trip-wrap.has-wx .trip-banner { padding-right: 100px; }
+.trip-wrap.has-wx .trip-banner .trip-text strong, .trip-wrap.has-wx .trip-banner .trip-text span { white-space: normal; }
+.trip-wrap.has-wx .trip-go { display: none; }
+.trip-wrap .tripwx { position: absolute; top: 10px; bottom: 10px; right: 10px; width: 80px; min-height: 0; padding: 4px; justify-content: center; border: 0; border-radius: 16px; background: rgba(255, 255, 255, .4); color: #2a2200; display: flex; flex-direction: column; align-items: center; line-height: 1.15; margin: 0; font: inherit; cursor: pointer; }
+.trip-wrap .tripwx[hidden] { display: none; }
+.trip-wrap .tripwx[aria-expanded="true"] { background: rgba(255, 255, 255, .65); }
+.trip-wrap .wx-ico { font-size: 1.4rem; }
+.trip-wrap .tripwx strong { font-size: 1.05rem; font-weight: 800; }
+.trip-wrap .tripwx small { font-size: .72rem; font-weight: 600; }
+.trip-wrap .tripwx-detail { margin: 0 12px 12px; padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, .4); }
+.trip-wrap .tripwx-detail[hidden] { display: none; }
+.trip-wrap .tripwx-detail > * + * { margin-top: 8px; }
+.tripwx-day { margin: 0; font-weight: 700; }
+.tripwx-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px 4px; text-align: center; }
+.tripwx-row > span { display: flex; flex-direction: column; align-items: center; line-height: 1.25; }
+.tripwx-row > span.past { opacity: .45; }
+.tripwx-row strong { font-size: 1.1rem; }
+.tripwx-row small { font-size: .78rem; }
+.tripwx-src { margin: 0; font-size: .72rem; opacity: .85; }
+.tripwx-src a { color: inherit; }
+
 /* Unsere Bewertung in der Hauptkarte */
 .hero .ratechip { display: inline-block; text-align: left; margin: 8px 0 0; padding: 4px 12px; min-height: 36px; border-radius: 999px; border: 0; background: rgba(255, 255, 255, .2); color: #fff; font-size: .9rem; font-weight: 400; }
 .hero .ratechip.static { min-height: 0; padding: 4px 12px; }

@@ -116,6 +116,52 @@
     return { btn, detail, attach: (el) => { hero = el; if (!btn.hidden) el.classList.add("has-wx"); } };
   }
 
+  // Wetter beim Ausflug: kleine Kachel im gelben Ausflugs-Banner (wie beim Stammtisch in der Hauptkarte), Antippen klappt
+  // den Tag in 3-Stunden-Schritten auf (Open-Meteo, bis 14 Tage voraus). Fehler bleiben still, dann bleibt der Banner wie er war.
+  let tripWxOpen = false;
+  function tripBanner(name) {
+    const today = todayBerlin();
+    const banner = window.Trip.banner(h, today, () => goTab("trip"), name);
+    const W = window.Weather;
+    if (!W || !window.Trip.weatherSpot(name, today)) return banner;
+    const top = h("div", { class: "trip-top" }, banner);
+    const wrap = h("div", { class: "trip-wrap" }, top);
+    const btn = h("button", { type: "button", class: "tripwx", hidden: true, "aria-expanded": String(tripWxOpen), onclick: () => { tripWxOpen = !tripWxOpen; btn.setAttribute("aria-expanded", String(tripWxOpen)); detail.hidden = !tripWxOpen; } });
+    const detail = h("div", { class: "tripwx-detail", hidden: true });
+    top.append(btn); wrap.append(detail);
+    const nowHm = () => new Date().toLocaleTimeString("sv-SE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" });
+    let spot = null;
+    const draw = (ev, at) => {
+      if (!ev) return;
+      const stand = new Date(at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+      const dayName = new Date(spot.day + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+      const place = spot.place.name.split(",")[0];
+      btn.replaceChildren(h("span", { class: "wx-ico", "aria-hidden": "true" }, W.ICON[ev.kind]), h("strong", {}, `${ev.min}–${ev.max}°`), h("small", {}, ev.text));
+      btn.setAttribute("aria-label", `Wetter ${dayName} bei ${place}: ${ev.min} bis ${ev.max} Grad, ${ev.text}. Details ${tripWxOpen ? "ausblenden" : "anzeigen"}`);
+      detail.replaceChildren(
+        h("p", { class: "tripwx-day" }, `${dayName} · ${place}`),
+        h("div", { class: "tripwx-row" }, ev.slots.map((x) => h("span", {},
+          h("small", {}, /^\D/.test(x.label) ? x.label : `${x.label} Uhr`), h("span", { "aria-hidden": "true" }, W.ICON[x.kind]), h("strong", {}, `${x.temp}°`), h("small", {}, `${x.rain} %`)))),
+        h("p", { class: "tripwx-src" }, `Regenrisiko in Prozent unter den Symbolen${ev.sunset ? ` · Sonnenuntergang ${ev.sunset}` : ""}`),
+        h("p", { class: "tripwx-src" }, `Stand ${stand} Uhr · Wetterdaten von `, h("a", { href: "https://open-meteo.com/", target: "_blank", rel: "noopener noreferrer" }, "Open-Meteo.com")));
+      btn.hidden = false; detail.hidden = !tripWxOpen;
+      wrap.classList.add("has-wx");
+    };
+    // Zeit läuft mit: heute beginnt die Anzeige jetzt (oder zum Start der nächsten Aktivität, falls später), danach alle 3 Stunden.
+    const refresh = () => {
+      const sp = window.Trip.weatherSpot(name, todayBerlin());
+      if (!sp || sp.left > 14) return;
+      const now = nowHm();
+      const fromNow = sp.left === 0 && (!sp.start || now >= sp.start);
+      spot = sp;
+      const start = fromNow ? now : sp.start;
+      W.load(sp.place.lat, sp.place.lon, sp.day, draw, (data, day) => W.day3h(data, day, start, fromNow ? "Jetzt" : null));
+    };
+    const timer = setInterval(() => { if (!wrap.isConnected) clearInterval(timer); else refresh(); }, 60000);
+    refresh();
+    return wrap;
+  }
+
   // Wofür "Vorsitz übertragen" und "Location eintragen" gelten, bestimmt die Datenbank (me.chair_scope):
   //   upcoming: der anstehende Termin, current: der heutige Stammtisch bis 19 Uhr, next: heute ab 19 Uhr der nächste Stammtisch.
   function chairTarget(d) {
@@ -735,7 +781,7 @@
     const today = new Date(todayBerlin() + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
     // Nur der geöffnete Tab wird gebaut (der Statistik-Tab lädt Daten).
     const pages = {
-      start: () => [window.Trip.active(todayBerlin()) ? window.Trip.banner(h, todayBerlin(), () => goTab("trip"), d.me.name) : null, heroCard(d), moreCard(d), tilesBlock(d, goTab)],
+      start: () => [window.Trip.active(todayBerlin()) ? tripBanner(d.me.name) : null, heroCard(d), moreCard(d), tilesBlock(d, goTab)],
       trip: () => [window.Trip.page(h, todayBerlin(), () => goTab("start"), d.me.name)],
       stat: () => [statsPage(d)],
       abstimmung: () => [window.Motions.render(d.me)],

@@ -5,12 +5,12 @@
 
   // Orte: Name und Adresse für die Karte, optional Website. Der Kartenlink wird daraus gebaut.
   const P = {
-    airport: { name: "Malta International Airport", addr: "Luqa, Malta", url: "https://www.maltairport.com" },
-    hotel: { name: "VITA Hotel", addr: "146 St George's Road, St Julian's STJ 3203, Malta", url: "https://www.vitahotel.com.mt" },
-    bayview: { name: "Bayview Restaurant, Marina Hotel Corinthia", addr: "St George's Bay, St Julian's, Malta", url: "https://corinthiagroup.com/property/marina-hotel-corinthia-beach-resort-malta/" },
-    noru: { name: "Noru Hotel Malta", addr: "Triq Elija Zammit, San Ġiljan STJ 3151, Malta" },
-    valletta: { name: "Valletta", addr: "Valletta, Malta" },
-    lubelli: { name: "Lubelli, InterContinental Malta", addr: "St George's Bay, St Julian's STJ 3310, Malta", url: "https://www.ihg.com/intercontinental/hotels/gb/en/malta/malha/hoteldetail/dining" },
+    airport: { name: "Malta International Airport", addr: "Luqa, Malta", lat: 35.8575, lon: 14.4775, url: "https://www.maltairport.com" },
+    hotel: { name: "VITA Hotel", addr: "146 St George's Road, St Julian's STJ 3203, Malta", lat: 35.9205, lon: 14.4890, url: "https://www.vitahotel.com.mt" },
+    bayview: { name: "Bayview Restaurant, Marina Hotel Corinthia", addr: "St George's Bay, St Julian's, Malta", lat: 35.9190, lon: 14.4900, url: "https://corinthiagroup.com/property/marina-hotel-corinthia-beach-resort-malta/" },
+    noru: { name: "Noru Hotel Malta", addr: "Triq Elija Zammit, San Ġiljan STJ 3151, Malta", lat: 35.9180, lon: 14.4930 },
+    valletta: { name: "Valletta", addr: "Valletta, Malta", lat: 35.8989, lon: 14.5146 },
+    lubelli: { name: "Lubelli, InterContinental Malta", addr: "St George's Bay, St Julian's STJ 3310, Malta", lat: 35.9215, lon: 14.4905, url: "https://www.ihg.com/intercontinental/hotels/gb/en/malta/malha/hoteldetail/dining" },
   };
 
   // Zielgruppe eines Programmpunkts: REST = alle außer Ernest und Stefan (sie reisen erst am Freitag), ONLY = nur Ernest und Stefan.
@@ -99,6 +99,27 @@
       p.url ? [" · ", h("a", { href: p.url, target: "_blank", rel: "noopener noreferrer" }, "Website")] : null));
   }
 
+  // Wetterort und -tag: Tag = heute (vor der Reise der erste Tag). Ort = der Programmpunkt, der gerade läuft
+  // (Beginn höchstens 3 Stunden her), sonst der nächste; Punkte ohne Ort erben den vorherigen, der erste das Hotel.
+  function weatherSpot(name, today, now) {
+    now = now || nowBerlin();
+    let cur = P.hotel;
+    const line = TRIP.days.flatMap((d) => d.items
+      .filter(([time, , , ...rest]) => time && applies(rest, name))
+      .map(([time, , , ...rest]) => ({ at: `${d.date}T${time}`, place: rest.find((x) => x.lat != null) })))
+      .sort((a, b) => a.at.localeCompare(b.at))
+      .map((e) => ({ at: e.at, place: (cur = e.place || cur) }));
+    if (!line.length) return null;
+    const ago = (e) => (Date.parse(now + ":00Z") - Date.parse(e.at + ":00Z")) / 60000;
+    const started = line.filter((e) => ago(e) >= 0);
+    const last = started[started.length - 1];
+    const pick = last && ago(last) <= 180 ? last : line.find((e) => ago(e) < 0) || line[line.length - 1];
+    const first = startOf(name);
+    const day = today < first ? first : today > TRIP.to ? TRIP.to : today;
+    const todays = line.filter((e) => e.at.slice(0, 10) === day);
+    return { day, place: pick.place, left: dayDiff(today, day), start: todays.length ? todays[0].at.slice(11, 16) : null };
+  }
+
   const range = (name) => (isEs(name) ? "16. bis 18. Oktober 2026" : "15. bis 18. Oktober 2026");
 
   function banner(h, today, onOpen, name) {
@@ -132,5 +153,5 @@
         h("p", { style: "margin:0" }, TRIP.tips)));
   }
 
-  root.Trip = { TRIP, active, banner, page, nextEvent, events };
+  root.Trip = { TRIP, active, banner, page, nextEvent, events, weatherSpot };
 })(window);
