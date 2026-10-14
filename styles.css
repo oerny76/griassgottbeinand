@@ -81,7 +81,7 @@ input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; m
 .pickbody { display: flex; flex-direction: column; min-width: 0; }
 
 /* ---------- Redesign: Startseite mit Hauptkarte und Kacheln ---------- */
-#app.tabs { padding-bottom: calc(var(--tabbar-h) + max(24px, env(safe-area-inset-bottom))); }
+#app.tabs { padding-bottom: calc(var(--tabbar-h) + max(10px, env(safe-area-inset-bottom)) + 24px); }
 .hero { position: relative; overflow: hidden; margin: 0 0 12px; padding: 20px; border-radius: 24px; background: var(--hero); color: #fff; }
 .hero::before { content: ""; position: absolute; inset: 0; opacity: .12; pointer-events: none;
   background: linear-gradient(45deg, #fff 25%, transparent 25%) 0 0 / 34px 34px, linear-gradient(-45deg, #fff 25%, transparent 25%) 0 0 / 34px 34px;
@@ -107,12 +107,13 @@ input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; m
 .tile .num.text { font-size: 1.2rem; }
 .tile .btn { margin-top: 10px; }
 .tile.tap { cursor: pointer; text-align: left; font-weight: 400; min-height: 0; display: block; }
-.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8; background: var(--card); border-top: 1px solid var(--line); padding: 0 max(8px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(8px, env(safe-area-inset-left)); }
-.tabbar-in { max-width: 520px; margin: 0 auto; display: flex; justify-content: space-around; }
-.tabbar button, .tabbar a { display: flex; align-items: center; justify-content: center; text-decoration: none; flex: 1 1 0; min-height: var(--tabbar-h); flex-direction: column; gap: 3px; border: 0; border-radius: 0; background: transparent; color: var(--muted); font-size: .72rem; font-weight: 600; padding: 8px 4px; }
-.tabbar button[aria-current="page"] { color: var(--brand); }
+.tabbar { position: fixed; left: 0; right: 0; bottom: max(10px, env(safe-area-inset-bottom)); z-index: 8; padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left)); pointer-events: none; }
+.tabbar-in { pointer-events: auto; max-width: 520px; margin: 0 auto; display: flex; justify-content: space-around; gap: 2px; padding: 4px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent); background: color-mix(in srgb, var(--card) 62%, transparent); -webkit-backdrop-filter: blur(22px) saturate(1.8); backdrop-filter: blur(22px) saturate(1.8); box-shadow: 0 8px 28px rgba(0, 0, 0, .16), inset 0 1px 0 rgba(255, 255, 255, .35); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .tabbar-in { background: var(--card); } }
+.tabbar button, .tabbar a { display: flex; align-items: center; justify-content: center; text-decoration: none; flex: 1 1 0; min-height: calc(var(--tabbar-h) - 8px); flex-direction: column; gap: 3px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font-size: .72rem; font-weight: 600; padding: 8px 4px; }
+.tabbar button[aria-current="page"] { color: var(--brand); background: color-mix(in srgb, var(--brand) 14%, transparent); }
 .tabbar svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-body:has(.tabbar) #toast { bottom: calc(var(--tabbar-h) + max(20px, env(safe-area-inset-bottom))); }
+body:has(.tabbar) #toast { bottom: calc(var(--tabbar-h) + max(10px, env(safe-area-inset-bottom)) + 14px); }
 
 /* ---------- Statistik: Diagramme (Farben in Hell und Dunkel geprüft, siehe docs/REDESIGN-KONZEPT.md) ---------- */
 .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 12px; }
@@ -179,7 +180,7 @@ table.tv thead th { color: var(--muted); font-weight: 600; position: sticky; top
 .hero .panel a { color: var(--brand); }
 
 /* Bierdeckel: schwebender Knopf unten rechts und Overlay */
-.dk-fab { --filz: #f3e6c8; --filz-line: #b8975a; --filz-ink: #3a2a14; position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: calc(var(--tabbar-h) + 16px + env(safe-area-inset-bottom)); z-index: 7; width: 64px; height: 64px; min-height: 0; padding: 0; border-radius: 50%; background: transparent; border: 0; color: #3a2a14; box-shadow: 0 4px 14px rgba(0, 0, 0, .28); }
+.dk-fab { --filz: #f3e6c8; --filz-line: #b8975a; --filz-ink: #3a2a14; position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: calc(var(--tabbar-h) + 26px + max(10px, env(safe-area-inset-bottom))); z-index: 7; width: 64px; height: 64px; min-height: 0; padding: 0; border-radius: 50%; background: transparent; border: 0; color: #3a2a14; box-shadow: 0 4px 14px rgba(0, 0, 0, .28); }
 .dk-fab[hidden], .dk-back[hidden], .dk-badge[hidden] { display: none; }
 .dk-ico, .dk-ico > svg { display: block; width: 100%; height: 100%; }
 .dk-filz { fill: var(--filz, #f3e6c8); stroke: var(--filz-line, #b8975a); stroke-width: 2; }
