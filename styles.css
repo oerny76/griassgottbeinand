@@ -420,3 +420,13 @@ details.more > summary small { font-weight: 500; color: var(--muted); margin-lef
 .mt button.count[aria-expanded="true"]::after { transform: rotate(180deg); }
 .mt .who2.panel h3 { margin: 0 0 6px; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
 .mt .who2.panel p { margin: 0; }
+
+.doc-search { margin: 0 0 10px; }
+.doc-head { margin: 0 0 8px; font-size: 1.05rem; text-transform: none; letter-spacing: 0; color: var(--ink); }
+.doc-p { margin: 0 0 8px; }
+.doc-p:last-child, .doc-li:last-child { margin-bottom: 0; }
+.doc-li { margin: 0 0 4px 16px; }
+.doc-fee { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.doc-fee:last-child { border-bottom: 0; padding-bottom: 0; }
+.doc-fee strong { flex: 0 0 auto; text-align: right; white-space: nowrap; }
+mark { background: color-mix(in srgb, var(--brand) 30%, transparent); color: inherit; border-radius: 3px; }

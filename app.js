@@ -2,8 +2,6 @@
   "use strict";
   const { h, card, options, rpc, toast, euro, dateShort, dateLong, dateDay, stripGast, safeUrl, act, session, hooks } = window.App;
   const NS = "http://www.w3.org/2000/svg";
-  const DOC_HOSTS = ["drive.google.com", "docs.google.com"];
-  let linksCache = null; // Satzung und Gebührenordnung kommen aus der Datenbank, nicht aus dem Code
   const $app = document.getElementById("app");
 
   // ---------- Bereiche ----------
@@ -688,16 +686,8 @@
     return h("div", { class: "tile wide", "aria-label": `Abwesenheiten ${a.year}` }, h("p", { class: "label" }, `Abwesenheiten ${a.year}`), body);
   }
 
-  function docLinks(slot, links) {
-    const items = [["satzung", "Satzung"], ["gebuehren", "Gebührenordnung"]]
-      .map(([key, label]) => [safeUrl(links && links[key], DOC_HOSTS), label]).filter(([u]) => u);
-    slot.replaceChildren(...items.flatMap(([u, label]) => [h("a", { href: u, target: "_blank", rel: "noopener noreferrer" }, label), " · "]));
-  }
-
   function footer() {
-    const slot = h("span");
-    if (linksCache) docLinks(slot, linksCache);
-    else rpc("app_links").then((l) => { linksCache = l; docLinks(slot, l); }).catch(() => {});
+    const slot = h("span", {}, [["satzung", "Satzung"], ["gebuehren", "Gebührenordnung"]].flatMap(([id, label]) => [h("button", { class: "link", onclick: () => goTab(id) }, label), " · "]));
     return h("p", { class: "center muted small", style: "margin-top:18px" },
       slot,
       h("button", { class: "link", onclick: () => load(true) }, "Aktualisieren"),
@@ -725,7 +715,7 @@
   let last = null; // zuletzt geladene Daten, damit ein Tab-Wechsel nicht neu lädt
 
   function goTab(id) {
-    tab = id; if (id !== "trip") session.set(TAB_KEY, id);
+    tab = id; if (id !== "trip" && id !== "satzung" && id !== "gebuehren") session.set(TAB_KEY, id);
     if (last) render(last.own);
     window.scrollTo(0, 0);
   }
@@ -783,6 +773,8 @@
     const pages = {
       start: () => [window.Trip.active(todayBerlin()) ? tripBanner(d.me.name) : null, heroCard(d), moreCard(d), tilesBlock(d, goTab)],
       trip: () => [window.Trip.page(h, todayBerlin(), () => goTab("start"), d.me.name)],
+      satzung: () => [window.Satzung.page(h, "satzung", () => goTab("start"))],
+      gebuehren: () => [window.Satzung.page(h, "gebuehren", () => goTab("start"))],
       stat: () => [statsPage(d)],
       abstimmung: () => [window.Motions.render(d.me)],
       konto: () => [accountCard(d), openCard(d), pushCard()],
@@ -792,7 +784,7 @@
     const root = h("div", {},
       tab === "start"
         ? [h("p", { class: "hello" }, today), h("h1", {}, `Servus, ${d.me.name}!`)]
-        : tab === "trip" ? null
+        : tab === "trip" || tab === "satzung" || tab === "gebuehren" ? null
         : h("h1", {}, tab === "admin" ? "Admin" : TABS.find(([id]) => id === tab)[1]),
       pages[tab](),
       footer());
