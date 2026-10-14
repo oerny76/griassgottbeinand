@@ -11,7 +11,7 @@
     intro: [["p", "Präambel: Dieser Stammtisch wurde am 9. April des Jahres 2004 n. Chr. gegründet. Gründungsmitglieder sind Andreas Beck, Dennis Ostermeier, Bernd Hanselmann, Manuel Hackel, Ernest Jennen, Norbert Hanselmann und Michael Hirschbichler. Als Gründungsort gilt offiziell der „Dreigroschenkeller“ in München."]],
     sections: [
       { head: "§ 1 Name", blocks: [
-        ["p", "(1) Dieser Stammtisch trägt den Namen „Griassgottbeinnand“."],
+        ["p", "(1) Dieser Stammtisch trägt den Namen „Griassgottbeinand“."],
         ["p", "(2) Ein Antrag auf Änderung des Stammtischnamens kann nur von einem aktiven Stammtischmitglied erfolgen. Die Abstimmung über die Änderung verlangt Einstimmigkeit."],
       ] },
       { head: "§ 2 Sinn und Zweck", blocks: [
@@ -25,10 +25,10 @@
         ["p", "(1) Die Mitgliedschaft erstreckt sich auf aktive und Ehrenmitglieder. Stimmberechtigt sind ausschließlich aktive Mitglieder. Über den Status oder die Änderung der Mitgliedschaft eines einzelnen Mitgliedes entscheidet die Vollversammlung."],
         ["p", "(2) Aktive Mitglieder sind derzeit: Alexander Gresiak, Andreas Beck, Bernd Hanselmann, Berthold Riesterer, Christian Beyer, Christoph Herberth, Dennis Ostermeier, Ernest Jennen, Manuel Hackel, Michael Hirschbichler, Norbert Hanselmann, Stefan Heinzel, Johannes Poethen."],
         ["p", "(3) Ehrenmitglied ohne Stimmrechte ist derzeit: Thomas Heigermoser."],
-        ["p", "(3) Die Mitgliedschaft ist zeitlich unbefristet und endet mit dem Tod."],
-        ["p", "(4) Eine vorzeitige Beendigung der Mitgliedschaft kann von einem Mitglied für seine Person beantragt werden."],
-        ["p", "(5) Bei schwerwiegenden Verfehlungen gegen Moral und Ethik kann der Ausschluss eines Mitgliedes erfolgen. Dies geschieht auf Antrag und erfordert eine 2/3-Mehrheit."],
-        ["p", "(6) Für die Neuaufnahme eines Mitgliedes ist grundsätzlich Einstimmigkeit erforderlich."],
+        ["p", "(4) Die Mitgliedschaft ist zeitlich unbefristet und endet mit dem Tod."],
+        ["p", "(5) Eine vorzeitige Beendigung der Mitgliedschaft kann von einem Mitglied für seine Person beantragt werden."],
+        ["p", "(6) Bei schwerwiegenden Verfehlungen gegen Moral und Ethik kann der Ausschluss eines Mitgliedes erfolgen. Dies geschieht auf Antrag und erfordert eine 2/3-Mehrheit."],
+        ["p", "(7) Für die Neuaufnahme eines Mitgliedes ist grundsätzlich Einstimmigkeit erforderlich."],
       ] },
       { head: "§ 5 Sitz", blocks: [
         ["p", "(1) Dieser Stammtisch hat nicht wie allgemein üblich einen festen Sitz in einer Wirtschaft. Die Lokalität wechselt monatlich. Der Sitz ist München, Ausnahme siehe Abs. 3."],
